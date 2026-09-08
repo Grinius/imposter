@@ -28,6 +28,7 @@ function random() { return crypto.getRandomValues(new Uint32Array(1))[0] / 42949
 export class ImposterRoom {
   private state: DurableObjectState;
   private sockets = new Map<WebSocket, string>();
+  private roomId = '';
   private room: PublicRoom | null = null;
   private roundState: ReturnType<typeof createRound> | null = null;
   private roles = new Map<string, PrivateRole>();
@@ -47,10 +48,8 @@ export class ImposterRoom {
   async fetch(request: Request) {
     if (request.headers.get('Upgrade') !== 'websocket') return new Response('WebSocket upgrade required', { status: 426 });
     await this.load();
-    if (this.room && !this.room.roomId) {
-      const id = new URL(request.url).pathname.split('/').pop();
-      if (id && roomIdIsValid(id)) this.room.roomId = id;
-    }
+    const id = new URL(request.url).pathname.split('/').pop();
+    if (id && roomIdIsValid(id)) { this.roomId = id; if (this.room && !this.room.roomId) this.room.roomId = id; }
     const pair = new WebSocketPair();
     const client = pair[0], server = pair[1];
     server.accept();
@@ -84,7 +83,7 @@ export class ImposterRoom {
     if (!name || name.length > 20) { this.send(socket, { type: 'error', message: 'Choose a name from 1–20 characters.' }); return; }
     if (!this.room) {
       const id = message.playerId && /^[a-f0-9-]{36}$/.test(message.playerId) ? message.playerId : randomId();
-      this.room = { roomId: '', hostId: id, status: 'lobby', players: [{ id, name, connected: true, isHost: true }], round: 0 };
+      this.room = { roomId: this.roomId, hostId: id, status: 'lobby', players: [{ id, name, connected: true, isHost: true }], round: 0 };
     } else {
       const existing = this.room.players.find(player => player.id === message.playerId);
       if (this.room.status !== 'lobby' && !existing) { this.send(socket, { type: 'error', message: 'This round has already started.' }); return; }
