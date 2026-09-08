@@ -1,34 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-test('three isolated browsers can join the same private room', async ({ browser, request }) => {
-  const host = await browser.newContext();
-  const guest = await browser.newContext();
-  const third = await browser.newContext();
-  const hostPage = await host.newPage();
-  const guestPage = await guest.newPage();
-  const thirdPage = await third.newPage();
-  await hostPage.goto('/online/');
-  await hostPage.getByLabel('Your name').fill('Alex');
-  await hostPage.getByRole('button', { name: /Create a private room/i }).click();
-  const code = hostPage.locator('.room-code strong');
-  await expect(code).toHaveText(/^[A-Z0-9]{6}$/);
-  const roomCode = await code.textContent();
-  expect(roomCode).toBeTruthy();
+async function waitForTurn(page: Page) { await expect(page.getByRole('heading', { name: 'Discuss the clues' })).toBeVisible({ timeout: 15_000 }); }
 
-  for (const [page, name] of [[guestPage, 'Jamie'], [thirdPage, 'Taylor']] as const) {
-    await page.goto('/online/');
-    await page.getByLabel('Your name').fill(name);
-    await page.getByLabel('Room code').fill(roomCode!);
-    await page.getByRole('button', { name: /Join with code/i }).click();
-  }
-  await expect(hostPage.locator('.online-player')).toHaveCount(3);
-  await expect(guestPage.locator('.online-player')).toHaveCount(3);
-  await expect(thirdPage.locator('.online-player')).toHaveCount(3);
-  await expect(hostPage.getByText('Jamie')).toBeVisible();
-  await expect(hostPage.getByText('Taylor')).toBeVisible();
-
-  await host.close();
-  await guest.close();
-  await third.close();
-  await request.dispose();
+test('three browsers complete a private online round', async ({ browser }) => {
+  const contexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext()]);
+  const pages = await Promise.all(contexts.map(context => context.newPage()));
+  const names = ['Alex', 'Jamie', 'Taylor'];
+  await pages[0].goto('/online/'); await pages[0].getByLabel('Your name').fill(names[0]); await pages[0].getByRole('button', { name: /Create a private room/i }).click();
+  const code = (await pages[0].locator('.room-code strong').textContent())!;
+  for (let index = 1; index < pages.length; index += 1) { await pages[index].goto('/online/'); await pages[index].getByLabel('Your name').fill(names[index]); await pages[index].getByLabel('Room code').fill(code); await pages[index].getByRole('button', { name: /Join with code/i }).click(); }
+  for (const page of pages) await expect(page.locator('.online-player')).toHaveCount(3);
+  await pages[0].getByRole('button', { name: /Start the round/i }).click();
+  for (const page of pages) await expect(page.locator('.online-role')).toBeVisible({ timeout: 15_000 });
+  const roles = await Promise.all(pages.map(page => page.locator('.online-role').textContent())); expect(roles.filter(role => role?.includes('imposter'))).toHaveLength(1); const imposterIndex = roles.findIndex(role => role?.includes('imposter')); const imposterName = names[imposterIndex];
+  for (let turn = 0; turn < names.length; turn += 1) { const page = pages[turn]; await waitForTurn(page); await page.getByPlaceholder('Your clue').fill(`clue ${turn + 1}`); await page.getByRole('button', { name: /Submit clue/i }).click(); }
+  await expect(pages[0].getByRole('button', { name: /Start voting/i })).toBeVisible(); await pages[0].getByRole('button', { name: /Start voting/i }).click();
+  for (let turn = 0; turn < names.length; turn += 1) { const page = pages[turn]; await expect(page.getByRole('button', { name: /Open my ballot/i })).toBeVisible({ timeout: 15_000 }); await page.getByRole('button', { name: /Open my ballot/i }).click(); const target = turn === imposterIndex ? names[(turn + 1) % names.length] : imposterName; await page.getByRole('button', { name: target, exact: true }).click(); }
+  const imposterPage = pages[imposterIndex]; await expect(imposterPage.getByPlaceholder('Guess the secret word')).toBeVisible({ timeout: 15_000 }); await imposterPage.getByPlaceholder('Guess the secret word').fill('definitely-wrong-guess'); await imposterPage.getByRole('button', { name: /Make final guess/i }).click(); for (const page of pages) await expect(page.getByRole('heading', { name: 'Friends win!' })).toBeVisible({ timeout: 15_000 });
+  await pages[1].reload(); await expect(pages[1].locator('.online-player')).toHaveCount(3, { timeout: 15_000 }); await pages[2].close(); await expect(pages[0].locator('.presence.connected')).toHaveCount(2, { timeout: 15_000 }); await Promise.all(contexts.map(context => context.close()));
 });
