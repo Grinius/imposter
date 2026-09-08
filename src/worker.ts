@@ -105,7 +105,7 @@ export class ImposterRoom {
 
   private async start(socket: WebSocket, playerId: string, settings: Settings) {
     if (!this.room || this.room.hostId !== playerId || this.room.players.length < 3) { this.send(socket, { type: 'error', message: 'The host needs at least three players to start.' }); return; }
-    if (this.room.status !== 'lobby') { this.send(socket, { type: 'error', message: 'This room is already in progress.' }); return; }
+    if (!['lobby', 'finished'].includes(this.room.status)) { this.send(socket, { type: 'error', message: 'This room is already in progress.' }); return; }
     try { this.roundState = createRound({ ...settings, names: this.room.players.map(player => player.name) }, random); }
     catch (error) { this.send(socket, { type: 'error', message: error instanceof Error ? error.message : 'Those settings were invalid.' }); return; }
     this.room.status = 'playing'; this.room.round += 1;
