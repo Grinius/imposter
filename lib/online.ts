@@ -6,6 +6,18 @@ export type PublicRoom = {
   status: 'lobby' | 'playing' | 'finished';
   players: OnlinePlayer[];
   round: number;
+  game?: PublicGame;
+};
+
+export type PublicGame = {
+  phase: import('./game').Phase;
+  cursor: number;
+  clues: string[];
+  votesSubmitted: number;
+  playerCount: number;
+  accused: number | null;
+  winner: 'friends' | 'imposter' | null;
+  reason: 'caught' | 'escaped' | 'tie' | 'guessed' | null;
 };
 
 export type PrivateRole = { round: number; role: 'friend' | 'imposter'; word?: string; hint?: string };
@@ -22,12 +34,13 @@ export function playerCanAct(room: PublicRoom, playerId: string) {
   return room.players.some(player => player.id === playerId && player.connected);
 }
 
-export function publicRoom(room: PublicRoom): PublicRoom {
+export function publicRoom(room: PublicRoom, game?: import('./game').Round | null): PublicRoom {
   return {
     roomId: room.roomId,
     hostId: room.hostId,
     status: room.status,
     round: room.round,
     players: room.players.map(({ id, name, connected, isHost }) => ({ id, name, connected, isHost })),
+    ...(game ? { game: { phase: game.phase, cursor: game.cursor, clues: game.clues, votesSubmitted: game.votes.length, playerCount: game.names.length, accused: game.accused, winner: game.winner, reason: game.reason } } : {}),
   };
 }

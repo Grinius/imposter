@@ -86,7 +86,7 @@ export class ImposterRoom {
     if (!player) { this.send(socket, { type: 'error', message: 'Could not join this room.' }); return; }
     this.sockets.set(socket, player.id);
     await this.persist();
-    this.broadcast({ type: 'room', room: publicRoom(this.room) });
+    this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
   }
 
   private async start(socket: WebSocket, playerId: string, settings: Settings) {
@@ -96,21 +96,28 @@ export class ImposterRoom {
     catch (error) { this.send(socket, { type: 'error', message: error instanceof Error ? error.message : 'Those settings were invalid.' }); return; }
     this.room.status = 'playing'; this.room.round += 1;
     this.roles = new Map(this.room.players.map((player, index) => [player.id, index === this.roundState!.imposter ? { round: this.room!.round, role: 'imposter', hint: this.roundState!.settings.hints ? this.roundState!.word.category : undefined } : { round: this.room!.round, role: 'friend', word: this.roundState!.word.text }]));
-    await this.persist(); this.broadcast({ type: 'room', room: publicRoom(this.room) });
+    await this.persist(); this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
     for (const [client, id] of this.sockets) { const role = this.roles.get(id); if (role) this.send(client, { type: 'role', role }); }
   }
 
   private async action(socket: WebSocket, playerId: string, message: Extract<ClientMessage, { type: 'action' }>) {
     if (!this.room || !this.roundState || this.room.status !== 'playing' || message.round !== this.room.round) { this.send(socket, { type: 'error', message: 'That action belongs to an old or inactive round.' }); return; }
     if (!this.room.players.some(player => player.id === playerId && player.connected)) { this.send(socket, { type: 'error', message: 'You are not an active player in this room.' }); return; }
-    // The first network slice validates membership and round freshness. The shared action
-    // protocol is deliberately kept private until the multiplayer turn UI is wired.
-    if (message.action.type === 'guess') message.action = { ...message.action, word: message.action.word.slice(0, 60) };
-    this.roundState = transition(this.roundState, message.action);
-    await this.persist(); this.broadcast({ type: 'room', room: publicRoom(this.room) });
+    const playerIndex = this.room.players.findIndex(player => player.id === playerId);
+    const current = this.roundState.cursor;
+    const action = message.action.type === 'guess' ? { ...message.action, word: message.action.word.slice(0, 60) } : message.action;
+    const isTurn = playerIndex === current;
+    const allowed = action.type === 'start-vote' || action.type === 'skip-guess' || action.type === 'guess' || action.type === 'privacy' || action.type === 'open-ballot' || action.type === 'clue' || action.type === 'vote';
+    if (!allowed || ((action.type === 'clue' || action.type === 'vote' || action.type === 'open-ballot') && !isTurn) || (action.type === 'guess' && playerIndex !== this.roundState.imposter)) {
+      this.send(socket, { type: 'error', message: 'That action is not yours or is not available yet.' }); return;
+    }
+    const before = JSON.stringify(this.roundState);
+    this.roundState = transition(this.roundState, action);
+    if (JSON.stringify(this.roundState) === before) { this.send(socket, { type: 'error', message: 'That action is not valid in the current phase.' }); return; }
+    await this.persist(); this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
   }
 
-  private disconnect(socket: WebSocket) { const id = this.sockets.get(socket); if (!id || !this.room) return; this.sockets.delete(socket); const player = this.room.players.find(candidate => candidate.id === id); if (player) player.connected = false; void this.persist().then(() => this.broadcast({ type: 'room', room: publicRoom(this.room!) })); }
+  private disconnect(socket: WebSocket) { const id = this.sockets.get(socket); if (!id || !this.room) return; this.sockets.delete(socket); const player = this.room.players.find(candidate => candidate.id === id); if (player) player.connected = false; void this.persist().then(() => this.broadcast({ type: 'room', room: publicRoom(this.room!, this.roundState) })); }
   private send(socket: WebSocket, message: ServerMessage) { try { socket.send(json(message)); } catch { /* disconnected sockets are cleaned up by close */ } }
   private broadcast(message: ServerMessage) { for (const socket of this.sockets.keys()) this.send(socket, message); }
   private async persist() { if (!this.room) return; await this.state.storage.put({ room: this.room, round: this.roundState, roles: [...this.roles] }); this.state.storage.setAlarm(Date.now() + ROOM_TTL_MS); }

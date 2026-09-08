@@ -23,7 +23,7 @@ Features: 3–12 editable players, 120 starter words in five packs plus mixed, c
 
 The first online slice is implemented behind `/online/` and the Cloudflare Worker API. It has a six-character room endpoint, WebSocket Durable Object rooms, lobby presence, reconnecting player IDs, host-only start, per-player role messages, and round freshness checks. The shared local rules remain the source for round transitions.
 
-This is a backend/lobby foundation rather than the complete remote turn UI: network clue discussion, distributed voting controls, per-player action authorization for every phase, and full separate-browser integration tests remain next. The current worker keeps the authoritative round object but still needs a complete network action protocol before public deployment.
+The online round now synchronizes clue submissions, private ballot handoffs, distributed votes, and the imposter's final guess. The Worker authorizes the acting player for each turn and publishes public phase state while roles remain private WebSocket messages. Vitest covers clue ordering, vote resolution, and final-guess outcomes. Full separate-browser automation remains a follow-up because the repository does not yet include a Playwright/WebDriver dependency.
 
 ## Not implemented
 
@@ -31,7 +31,7 @@ Authentication, analytics, ads, payments, real-time 3D, and production deploymen
 
 ## Next work
 
-Complete the remote turn protocol and UI on top of the room foundation: synchronize phases, deliver only the current player's secret, authorize each action on the server, and test two or more browser contexts. Keep local play available. Refine public content and routes when keyword research arrives. Supply the real SITE_URL for public-launch metadata and indexing.
+Add Playwright or equivalent multi-context browser tests for room creation, reconnect, simultaneous stale actions, and two-player views. Keep local play available. Refine public content and routes when keyword research arrives. Supply the real SITE_URL for public-launch metadata and indexing.
 
 ## Local preview
 
