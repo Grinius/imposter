@@ -34,6 +34,16 @@ export class ImposterRoom {
 
   constructor(state: DurableObjectState) { this.state = state; }
 
+  async alarm() {
+    await this.load();
+    if (this.room && this.room.players.every(player => !player.connected)) {
+      await this.state.storage.deleteAll();
+      this.room = null; this.roundState = null; this.roles.clear();
+    } else if (this.room) {
+      this.state.storage.setAlarm(Date.now() + ROOM_TTL_MS);
+    }
+  }
+
   async fetch(request: Request) {
     if (request.headers.get('Upgrade') !== 'websocket') return new Response('WebSocket upgrade required', { status: 426 });
     await this.load();
@@ -76,10 +86,14 @@ export class ImposterRoom {
       const id = message.playerId && /^[a-f0-9-]{36}$/.test(message.playerId) ? message.playerId : randomId();
       this.room = { roomId: '', hostId: id, status: 'lobby', players: [{ id, name, connected: true, isHost: true }], round: 0 };
     } else {
-      if (this.room.status !== 'lobby') { this.send(socket, { type: 'error', message: 'This round has already started.' }); return; }
-      if (this.room.players.length >= 12) { this.send(socket, { type: 'error', message: 'This room is full.' }); return; }
       const existing = this.room.players.find(player => player.id === message.playerId);
-      if (existing) { existing.name = name; existing.connected = true; }
+      if (this.room.status !== 'lobby' && !existing) { this.send(socket, { type: 'error', message: 'This round has already started.' }); return; }
+      if (this.room.players.length >= 12 && !existing) { this.send(socket, { type: 'error', message: 'This room is full.' }); return; }
+      if (existing) {
+        const previous = [...this.sockets.entries()].find(([, id]) => id === existing.id);
+        if (previous) { this.sockets.delete(previous[0]); try { previous[0].close(4001, 'Reconnected elsewhere'); } catch { /* already closed */ } }
+        existing.name = name; existing.connected = true;
+      }
       else this.room.players.push({ id: randomId(), name, connected: true, isHost: false });
     }
     const player = this.room.players.find(candidate => candidate.name === name && candidate.connected);
@@ -114,10 +128,11 @@ export class ImposterRoom {
     const before = JSON.stringify(this.roundState);
     this.roundState = transition(this.roundState, action);
     if (JSON.stringify(this.roundState) === before) { this.send(socket, { type: 'error', message: 'That action is not valid in the current phase.' }); return; }
+    if (this.roundState.phase === 'result') this.room.status = 'finished';
     await this.persist(); this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
   }
 
-  private disconnect(socket: WebSocket) { const id = this.sockets.get(socket); if (!id || !this.room) return; this.sockets.delete(socket); const player = this.room.players.find(candidate => candidate.id === id); if (player) player.connected = false; void this.persist().then(() => this.broadcast({ type: 'room', room: publicRoom(this.room!, this.roundState) })); }
+  private disconnect(socket: WebSocket) { const id = this.sockets.get(socket); if (!id || !this.room) return; this.sockets.delete(socket); const player = this.room.players.find(candidate => candidate.id === id); if (player) { player.connected = false; if (player.id === this.room.hostId) { const successor = this.room.players.find(candidate => candidate.connected); if (successor) { this.room.hostId = successor.id; this.room.players.forEach(candidate => { candidate.isHost = candidate.id === successor.id; }); } } } void this.persist().then(() => this.broadcast({ type: 'room', room: publicRoom(this.room!, this.roundState) })); }
   private send(socket: WebSocket, message: ServerMessage) { try { socket.send(json(message)); } catch { /* disconnected sockets are cleaned up by close */ } }
   private broadcast(message: ServerMessage) { for (const socket of this.sockets.keys()) this.send(socket, message); }
   private async persist() { if (!this.room) return; await this.state.storage.put({ room: this.room, round: this.roundState, roles: [...this.roles] }); this.state.storage.setAlarm(Date.now() + ROOM_TTL_MS); }
