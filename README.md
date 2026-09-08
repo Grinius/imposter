@@ -21,7 +21,7 @@ npm run typecheck
 npm run lint
 npm run build     # Static HTML/CSS/JS in out/
 npm run check     # All of the above
-npm run test:e2e:setup  # One-time Chromium download
+npm run test:e2e:setup  # Download Chromium for CI or machines without Chrome
 npm run test:e2e        # Playwright multiplayer browser test
 ```
 
