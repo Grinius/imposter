@@ -21,6 +21,8 @@ npm run typecheck
 npm run lint
 npm run build     # Static HTML/CSS/JS in out/
 npm run check     # All of the above
+npm run test:e2e:setup  # One-time Chromium download
+npm run test:e2e        # Playwright multiplayer browser test
 ```
 
 ## Cloudflare
@@ -44,11 +46,11 @@ For an authorized public launch, set `SITE_URL` to the actual HTTPS origin in th
 - One private vote per player, no self-votes. Unique plurality accuses a player; ties favor the imposter.
 - A caught imposter gets one final guess. Replay avoids immediately repeating a word.
 - Mobile and desktop layouts, keyboard controls, reduced-motion support, optional synthesized sound.
-- Online beta foundation at `/online/`: create/join room, six-character code, Durable Object lobby presence, reconnecting player IDs, host start, and per-player role delivery.
+- Online beta at `/online/`: create/join room, six-character code, Durable Object lobby presence, reconnecting player IDs, host transfer, synchronized clues, distributed voting, final guesses, and per-player role delivery.
 
 ## Next
 
-The remote turn UI is still in progress. The Durable Object room foundation is implemented, but clue discussion, distributed voting controls, complete per-action server authorization, and multi-browser end-to-end tests remain before public launch. See [architecture](docs/ARCHITECTURE.md).
+The online flow is implemented and covered by domain tests plus a Playwright room-join test. Production launch still needs deployed staging validation, broader reconnect/disconnect browser coverage, and operational safeguards. See [architecture](docs/ARCHITECTURE.md).
 
 The initial art uses an illustration with CSS motion, not a real-time 3D scene. Word packs are a starter editorial selection and still need playtesting across ages and cultures. SEO keyword data and the production domain remain pending.
 

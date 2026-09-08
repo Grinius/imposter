@@ -9,6 +9,7 @@
     "test": "vitest run",
     "lint": "eslint .",
     "test:e2e": "playwright test",
+    "test:e2e:setup": "playwright install chromium",
     "preview": "wrangler dev",
     "deploy": "npm run build && wrangler deploy",
     "check": "npm run test && npm run typecheck && npm run lint && npm run build"
