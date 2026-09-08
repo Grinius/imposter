@@ -19,13 +19,19 @@ Features: 3–12 editable players, 120 starter words in five packs plus mixed, c
 - Export inspection verified HTML text, description metadata, eager-loaded artwork, included image, and preview noindex/robots behavior. Field Core Web Vitals and production indexing have not been measured.
 - Artwork is 148,312 bytes as a 1280 px WebP. Provenance and final prompt are in ASSETS.md.
 
+## Online mode slice built
+
+The first online slice is implemented behind `/online/` and the Cloudflare Worker API. It has a six-character room endpoint, WebSocket Durable Object rooms, lobby presence, reconnecting player IDs, host-only start, per-player role messages, and round freshness checks. The shared local rules remain the source for round transitions.
+
+This is a backend/lobby foundation rather than the complete remote turn UI: network clue discussion, distributed voting controls, per-player action authorization for every phase, and full separate-browser integration tests remain next. The current worker keeps the authoritative round object but still needs a complete network action protocol before public deployment.
+
 ## Not implemented
 
-Private online rooms, networking, authentication, persistence, analytics, ads, payments, real-time 3D, and production deployment. Keyword data and production domain remain pending. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified.
+Authentication, analytics, ads, payments, real-time 3D, and production deployment remain unimplemented. Keyword data and production domain remain pending. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified.
 
 ## Next work
 
-Get feedback on the playable design, then add authoritative private rooms using Cloudflare Durable Objects, with per-player secret projection and reconnect handling. Keep local play available. Refine public content and routes when keyword research arrives. Supply the real SITE_URL for public-launch metadata and indexing.
+Complete the remote turn protocol and UI on top of the room foundation: synchronize phases, deliver only the current player's secret, authorize each action on the server, and test two or more browser contexts. Keep local play available. Refine public content and routes when keyword research arrives. Supply the real SITE_URL for public-launch metadata and indexing.
 
 ## Local preview
 

@@ -44,10 +44,11 @@ For an authorized public launch, set `SITE_URL` to the actual HTTPS origin in th
 - One private vote per player, no self-votes. Unique plurality accuses a player; ties favor the imposter.
 - A caught imposter gets one final guess. Replay avoids immediately repeating a word.
 - Mobile and desktop layouts, keyboard controls, reduced-motion support, optional synthesized sound.
+- Online beta foundation at `/online/`: create/join room, six-character code, Durable Object lobby presence, reconnecting player IDs, host start, and per-player role delivery.
 
 ## Next
 
-Private online rooms are not implemented. They will use an authoritative Cloudflare Durable Object per room; the current same-device state is not a secure multiplayer backend. See [architecture](docs/ARCHITECTURE.md).
+The remote turn UI is still in progress. The Durable Object room foundation is implemented, but clue discussion, distributed voting controls, complete per-action server authorization, and multi-browser end-to-end tests remain before public launch. See [architecture](docs/ARCHITECTURE.md).
 
 The initial art uses an illustration with CSS motion, not a real-time 3D scene. Word packs are a starter editorial selection and still need playtesting across ages and cultures. SEO keyword data and the production domain remain pending.
 
