@@ -85,7 +85,9 @@ export class ImposterRoom {
       const id = message.playerId && /^[a-f0-9-]{36}$/.test(message.playerId) ? message.playerId : randomId();
       this.room = { roomId: this.roomId, hostId: id, status: 'lobby', players: [{ id, name, connected: true, isHost: true }], round: 0 };
     } else {
-      const existing = this.room.players.find(player => player.id === message.playerId);
+      const byId = this.room.players.find(player => player.id === message.playerId);
+      const sameName = this.room.players.filter(player => player.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+      const existing = byId ?? (sameName.length === 1 ? sameName[0] : undefined);
       if (this.room.status !== 'lobby' && !existing) { this.send(socket, { type: 'error', message: 'This round has already started.' }); return; }
       if (this.room.players.length >= 12 && !existing) { this.send(socket, { type: 'error', message: 'This room is full.' }); return; }
       if (existing) {
@@ -117,11 +119,9 @@ export class ImposterRoom {
     if (!this.room || !this.roundState || this.room.status !== 'playing' || message.round !== this.room.round) { this.send(socket, { type: 'error', message: 'That action belongs to an old or inactive round.' }); return; }
     if (!this.room.players.some(player => player.id === playerId && player.connected)) { this.send(socket, { type: 'error', message: 'You are not an active player in this room.' }); return; }
     const playerIndex = this.room.players.findIndex(player => player.id === playerId);
-    const current = this.roundState.cursor;
     const action = message.action.type === 'guess' ? { ...message.action, word: message.action.word.slice(0, 60) } : message.action;
-    const isTurn = playerIndex === current;
     const allowed = action.type === 'start-vote' || action.type === 'skip-guess' || action.type === 'guess' || action.type === 'privacy' || action.type === 'open-ballot' || action.type === 'clue' || action.type === 'vote';
-    if (!allowed || ((action.type === 'vote' || action.type === 'open-ballot') && !isTurn) || (action.type === 'guess' && playerIndex !== this.roundState.imposter)) {
+    if (!allowed || (action.type === 'guess' && playerIndex !== this.roundState.imposter)) {
       this.send(socket, { type: 'error', message: 'That action is not yours or is not available yet.' }); return;
     }
     const before = JSON.stringify(this.roundState);
