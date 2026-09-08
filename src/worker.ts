@@ -121,7 +121,7 @@ export class ImposterRoom {
     const action = message.action.type === 'guess' ? { ...message.action, word: message.action.word.slice(0, 60) } : message.action;
     const isTurn = playerIndex === current;
     const allowed = action.type === 'start-vote' || action.type === 'skip-guess' || action.type === 'guess' || action.type === 'privacy' || action.type === 'open-ballot' || action.type === 'clue' || action.type === 'vote';
-    if (!allowed || ((action.type === 'clue' || action.type === 'vote' || action.type === 'open-ballot') && !isTurn) || (action.type === 'guess' && playerIndex !== this.roundState.imposter)) {
+    if (!allowed || ((action.type === 'vote' || action.type === 'open-ballot') && !isTurn) || (action.type === 'guess' && playerIndex !== this.roundState.imposter)) {
       this.send(socket, { type: 'error', message: 'That action is not yours or is not available yet.' }); return;
     }
     const before = JSON.stringify(this.roundState);
