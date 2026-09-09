@@ -1,3 +1,5 @@
+import { minPlayerLimit } from './limits';
+
 export type OnlinePlayer = { id: string; name: string; connected: boolean; isHost: boolean };
 
 export type PublicRoom = {
@@ -28,7 +30,7 @@ export function roomIdIsValid(roomId: string) {
 }
 
 export function playerCanStart(room: PublicRoom, playerId: string) {
-  return room.hostId === playerId && room.status === 'lobby' && room.players.length >= 3;
+  return room.hostId === playerId && room.status === 'lobby' && room.players.length >= minPlayerLimit;
 }
 
 export function playerCanAct(room: PublicRoom, playerId: string) {

@@ -1,5 +1,5 @@
 import { createRound, transition, type Action, type Settings } from '../lib/game';
-import { freePlayerLimit } from '../lib/limits';
+import { freePlayerLimit, minPlayerLimit } from '../lib/limits';
 import { publicRoom, roomIdIsValid, type PrivateRole, type PublicRoom } from '../lib/online';
 
 export interface Env {
@@ -114,9 +114,9 @@ export class ImposterRoom {
   }
 
   private async start(socket: WebSocket, playerId: string, settings: Settings) {
-    if (!this.room || this.room.hostId !== playerId || this.room.players.length < 3) { this.send(socket, { type: 'error', message: 'The host needs at least three players to start.' }); return; }
+    if (!this.room || this.room.hostId !== playerId || this.room.players.length < minPlayerLimit) { this.send(socket, { type: 'error', message: `The host needs at least ${minPlayerLimit} players to start.` }); return; }
     if (!['lobby', 'finished'].includes(this.room.status)) { this.send(socket, { type: 'error', message: 'This room is already in progress.' }); return; }
-    try { const freshRound = createRound({ ...settings, names: this.room.players.map(player => player.name) }, random); this.roundState = { ...freshRound, phase: 'discussion', cursor: 0 }; }
+    try { const freshRound = createRound({ ...settings, names: this.room.players.map(player => player.name) }, random); this.roundState = { ...freshRound, phase: 'discussion', cursor: freshRound.firstClue }; }
     catch (error) { this.send(socket, { type: 'error', message: error instanceof Error ? error.message : 'Those settings were invalid.' }); return; }
     this.room.status = 'playing'; this.room.round += 1;
     this.roles = new Map(this.room.players.map((player, index) => [player.id, index === this.roundState!.imposter ? { round: this.room!.round, role: 'imposter', hint: this.roundState!.settings.hints ? this.roundState!.word.category : undefined } : { round: this.room!.round, role: 'friend', word: this.roundState!.word.text }]));

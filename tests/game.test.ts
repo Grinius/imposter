@@ -22,7 +22,7 @@ describe('setup and word packs', () => {
 describe('private reveals', () => {
   it('requires a fresh reveal for each player', () => { const initial = make(); expect(transition(initial, { type: 'hide' })).toBe(initial); const hidden = transition(transition(initial, { type: 'reveal' }), { type: 'hide' }); expect(hidden.phase).toBe('handoff'); expect(hidden.cursor).toBe(1); expect(transition(hidden, { type: 'hide' })).toBe(hidden); });
   it('hides the current role on privacy events without skipping its owner', () => { const current = transition(make(), { type: 'reveal' }); const hidden = transition(current, { type: 'privacy' }); expect(hidden.phase).toBe('handoff'); expect(hidden.cursor).toBe(0); });
-  it('begins discussion only after everyone has read their card', () => { expect(revealed().phase).toBe('discussion'); });
+  it('begins discussion only after everyone has read their card', () => { const round = revealed(); expect(round.phase).toBe('discussion'); expect(round.cursor).toBe(round.firstClue); });
   it('ignores premature or repeated phase actions', () => { const initial = make(); expect(transition(initial, { type: 'start-vote' })).toBe(initial); expect(transition(initial, { type: 'guess', word: initial.word.text })).toBe(initial); });
 });
 describe('voting and win conditions', () => {

@@ -6,7 +6,7 @@ import { ArrowRight, Check, Eye, EyeOff, Feather, Fingerprint, Plus, RotateCcw, 
 import { categories, getWords, type Category, type Word } from '@/lib/words';
 import { secureRandom } from '@/lib/game';
 import UpgradeCard from '@/components/premium/upgrade-card';
-import { freePlayerLimit } from '@/lib/limits';
+import { freePlayerLimit, minPlayerLimit } from '@/lib/limits';
 import { premiumFeatures } from '@/lib/premium';
 
 type GeneratedPlayer = { name: string; isImposter: boolean };
@@ -41,7 +41,7 @@ export default function ImposterGenerator() {
 
   function generate() {
     const trimmed = names.map(name => name.trim());
-    if (trimmed.length < 3 || trimmed.length > freePlayerLimit) { setError('Use 3-5 players for the free imposter game. Premium larger rooms are locked until payment is connected.'); return; }
+    if (trimmed.length < minPlayerLimit || trimmed.length > freePlayerLimit) { setError(`Use ${minPlayerLimit}-${freePlayerLimit} players for the free imposter game. Premium larger rooms are locked until payment is connected.`); return; }
     if (trimmed.some(name => !name || name.length > 20)) { setError('Give every player a name up to 20 characters.'); return; }
     if (new Set(trimmed.map(name => name.toLocaleLowerCase())).size !== trimmed.length) { setError('Each player needs a different name.'); return; }
     setError('');
@@ -62,7 +62,7 @@ export default function ImposterGenerator() {
         <div className="generator-names" role="group" aria-labelledby="generator-players">
           {names.map((name, index) => <div className="generator-name" key={index}>
             <input aria-label={`Player ${index + 1} name`} value={name} maxLength={20} onChange={event => { setNames(names.map((value, i) => i === index ? event.target.value : value)); setError(''); }} />
-            <button type="button" aria-label={`Remove player ${index + 1}`} disabled={names.length <= 3} onClick={() => setNames(names.filter((_, i) => i !== index))}><X size={14} /></button>
+            <button type="button" aria-label={`Remove player ${index + 1}`} disabled={names.length <= minPlayerLimit} onClick={() => setNames(names.filter((_, i) => i !== index))}><X size={14} /></button>
           </div>)}
         </div>
         <button className="generator-add" type="button" disabled={names.length >= freePlayerLimit} onClick={addPlayer}><Plus size={15} /> Add player</button>
