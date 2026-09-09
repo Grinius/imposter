@@ -12,6 +12,7 @@ export type PublicRoom = {
 export type PublicGame = {
   phase: import('./game').Phase;
   cursor: number;
+  cursorPlayerId: string;
   clues: string[];
   votesSubmitted: number;
   playerCount: number;
@@ -41,6 +42,6 @@ export function publicRoom(room: PublicRoom, game?: import('./game').Round | nul
     status: room.status,
     round: room.round,
     players: room.players.map(({ id, name, connected, isHost }) => ({ id, name, connected, isHost })),
-    ...(game ? { game: { phase: game.phase, cursor: game.cursor, clues: game.clues, votesSubmitted: game.votes.length, playerCount: game.names.length, accused: game.accused, winner: game.winner, reason: game.reason } } : {}),
+    ...(game ? { game: { phase: game.phase, cursor: game.cursor, cursorPlayerId: room.players[game.cursor]?.id ?? '', clues: game.clues, votesSubmitted: game.votes.length, playerCount: game.names.length, accused: game.accused, winner: game.winner, reason: game.reason } } : {}),
   };
 }
