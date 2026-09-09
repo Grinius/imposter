@@ -1,0 +1,117 @@
+'use client';
+
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { ArrowRight, Check, Eye, EyeOff, Feather, Fingerprint, Plus, RotateCcw, Shuffle, Sparkles, Users, X } from 'lucide-react';
+import { categories, getWords, type Category, type Word } from '@/lib/words';
+import { secureRandom } from '@/lib/game';
+
+type GeneratedPlayer = { name: string; isImposter: boolean };
+type GeneratedGame = { word: Word; players: GeneratedPlayer[] };
+
+const categoryLabels = categories.map(category => ({ id: category.id, label: category.short }));
+
+function randomIndex(length: number) {
+  return Math.floor(secureRandom() * length);
+}
+
+function makeGame(names: string[], category: Category): GeneratedGame {
+  const pool = getWords(category);
+  const word = pool[randomIndex(pool.length)];
+  const imposter = randomIndex(names.length);
+  return { word, players: names.map((name, index) => ({ name: name.trim(), isImposter: index === imposter })) };
+}
+
+export default function ImposterGenerator() {
+  const [names, setNames] = useState(['Alex', 'Jamie', 'Taylor', 'Morgan']);
+  const [category, setCategory] = useState<Category>('mixed');
+  const [game, setGame] = useState<GeneratedGame | null>(null);
+  const [revealed, setRevealed] = useState<number | null>(null);
+  const [error, setError] = useState('');
+  const currentCategory = useMemo(() => categories.find(item => item.id === category)!, [category]);
+
+  function addPlayer() {
+    let next = names.length + 1;
+    while (names.includes(`Player ${next}`)) next += 1;
+    setNames([...names, `Player ${next}`]);
+  }
+
+  function generate() {
+    const trimmed = names.map(name => name.trim());
+    if (trimmed.length < 3 || trimmed.length > 12) { setError('Use 3-12 players for a fair imposter game.'); return; }
+    if (trimmed.some(name => !name || name.length > 20)) { setError('Give every player a name up to 20 characters.'); return; }
+    if (new Set(trimmed.map(name => name.toLocaleLowerCase())).size !== trimmed.length) { setError('Each player needs a different name.'); return; }
+    setError('');
+    setRevealed(null);
+    setGame(makeGame(trimmed, category));
+  }
+
+  return <section className="generator-tool" aria-labelledby="generator-tool-title">
+    <div className="generator-controls">
+      <div className="generator-panel">
+        <span className="eyebrow"><Sparkles size={14} /> FREE IMPOSTER GAME GENERATOR</span>
+        <h1 id="generator-tool-title">Imposter game generator</h1>
+        <p>Create a secret word, assign one imposter, and reveal private role cards for 3-12 players.</p>
+        <div className="generator-field">
+          <label id="generator-players"><Users size={16} /> Players</label>
+          <span>{names.length} / 12</span>
+        </div>
+        <div className="generator-names" role="group" aria-labelledby="generator-players">
+          {names.map((name, index) => <div className="generator-name" key={index}>
+            <input aria-label={`Player ${index + 1} name`} value={name} maxLength={20} onChange={event => { setNames(names.map((value, i) => i === index ? event.target.value : value)); setError(''); }} />
+            <button type="button" aria-label={`Remove player ${index + 1}`} disabled={names.length <= 3} onClick={() => setNames(names.filter((_, i) => i !== index))}><X size={14} /></button>
+          </div>)}
+        </div>
+        <button className="generator-add" type="button" disabled={names.length >= 12} onClick={addPlayer}><Plus size={15} /> Add player</button>
+        <div className="generator-field generator-category-label">
+          <label>Category</label>
+          <span>{getWords(category).length} words</span>
+        </div>
+        <div className="generator-categories">
+          {categoryLabels.map(item => <button type="button" key={item.id} className={category === item.id ? 'selected' : ''} aria-pressed={category === item.id} onClick={() => { setCategory(item.id); setGame(null); }}>
+            <Shuffle size={15} />
+            <span>{item.label}</span>
+            {category === item.id && <Check size={12} />}
+          </button>)}
+        </div>
+        {error && <p role="alert" className="form-error">{error}</p>}
+        <button className="start-button generator-start" type="button" onClick={generate}><span><Fingerprint size={20} /> Generate roles</span><ArrowRight size={18} /></button>
+      </div>
+    </div>
+    <div className="generator-output" aria-live="polite">
+      {game ? <>
+        <div className="generator-secret">
+          <span>{currentCategory.hint}</span>
+          <strong>Secret word ready</strong>
+          <p>Pass the screen around. Each player should open only their own card.</p>
+        </div>
+        <div className="generator-cards">
+          {game.players.map((player, index) => {
+            const isOpen = revealed === index;
+            return <button className={`generator-card ${isOpen ? 'open' : ''} ${isOpen && player.isImposter ? 'imposter' : ''}`} type="button" key={`${player.name}-${index}`} onClick={() => setRevealed(isOpen ? null : index)} aria-pressed={isOpen}>
+              <span>{player.name}</span>
+              {isOpen ? <>
+                {player.isImposter ? <Fingerprint size={35} strokeWidth={1.2} /> : <Feather size={31} strokeWidth={1.2} />}
+                <strong>{player.isImposter ? 'The imposter' : game.word.text}</strong>
+                <small>{player.isImposter ? 'Blend in. Guess the word if caught.' : 'Give a clue without saying the word.'}</small>
+                <EyeOff size={15} />
+              </> : <>
+                <Eye size={34} strokeWidth={1.1} />
+                <strong>Private card</strong>
+                <small>Tap when this player is looking.</small>
+              </>}
+            </button>;
+          })}
+        </div>
+        <div className="generator-actions">
+          <button className="gold-button" type="button" onClick={generate}><RotateCcw size={17} /> Generate another</button>
+          <Link className="outline-button" href="/online/">Play online <ArrowRight size={16} /></Link>
+        </div>
+      </> : <div className="generator-empty">
+        <Eye size={52} strokeWidth={1} />
+        <strong>Ready when your group is.</strong>
+        <p>Choose a category, enter player names, and generate private cards for the table.</p>
+      </div>}
+    </div>
+  </section>;
+}

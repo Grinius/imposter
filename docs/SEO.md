@@ -9,7 +9,7 @@ When data arrives, retain its source and date. Capture keyword, country, languag
 ## Candidate pages
 
 - Main playable imposter game.
-- Word generator with usable category and difficulty controls.
+- `/imposter-game-generator/`: functional word and role-card generator for the "imposter game generator" intent.
 - Rules with a concrete example round.
 - Curated category lists with a direct path into that game mode.
 - Private room creation/joining entry point.

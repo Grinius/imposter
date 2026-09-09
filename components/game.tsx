@@ -134,7 +134,7 @@ export default function Game() {
             <p className="hint-description">{settings.hints ? 'The imposter gets a category hint. A little help with the bluff.' : 'No hint for the imposter. Let your poker face do the work.'}</p>
             {error && <p role="alert" className="form-error">{error}</p>}
             <button className="start-button" type="submit"><span><Fingerprint size={21} /> Let the bluffing begin</span><ArrowRight size={20} /></button>
-            <a className="online-link" href="/online/"><Wifi size={16} /> Play online with friends <ArrowRight size={15} /></a>
+            <div className="setup-links"><a className="online-link" href="/online/"><Wifi size={16} /> Play online with friends <ArrowRight size={15} /></a><a className="online-link" href="/imposter-game-generator/"><Shuffle size={16} /> Open game generator <ArrowRight size={15} /></a></div>
             <div className="setup-footnote"><LockKeyhole size={12} /> Secret roles. Real friends. Absolutely no accounts.</div>
           </form>
         </section>

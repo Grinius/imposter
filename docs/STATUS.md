@@ -1,6 +1,6 @@
 # Current status
 
-Updated: 2026-09-08.
+Updated: 2026-09-09.
 
 ## Built
 
@@ -16,7 +16,7 @@ Features: 3–12 editable players, 120 starter words in five packs plus mixed, c
 - Browser: completed a four-player round with all private cards, timer start/pause, private ballots, caught imposter, correct final guess, matching vote totals, and replay to a different word.
 - Browser: checked duplicate-name validation, a rapid double click at handoff, opening rules hides the secret, exit confirmation, and preserved settings after returning to setup.
 - Browser: checked desktop layout and phone result/setup layouts; measured no horizontal overflow at 320, 390, and 768 px. Tested twelve players, player limit, and a long valid name. These are browser viewport checks, not physical-device testing.
-- Export inspection verified HTML text, description metadata, eager-loaded artwork, included image, and preview noindex/robots behavior. Field Core Web Vitals and production indexing have not been measured.
+- Export inspection verified HTML text, description metadata, eager-loaded artwork, included image, and production sitemap/canonical behavior for `https://laughtable.com`. Field Core Web Vitals and production indexing have not been measured.
 - Artwork is 148,312 bytes as a 1280 px WebP. Provenance and final prompt are in ASSETS.md.
 
 ## Online mode slice built
@@ -25,13 +25,17 @@ The first online slice is implemented behind `/online/` and the Cloudflare Worke
 
 The online round now synchronizes clue submissions, private ballot handoffs, distributed votes, and the imposter's final guess. The Worker authorizes the acting player for each turn and publishes public phase state while roles remain private WebSocket messages. Vitest covers clue ordering, vote resolution, and final-guess outcomes. Full separate-browser automation remains a follow-up because the repository does not yet include a Playwright/WebDriver dependency.
 
+## SEO pages built
+
+`/imposter-game-generator/` is implemented as an indexable page for the "imposter game generator" intent. It renders explanatory content, built-in category summaries, crawlable links to the pass-and-play and online game routes, and a client-side generator that creates private role cards from the shared word packs.
+
 ## Not implemented
 
-Authentication, analytics, ads, payments, real-time 3D, and production deployment remain unimplemented. Keyword data and production domain remain pending. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified.
+Authentication, analytics, ads, payments, real-time 3D, and production deployment remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified.
 
 ## Next work
 
-Add Playwright or equivalent multi-context browser tests for room creation, reconnect, simultaneous stale actions, and two-player views. Keep local play available. Refine public content and routes when keyword research arrives. Supply the real SITE_URL for public-launch metadata and indexing.
+Keep local play available. Refine public content and routes when keyword research arrives. Deploy with `SITE_URL=https://laughtable.com`, then validate indexing from the live domain.
 
 ## Local preview
 

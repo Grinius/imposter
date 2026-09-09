@@ -35,7 +35,7 @@ npm run preview                 # Local Cloudflare runtime
 npx wrangler deploy --dry-run    # Validate without publishing
 ```
 
-For an authorized public launch, set `SITE_URL` to the actual HTTPS origin in the build environment (see `.env.example`), then run `npm run deploy` while authenticated to the intended Cloudflare account. No domain is hardcoded. Without `SITE_URL`, the build emits noindex metadata and disallows crawling, with no invented canonical URL. The build includes original artwork and self-hosted fonts. No analytics, ads, accounts, or payments are enabled.
+For an authorized public launch, set `SITE_URL=https://laughtable.com` in the build environment, then run `npm run deploy` while authenticated to the intended Cloudflare account. The code defaults to `https://laughtable.com` for canonical URLs, robots, and sitemap output so the production sitemap does not build empty. The build includes original artwork and self-hosted fonts. No analytics, ads, accounts, or payments are enabled.
 
 ## What is built
 
@@ -52,7 +52,7 @@ For an authorized public launch, set `SITE_URL` to the actual HTTPS origin in th
 
 The online flow is implemented and covered by domain tests plus a Playwright room-join test. Production launch still needs deployed staging validation, broader reconnect/disconnect browser coverage, and operational safeguards. See [architecture](docs/ARCHITECTURE.md).
 
-The initial art uses an illustration with CSS motion, not a real-time 3D scene. Word packs are a starter editorial selection and still need playtesting across ages and cultures. SEO keyword data and the production domain remain pending.
+The initial art uses an illustration with CSS motion, not a real-time 3D scene. Word packs are a starter editorial selection and still need playtesting across ages and cultures. SEO keyword data remains pending; the production domain is `laughtable.com`.
 
 ## Project guidance
 
