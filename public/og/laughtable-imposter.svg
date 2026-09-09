@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Laugh Table Imposter</title>
+  <desc id="desc">A dark green tabletop with secret word cards for the Imposter party game.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#102b26"/>
+      <stop offset=".58" stop-color="#1f4538"/>
+      <stop offset="1" stop-color="#0b201c"/>
+    </linearGradient>
+    <radialGradient id="light" cx=".55" cy=".2" r=".72">
+      <stop offset="0" stop-color="#edd4a0" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#edd4a0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#light)"/>
+  <g fill="none" stroke="#cfb17b" stroke-opacity=".24">
+    <path d="M80 78h1040v474H80z"/>
+    <path d="M102 100h996v430H102z"/>
+  </g>
+  <g transform="translate(775 156) rotate(7)">
+    <rect width="230" height="310" rx="18" fill="#f3ecdd" stroke="#d9c69e" stroke-width="3"/>
+    <rect x="18" y="18" width="194" height="274" rx="8" fill="none" stroke="#a99c70" stroke-opacity=".45"/>
+    <text x="115" y="88" text-anchor="middle" fill="#7f8364" font-family="Arial, sans-serif" font-size="18" letter-spacing="4">SECRET WORD</text>
+    <text x="115" y="178" text-anchor="middle" fill="#34523c" font-family="Georgia, serif" font-size="47">Pizza</text>
+    <path d="M80 216h70" stroke="#a99c70" stroke-opacity=".55" stroke-width="2"/>
+    <text x="115" y="256" text-anchor="middle" fill="#65715f" font-family="Arial, sans-serif" font-size="20">Find the bluff.</text>
+  </g>
+  <g transform="translate(680 190) rotate(-10)">
+    <rect width="205" height="285" rx="17" fill="#254d35" stroke="#cfb17b" stroke-width="3"/>
+    <rect x="16" y="16" width="173" height="253" rx="7" fill="none" stroke="#cfb17b" stroke-opacity=".42"/>
+    <circle cx="102" cy="120" r="52" fill="none" stroke="#cfb17b" stroke-width="5"/>
+    <circle cx="102" cy="120" r="18" fill="none" stroke="#cfb17b" stroke-width="5"/>
+    <path d="M47 120c30-43 80-43 110 0-30 43-80 43-110 0z" fill="none" stroke="#cfb17b" stroke-width="5"/>
+    <text x="102" y="212" text-anchor="middle" fill="#edd4a0" font-family="Georgia, serif" font-size="26">TRUST NO ONE</text>
+  </g>
+  <text x="96" y="151" fill="#cfb17b" font-family="Arial, sans-serif" font-size="23" letter-spacing="6">LAUGH TABLE</text>
+  <text x="94" y="276" fill="#f3ecdd" font-family="Georgia, serif" font-size="94">Imposter</text>
+  <text x="98" y="356" fill="#edd4a0" font-family="Georgia, serif" font-size="57">game generator</text>
+  <text x="100" y="425" fill="#b4c2b7" font-family="Arial, sans-serif" font-size="29">Secret words, private roles, better bluffs.</text>
+  <text x="100" y="496" fill="#f3ecdd" font-family="Arial, sans-serif" font-size="23">laughtable.com</text>
+</svg>

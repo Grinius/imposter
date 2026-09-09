@@ -10,8 +10,8 @@ When data arrives, retain its source and date. Capture keyword, country, languag
 
 - Main playable imposter game.
 - `/imposter-game-generator/`: functional word and role-card generator for the "imposter game generator" intent.
-- Rules with a concrete example round.
-- Curated category lists with a direct path into that game mode.
+- `/imposter-game-rules/`: rules, example clues, voting, and final-guess explanation for "imposter game rules" and "how to play imposter game" intent.
+- `/imposter-game-words/`: curated starter word lists by category for "imposter game words" and "imposter word list" intent.
 - Private room creation/joining entry point.
 
 These are candidate page types, not a commitment to separate URLs for every phrase. Each indexable page needs distinct utility; avoid interchangeable location/category pages and mass-generated keyword permutations. Do not expose the current round's secret words in supporting content.
@@ -23,6 +23,10 @@ Deliver meaningful public content and links in HTML. Use descriptive titles, hea
 Load decorative graphics progressively. Reserve layout space for images and any later ads. Target good Core Web Vitals (LCP ≤2.5 s, INP ≤200 ms, CLS ≤0.1 at the 75th percentile); lab checks during development do not establish field results. Measure actual pages after launch.
 
 Once a domain exists, configure Search Console and validate indexing. Track game starts, completed rounds, replay, and room joins without collecting secret roles, words, or unnecessary personal data. Separate actual results from forecasts.
+
+## Search Console
+
+The production domain is `https://laughtable.com`. Submit `https://laughtable.com/sitemap.xml` in Google Search Console after each public route batch. Search Console access requires the owner's Google account and is not stored in this repository.
 
 ## Official references
 

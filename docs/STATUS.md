@@ -29,9 +29,11 @@ The online round now synchronizes clue submissions, private ballot handoffs, dis
 
 `/imposter-game-generator/` is implemented as an indexable page for the "imposter game generator" intent. It renders explanatory content, built-in category summaries, crawlable links to the pass-and-play and online game routes, and a client-side generator that creates private role cards from the shared word packs.
 
+`/imposter-game-rules/` and `/imposter-game-words/` are implemented as crawlable support pages for rules and word-list intent. They include static examples, category word lists, and internal links into the generator, local game, and online room entry points. The shared Open Graph image is `/og/laughtable-imposter.svg`.
+
 ## Not implemented
 
-Authentication, analytics, ads, payments, real-time 3D, and production deployment remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified.
+Authentication, analytics, ads, payments, real-time 3D, and Google Search Console submission remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified.
 
 ## Next work
 

@@ -29,3 +29,7 @@ Rooms use a six-character non-ambiguous code mapped to one Cloudflare Durable Ob
 ## 2026-09-09 — Imposter game generator page (adopted)
 
 Target the "imposter game generator" intent with one useful canonical route at `/imposter-game-generator/`. The page should generate a playable secret word and private role cards from the shared starter word packs instead of acting as a thin keyword page. Keep keyword volume and difficulty claims out of copy until the user supplies dated source data.
+
+## 2026-09-09 — SEO support pages (adopted)
+
+Add `/imposter-game-rules/` and `/imposter-game-words/` as distinct support pages for rules and word-list intent. Keep the content editorial and finite rather than creating mass-generated variants. Use one shared Open Graph image for the initial public launch.

@@ -1,18 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Eye, ListChecks, ShieldCheck, Smartphone, Wifi } from 'lucide-react';
+import { ArrowRight, BookOpen, Eye, ListChecks, ShieldCheck, Wifi } from 'lucide-react';
 import ImposterGenerator from '@/components/generator/imposter-generator';
 import { categories, getWords } from '@/lib/words';
-import { siteOrigin } from '@/lib/site';
+import { pageMetadata } from '@/lib/seo';
 
 const title = 'Imposter Game Generator - Free Secret Word Cards';
 const description = 'Use this free imposter game generator to create secret words, private role cards, and one imposter for 3-12 players. Play on one phone or online.';
 
 export const metadata: Metadata = {
-  title,
-  description,
-  alternates: { canonical: '/imposter-game-generator/' },
-  openGraph: { title, description, url: new URL('/imposter-game-generator/', siteOrigin).href, type: 'website' },
+  ...pageMetadata('/imposter-game-generator/', title, description),
 };
 
 export default function ImposterGameGeneratorPage() {
@@ -21,7 +18,7 @@ export default function ImposterGameGeneratorPage() {
     <header className="site-header">
       <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
       <span className="header-note">SECRET WORDS. PRIVATE ROLES.</span>
-      <nav aria-label="Main navigation"><Link className="nav-link" href="/"><Smartphone size={17} /><span>Pass & play</span></Link><span className="nav-divider" /><Link className="nav-link" href="/online/"><Wifi size={17} /><span>Online</span></Link></nav>
+      <nav aria-label="Main navigation"><Link className="nav-link" href="/imposter-game-rules/"><BookOpen size={17} /><span>Rules</span></Link><span className="nav-divider" /><Link className="nav-link" href="/online/"><Wifi size={17} /><span>Online</span></Link></nav>
     </header>
     <main>
       <ImposterGenerator />
@@ -52,7 +49,7 @@ export default function ImposterGameGeneratorPage() {
       <section className="generator-next">
         <h2>Want the full game flow?</h2>
         <p>Use the main game for timed discussion, private voting, final guesses, and replay. Use online rooms when every player has their own device.</p>
-        <div><Link className="gold-button" href="/">Play on one phone <ArrowRight size={17} /></Link><Link className="outline-button" href="/online/">Create online room <ArrowRight size={16} /></Link></div>
+        <div><Link className="gold-button" href="/">Play on one phone <ArrowRight size={17} /></Link><Link className="outline-button" href="/imposter-game-words/">Browse words <ArrowRight size={16} /></Link><Link className="outline-button" href="/online/">Create online room <ArrowRight size={16} /></Link></div>
       </section>
     </main>
     <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> imposter.</span><span>Free imposter word game generator.</span><span>Private cards. Better bluffs.</span></footer>
