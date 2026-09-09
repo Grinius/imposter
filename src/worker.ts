@@ -82,27 +82,35 @@ export class ImposterRoom {
   private async join(socket: WebSocket, message: Extract<ClientMessage, { type: 'join' }>) {
     const name = message.name.trim();
     if (!name || name.length > 20) { this.send(socket, { type: 'error', message: 'Choose a name from 1–20 characters.' }); return; }
+    let player: PublicRoom['players'][number];
     if (!this.room) {
       const id = message.playerId && /^[a-f0-9-]{36}$/.test(message.playerId) ? message.playerId : randomId();
-      this.room = { roomId: this.roomId, hostId: id, status: 'lobby', players: [{ id, name, connected: true, isHost: true }], round: 0 };
+      player = { id, name, connected: true, isHost: true };
+      this.room = { roomId: this.roomId, hostId: id, status: 'lobby', players: [player], round: 0 };
     } else {
-      const byId = this.room.players.find(player => player.id === message.playerId);
-      const sameName = this.room.players.filter(player => player.name.toLocaleLowerCase() === name.toLocaleLowerCase());
-      const existing = byId ?? (sameName.length === 1 ? sameName[0] : undefined);
+      // Only a matching playerId re-attaches an existing seat. A name match alone must never grant
+      // someone else's seat: names are public, so trusting them would let anyone hijack another
+      // connected player's identity (and disconnect them) just by joining with the same name.
+      const existing = message.playerId ? this.room.players.find(candidate => candidate.id === message.playerId) : undefined;
       if (this.room.status !== 'lobby' && !existing) { this.send(socket, { type: 'error', message: 'This round has already started.' }); return; }
       if (this.room.players.length >= freePlayerLimit && !existing) { this.send(socket, { type: 'error', message: 'This free room is full. Premium will unlock up to 20 players.' }); return; }
       if (existing) {
         const previous = [...this.sockets.entries()].find(([, id]) => id === existing.id);
         if (previous) { this.sockets.delete(previous[0]); try { previous[0].close(4001, 'Reconnected elsewhere'); } catch { /* already closed */ } }
         existing.name = name; existing.connected = true;
+        player = existing;
+      } else {
+        player = { id: randomId(), name, connected: true, isHost: false };
+        this.room.players.push(player);
       }
-      else this.room.players.push({ id: randomId(), name, connected: true, isHost: false });
     }
-    const player = this.room.players.find(candidate => candidate.name === name && candidate.connected);
-    if (!player) { this.send(socket, { type: 'error', message: 'Could not join this room.' }); return; }
     this.sockets.set(socket, player.id);
     await this.persist();
     this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
+    // Reconnecting mid-round must not lose the player's private role/word: start() only pushes
+    // roles at round start, so resend the current round's role here too.
+    const role = this.roundState ? this.roles.get(player.id) : undefined;
+    if (role && role.round === this.room.round) this.send(socket, { type: 'role', role });
   }
 
   private async start(socket: WebSocket, playerId: string, settings: Settings) {
