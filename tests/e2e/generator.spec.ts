@@ -4,6 +4,7 @@ test('imposter game generator creates private cards', async ({ page }) => {
   await page.goto('/imposter-game-generator/');
   await expect(page.getByRole('heading', { name: 'Imposter game generator' })).toBeVisible();
   await expect(page.getByText('Generate an imposter game in seconds.')).toBeVisible();
+  await expect(page.getByText('Premium word packs')).toBeVisible();
   await expect(page.getByText('Secret word ready')).toHaveCount(0);
 
   await page.getByRole('button', { name: /Generate roles/i }).click();

@@ -9,6 +9,7 @@ const publicRoutes = [
   '/imposter-game-categories/',
   '/imposter-game-online/',
   '/imposter-game-strategy/',
+  '/premium/',
 ] as const;
 
 test('seo support pages expose crawlable content and links', async ({ page }) => {
@@ -42,6 +43,12 @@ test('seo support pages expose crawlable content and links', async ({ page }) =>
   await page.goto('/imposter-game-strategy/');
   await expect(page.getByRole('heading', { name: 'Imposter game strategy' })).toBeVisible();
   await expect(page.getByText('Friend strategy')).toBeVisible();
+
+  await page.goto('/premium/');
+  await expect(page.getByRole('heading', { name: 'Imposter premium' })).toBeVisible();
+  await expect(page.getByText('Premium word packs')).toBeVisible();
+  await expect(page.getByText('Custom word packs')).toBeVisible();
+  await expect(page.getByText('Stripe link pending')).toBeVisible();
 });
 
 test('sitemap includes every canonical public route', async ({ page }) => {

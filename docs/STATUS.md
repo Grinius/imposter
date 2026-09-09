@@ -32,16 +32,20 @@ The online round now synchronizes clue submissions, private ballot handoffs, dis
 
 `/imposter-game-rules/` and `/imposter-game-words/` are implemented as crawlable support pages for rules and word-list intent. They include static examples, category word lists, and internal links into the generator, local game, and online room entry points.
 
-`/imposter-word-generator/`, `/imposter-game-categories/`, `/imposter-game-online/`, and `/imposter-game-strategy/` are implemented as a second finite SEO side-page batch. They cover word-only generation, category selection, online-play intent, and clue/bluff/voting strategy without creating mass keyword-variant pages. The sitemap now lists eight public canonical routes. The shared Open Graph image is `/og/laughtable-imposter.svg`.
+`/imposter-word-generator/`, `/imposter-game-categories/`, `/imposter-game-online/`, and `/imposter-game-strategy/` are implemented as a second finite SEO side-page batch. They cover word-only generation, category selection, online-play intent, and clue/bluff/voting strategy without creating mass keyword-variant pages. The sitemap now lists nine public canonical routes including `/premium/`. The shared Open Graph image is `/og/laughtable-imposter.svg`.
 
 ## Not implemented
 
-Authentication, analytics, ads, payments, real-time 3D, and Google Search Console submission remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified.
+Authentication, analytics, ads, Stripe payment verification, real-time 3D, and Google Search Console submission remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified.
 
 ## Next work
 
-Keep local play available. After deployment, verify the four new SEO routes live, confirm `https://laughtable.com/sitemap.xml` lists all eight canonical URLs, and submit the sitemap in Google Search Console from the owner's account.
+Keep local play available. Connect Stripe Checkout with server-side entitlement verification before unlocking premium features. After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all nine canonical URLs.
 
 ## Local preview
 
 `npm run dev` serves http://localhost:3000. See README for reproducible install, check, build, and Cloudflare preview commands.
+
+## Premium foundation
+
+A locked premium surface is implemented at `/premium/` and in the local generator, pass-and-play setup, and online room lobby. The prepared premium feature set includes premium word packs, custom word packs, classroom/family mode, branded private rooms, longer room history, more players, and printable cards/PDF party packs. Access remains locked until Stripe payment is connected and verified. The optional `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` environment variable only supplies the outbound checkout link; it does not prove entitlement.

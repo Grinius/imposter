@@ -66,3 +66,7 @@ The initial art uses an illustration with CSS motion, not a real-time 3D scene. 
 - [Shared agent instructions](AGENTS.md)
 
 Project skills live in `.agents/skills`; `.claude/skills` links to the same sources. CLAUDE.md imports AGENTS.md. Use the relevant game, visual-design, and web-SEO skills for future work.
+
+### Premium checkout placeholder
+
+Premium features are currently locked. Set `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` to a Stripe-hosted checkout URL to show an outbound unlock button on `/premium/`. Do not treat that public link as proof of payment; premium access still needs server-side Stripe verification before gated features are enabled.

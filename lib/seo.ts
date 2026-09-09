@@ -10,6 +10,7 @@ export const publicRoutes = [
   '/imposter-game-categories/',
   '/imposter-game-online/',
   '/imposter-game-strategy/',
+  '/premium/',
 ];
 
 export const defaultOgImage = '/og/laughtable-imposter.svg';
