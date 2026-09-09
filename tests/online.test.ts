@@ -15,6 +15,15 @@ describe('online room protocol helpers', () => {
     expect(two.cursor).toBe(2);
     expect(transition(two, { type: 'clue', text: '' })).toEqual(two);
   });
+  it('exposes firstClue publicly so clients can attribute each clue to the right player when the round does not start at player 0', () => {
+    const threePlayerRoom: PublicRoom = { ...room, players: [...room.players, { id: 'third', name: 'Taylor', connected: true, isHost: false }] };
+    const round = createRound({ names: ['Alex', 'Jamie', 'Taylor'], category: 'mixed', minutes: 3, hints: true }, () => .9);
+    const discussion = { ...round, phase: 'discussion' as const, cursor: round.firstClue }; // mirrors how start() seeds discussion
+    expect(discussion.firstClue).not.toBe(0); // otherwise this test wouldn't catch a regression to the old always-0 mapping
+    const projection = publicRoom(threePlayerRoom, discussion);
+    expect(projection.game?.firstClue).toBe(discussion.firstClue);
+    expect(projection.game?.cursorPlayerId).toBe(threePlayerRoom.players[discussion.firstClue]?.id);
+  });
   it('resolves distributed votes and requires a final imposter guess', () => {
     const base = { ...createRound({ names: ['Alex', 'Jamie', 'Taylor'], category: 'mixed', minutes: 3, hints: true }, () => 0), phase: 'voting' as const, cursor: 0, imposter: 1 };
     const afterAlex = transition(base, { type: 'vote', target: 1 });
