@@ -1,7 +1,16 @@
 import type { Metadata } from 'next';
 import { siteOrigin } from './site';
 
-export const publicRoutes = ['/', '/imposter-game-generator/', '/imposter-game-rules/', '/imposter-game-words/'];
+export const publicRoutes = [
+  '/',
+  '/imposter-game-generator/',
+  '/imposter-word-generator/',
+  '/imposter-game-rules/',
+  '/imposter-game-words/',
+  '/imposter-game-categories/',
+  '/imposter-game-online/',
+  '/imposter-game-strategy/',
+];
 
 export const defaultOgImage = '/og/laughtable-imposter.svg';
 

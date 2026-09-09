@@ -12,6 +12,7 @@ Features: 3–12 editable players, 120 starter words in five packs plus mixed, c
 
 - 18 Vitest domain tests pass: setup validation, word selection, replay exclusion, reveal ordering, illegal transitions, privacy transitions, vote authorization, duplicate actions, ties, wrong accusations, and final guesses.
 - TypeScript and ESLint pass. Production static build passes.
+- Playwright E2E passes for generator, online multiplayer, SEO support pages, and sitemap coverage.
 - Cloudflare Wrangler deployment dry run passes: 94 asset files, no runtime bindings. This did not publish anything.
 - Browser: completed a four-player round with all private cards, timer start/pause, private ballots, caught imposter, correct final guess, matching vote totals, and replay to a different word.
 - Browser: checked duplicate-name validation, a rapid double click at handoff, opening rules hides the secret, exit confirmation, and preserved settings after returning to setup.
@@ -29,7 +30,9 @@ The online round now synchronizes clue submissions, private ballot handoffs, dis
 
 `/imposter-game-generator/` is implemented as an indexable page for the "imposter game generator" intent. It renders explanatory content, built-in category summaries, crawlable links to the pass-and-play and online game routes, and a client-side generator that creates private role cards from the shared word packs.
 
-`/imposter-game-rules/` and `/imposter-game-words/` are implemented as crawlable support pages for rules and word-list intent. They include static examples, category word lists, and internal links into the generator, local game, and online room entry points. The shared Open Graph image is `/og/laughtable-imposter.svg`.
+`/imposter-game-rules/` and `/imposter-game-words/` are implemented as crawlable support pages for rules and word-list intent. They include static examples, category word lists, and internal links into the generator, local game, and online room entry points.
+
+`/imposter-word-generator/`, `/imposter-game-categories/`, `/imposter-game-online/`, and `/imposter-game-strategy/` are implemented as a second finite SEO side-page batch. They cover word-only generation, category selection, online-play intent, and clue/bluff/voting strategy without creating mass keyword-variant pages. The sitemap now lists eight public canonical routes. The shared Open Graph image is `/og/laughtable-imposter.svg`.
 
 ## Not implemented
 
@@ -37,7 +40,7 @@ Authentication, analytics, ads, payments, real-time 3D, and Google Search Consol
 
 ## Next work
 
-Keep local play available. Refine public content and routes when keyword research arrives. Deploy with `SITE_URL=https://laughtable.com`, then validate indexing from the live domain.
+Keep local play available. After deployment, verify the four new SEO routes live, confirm `https://laughtable.com/sitemap.xml` lists all eight canonical URLs, and submit the sitemap in Google Search Console from the owner's account.
 
 ## Local preview
 

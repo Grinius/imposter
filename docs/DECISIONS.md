@@ -33,3 +33,7 @@ Target the "imposter game generator" intent with one useful canonical route at `
 ## 2026-09-09 — SEO support pages (adopted)
 
 Add `/imposter-game-rules/` and `/imposter-game-words/` as distinct support pages for rules and word-list intent. Keep the content editorial and finite rather than creating mass-generated variants. Use one shared Open Graph image for the initial public launch.
+
+## 2026-09-09 — Second SEO side-page batch (adopted)
+
+Add a finite group of distinct support pages: `/imposter-word-generator/`, `/imposter-game-categories/`, `/imposter-game-online/`, and `/imposter-game-strategy/`. Each page must provide standalone utility and link to the relevant playable flow. Do not create thin spelling, city, or category permutations until keyword data justifies separate pages and the content can be meaningfully different.

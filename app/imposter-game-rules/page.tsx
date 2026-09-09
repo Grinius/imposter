@@ -29,7 +29,7 @@ export default function ImposterGameRulesPage() {
         <span className="eyebrow"><ListChecks size={14} /> HOW TO PLAY</span>
         <h1>Imposter game rules</h1>
         <p>The Imposter game is a secret-word party game. Most players know the same word. One player is the imposter and has to bluff through clues, discussion, and voting.</p>
-        <div><Link className="gold-button" href="/imposter-game-generator/">Generate a game <ArrowRight size={17} /></Link><Link className="outline-button" href="/">Play on one phone <ArrowRight size={16} /></Link></div>
+        <div><Link className="gold-button" href="/imposter-game-generator/">Generate a game <ArrowRight size={17} /></Link><Link className="outline-button" href="/imposter-game-strategy/">Strategy guide <ArrowRight size={16} /></Link><Link className="outline-button" href="/">Play on one phone <ArrowRight size={16} /></Link></div>
       </section>
       <section className="content-grid" aria-labelledby="rules-steps">
         <h2 id="rules-steps">Step-by-step rules</h2>

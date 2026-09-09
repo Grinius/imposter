@@ -10,9 +10,13 @@ When data arrives, retain its source and date. Capture keyword, country, languag
 
 - Main playable imposter game.
 - `/imposter-game-generator/`: functional word and role-card generator for the "imposter game generator" intent.
+- `/imposter-word-generator/`: word-only utility for groups that already know the rules and need a fast secret word.
 - `/imposter-game-rules/`: rules, example clues, voting, and final-guess explanation for "imposter game rules" and "how to play imposter game" intent.
 - `/imposter-game-words/`: curated starter word lists by category for "imposter game words" and "imposter word list" intent.
-- Private room creation/joining entry point.
+- `/imposter-game-categories/`: category-selection guide with static examples and starter words.
+- `/imposter-game-online/`: crawlable online-play landing page that links into the private room app.
+- `/imposter-game-strategy/`: clue, bluffing, and voting guide for strategy intent.
+- Private room creation/joining app at `/online/`.
 
 These are candidate page types, not a commitment to separate URLs for every phrase. Each indexable page needs distinct utility; avoid interchangeable location/category pages and mass-generated keyword permutations. Do not expose the current round's secret words in supporting content.
 

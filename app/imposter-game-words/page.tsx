@@ -21,7 +21,7 @@ export default function ImposterGameWordsPage() {
         <span className="eyebrow"><Shuffle size={14} /> WORD LISTS</span>
         <h1>Imposter game words</h1>
         <p>Use these secret-word lists for Imposter, Impostor, Spyfall-style clue games, and social deduction party nights. The built-in generator uses these same starter categories.</p>
-        <div><Link className="gold-button" href="/imposter-game-generator/">Generate private cards <ArrowRight size={17} /></Link><Link className="outline-button" href="/imposter-game-rules/">Read rules <ArrowRight size={16} /></Link></div>
+        <div><Link className="gold-button" href="/imposter-game-generator/">Generate private cards <ArrowRight size={17} /></Link><Link className="outline-button" href="/imposter-word-generator/">Use word generator <ArrowRight size={16} /></Link><Link className="outline-button" href="/imposter-game-categories/">Browse categories <ArrowRight size={16} /></Link></div>
       </section>
       <section className="word-list-section" aria-labelledby="word-categories">
         <h2 id="word-categories">Secret word categories</h2>
