@@ -1,4 +1,5 @@
 import { createRound, transition, type Action, type Settings } from '../lib/game';
+import { freePlayerLimit } from '../lib/limits';
 import { publicRoom, roomIdIsValid, type PrivateRole, type PublicRoom } from '../lib/online';
 
 export interface Env {
@@ -89,7 +90,7 @@ export class ImposterRoom {
       const sameName = this.room.players.filter(player => player.name.toLocaleLowerCase() === name.toLocaleLowerCase());
       const existing = byId ?? (sameName.length === 1 ? sameName[0] : undefined);
       if (this.room.status !== 'lobby' && !existing) { this.send(socket, { type: 'error', message: 'This round has already started.' }); return; }
-      if (this.room.players.length >= 12 && !existing) { this.send(socket, { type: 'error', message: 'This room is full.' }); return; }
+      if (this.room.players.length >= freePlayerLimit && !existing) { this.send(socket, { type: 'error', message: 'This free room is full. Premium will unlock up to 20 players.' }); return; }
       if (existing) {
         const previous = [...this.sockets.entries()].find(([, id]) => id === existing.id);
         if (previous) { this.sockets.delete(previous[0]); try { previous[0].close(4001, 'Reconnected elsewhere'); } catch { /* already closed */ } }

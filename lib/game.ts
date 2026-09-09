@@ -1,3 +1,4 @@
+import { freePlayerLimit } from './limits';
 import { categories, getWords, type Category, type Word } from './words';
 export type Phase = 'handoff' | 'reveal' | 'discussion' | 'vote-handoff' | 'voting' | 'guess' | 'result';
 export interface Settings { names: string[]; category: Category; minutes: number; hints: boolean; }
@@ -9,7 +10,7 @@ export interface Round {
 }
 export type Action = { type: 'reveal' | 'hide' | 'privacy' | 'start-vote' | 'open-ballot' | 'skip-guess' } | { type: 'clue'; text: string } | { type: 'vote'; target: number } | { type: 'guess'; word: string };
 export function validateSettings(settings: Settings): string | null {
-  if (settings.names.length < 3 || settings.names.length > 12) return 'Invite 3–12 players to the table.';
+  if (settings.names.length < 3 || settings.names.length > freePlayerLimit) return `Invite 3–${freePlayerLimit} players to the free table.`;
   const names = settings.names.map(name => name.trim());
   if (names.some(name => !name || name.length > 20)) return 'Give everyone a name (up to 20 characters).';
   if (new Set(names.map(name => name.toLocaleLowerCase())).size !== names.length) return 'Use a different name for each player.';

@@ -1,6 +1,6 @@
 # Imposter
 
-A playable secret-word party game for 3–12 friends sharing one phone. Original detective-club artwork, private role reveals, discussion timer, private voting, a final imposter guess, and replay.
+A playable secret-word party game for 3–5 friends sharing one phone. Original detective-club artwork, private role reveals, discussion timer, private voting, a final imposter guess, and replay.
 
 ## Run locally
 
@@ -39,7 +39,7 @@ For an authorized public launch, set `SITE_URL=https://laughtable.com` in the bu
 
 ## What is built
 
-- Editable 3–12 player names; five packs of 24 words each and a mixed category.
+- Editable 3–5 free player names; five packs of 24 words each and a mixed category.
 - Exactly one imposter, optional category hints, independently randomized first clue giver.
 - Hidden handoff screens, rapid-tap guard, secret hiding on blur/visibility loss.
 - A 2, 3, or 5 minute discussion timer with pause/resume; voting can start earlier.

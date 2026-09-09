@@ -8,6 +8,7 @@ function vote(targets: number[]) { let round = transition(revealed(), { type: 's
 describe('setup and word packs', () => {
   it('rejects invalid counts, empty and duplicate names, durations and categories', () => {
     expect(validateSettings({ ...settings, names: ['A', 'B'] })).not.toBeNull();
+    expect(validateSettings({ ...settings, names: ['A', 'B', 'C', 'D', 'E', 'F'] })).toBe('Invite 3–5 players to the free table.');
     expect(validateSettings({ ...settings, names: ['Alex', ' alex ', 'C'] })).not.toBeNull();
     expect(validateSettings({ ...settings, names: ['A', '', 'C'] })).not.toBeNull();
     expect(validateSettings({ ...settings, minutes: -1 })).not.toBeNull();

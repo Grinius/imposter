@@ -4,12 +4,12 @@ import { ArrowRight, Eye, Fingerprint, ListChecks, MessageCircle, ShieldCheck, S
 import { pageMetadata } from '@/lib/seo';
 
 const title = 'Imposter Game Rules - How to Play the Secret Word Game';
-const description = 'Learn the Imposter game rules: secret words, one imposter, clue rounds, voting, final guesses, and simple house rules for 3-12 players.';
+const description = 'Learn the Imposter game rules: secret words, one imposter, clue rounds, voting, final guesses, and simple house rules for 3-5 free players.';
 
 export const metadata: Metadata = pageMetadata('/imposter-game-rules/', title, description);
 
 const rules = [
-  ['Setup', 'Add 3-12 players. The game chooses one secret word and one imposter. Everyone except the imposter receives the same word.'],
+  ['Setup', 'Add 3-5 free players. The game chooses one secret word and one imposter. Everyone except the imposter receives the same word.'],
   ['Private reveal', 'Pass the phone or use separate devices. Each player should see only their own card. Friends see the word. The imposter sees their role.'],
   ['Clues', 'Players take turns giving short clues. A good clue proves you know the word without making the word obvious to the imposter.'],
   ['Discussion', 'After clues, talk through who sounded vague, copied another clue, reacted oddly, or seemed too confident.'],

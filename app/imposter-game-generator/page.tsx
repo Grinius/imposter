@@ -6,7 +6,7 @@ import { categories, getWords } from '@/lib/words';
 import { pageMetadata } from '@/lib/seo';
 
 const title = 'Imposter Game Generator - Free Secret Word Cards';
-const description = 'Use this free imposter game generator to create secret words, private role cards, and one imposter for 3-12 players. Play on one phone or online.';
+const description = 'Use this free imposter game generator to create secret words, private role cards, and one imposter for 3-5 free players. Play on one phone or online.';
 
 export const metadata: Metadata = {
   ...pageMetadata('/imposter-game-generator/', title, description),
@@ -29,7 +29,7 @@ export default function ImposterGameGeneratorPage() {
           <p>This imposter game generator creates one secret word for the friends and assigns one player as the imposter. Players reveal their own card privately, give clues, discuss suspicious answers, and vote for the person who does not seem to know the word.</p>
         </div>
         <ol>
-          <li><strong>Add 3-12 players.</strong><span>Use real names or nicknames so the vote is easy to follow.</span></li>
+          <li><strong>Add 3-5 free players.</strong><span>Use real names or nicknames so the vote is easy to follow.</span></li>
           <li><strong>Pick a word category.</strong><span>Use mixed words for variety, or choose food, animals, places, objects, or activities.</span></li>
           <li><strong>Reveal cards privately.</strong><span>Friends see the secret word. The imposter sees their role and tries to blend in.</span></li>
           <li><strong>Give clues and vote.</strong><span>After everyone gives clues, vote. If the imposter is caught, they can still win by guessing the word.</span></li>
