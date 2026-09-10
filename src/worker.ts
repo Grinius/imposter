@@ -60,14 +60,24 @@ function randomId() { return crypto.randomUUID(); }
 function randomRoomId() { return Array.from(crypto.getRandomValues(new Uint8Array(6)), value => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[value % 32]).join(''); }
 function random() { return crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296; }
 
+// What each socket carries through hibernation via serializeAttachment/deserializeAttachment,
+// since nothing about a specific connection survives in ordinary instance fields once the Durable
+// Object has been evicted and later re-instantiated for a later message.
+type SocketAttachment = { playerId: string };
+function attachedPlayerId(ws: WebSocket): string | undefined {
+  try { return (ws.deserializeAttachment() as SocketAttachment | null)?.playerId; } catch { return undefined; }
+}
+
 export class ImposterRoom {
   private state: DurableObjectState;
   private env: Env;
-  private sockets = new Map<WebSocket, string>();
   private roomId = '';
   private room: PublicRoom | null = null;
   private roundState: ReturnType<typeof createRound> | null = null;
   private roles = new Map<string, PrivateRole>();
+  // Only ever read within the same wake as the fetch() call that set it (room creation and the
+  // reconnect-kick check both happen on the first message right after a socket connects, before the
+  // object could hibernate) — safe despite resetting to 'unknown' whenever the object is re-instantiated.
   private clientIp = 'unknown';
 
   constructor(state: DurableObjectState, env: Env) { this.state = state; this.env = env; }
@@ -90,9 +100,10 @@ export class ImposterRoom {
     if (id && roomIdIsValid(id)) { this.roomId = id; if (this.room && !this.room.roomId) this.room.roomId = id; }
     const pair = new WebSocketPair();
     const client = pair[0], server = pair[1];
-    server.accept();
-    server.addEventListener('message', (event: MessageEvent) => { void this.message(server, String(event.data)); });
-    server.addEventListener('close', () => this.disconnect(server));
+    // Hibernation API: acceptWebSocket registers the socket without pinning this object in memory
+    // between messages — the runtime calls webSocketMessage/webSocketClose/webSocketError below
+    // directly instead of the old server.accept() + addEventListener pattern.
+    this.state.acceptWebSocket(server);
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -104,13 +115,13 @@ export class ImposterRoom {
     this.roles = new Map(storedRoles ?? []);
   }
 
-  private async message(socket: WebSocket, raw: string) {
+  async webSocketMessage(socket: WebSocket, raw: string | ArrayBuffer) {
     await this.load();
     let message: ClientMessage;
-    try { message = JSON.parse(raw) as ClientMessage; } catch { this.send(socket, { type: 'error', message: 'That message was not valid JSON.' }); return; }
+    try { message = JSON.parse(String(raw)) as ClientMessage; } catch { this.send(socket, { type: 'error', message: 'That message was not valid JSON.' }); return; }
     if (message.type === 'ping') { this.send(socket, { type: 'pong' }); return; }
     if (message.type === 'join') { await this.join(socket, message); return; }
-    const playerId = this.sockets.get(socket);
+    const playerId = attachedPlayerId(socket);
     if (!playerId || !this.room || !this.room.players.some(player => player.id === playerId)) { this.send(socket, { type: 'error', message: 'Join the room before sending actions.' }); return; }
     if (message.type === 'start') { await this.start(socket, playerId, message.settings); return; }
     if (message.type === 'action') { await this.action(socket, playerId, message); }
@@ -144,8 +155,8 @@ export class ImposterRoom {
       if (this.room.status !== 'lobby' && !existing) { this.send(socket, { type: 'error', message: 'This round has already started.' }); return; }
       if (this.room.players.length >= cap && !existing) { this.send(socket, { type: 'error', message: this.room.premium ? `This room is full (${cap} players).` : `This free room is full. Premium will unlock up to ${premiumPlayerLimit} players.` }); return; }
       if (existing) {
-        const previous = [...this.sockets.entries()].find(([, id]) => id === existing.id);
-        if (previous) { this.sockets.delete(previous[0]); try { previous[0].close(4001, 'Reconnected elsewhere'); } catch { /* already closed */ } }
+        const previous = this.state.getWebSockets().find(candidate => candidate !== socket && attachedPlayerId(candidate) === existing.id);
+        if (previous) { try { previous.close(4001, 'Reconnected elsewhere'); } catch { /* already closed */ } }
         existing.name = name; existing.connected = true;
         player = existing;
       } else {
@@ -153,7 +164,7 @@ export class ImposterRoom {
         this.room.players.push(player);
       }
     }
-    this.sockets.set(socket, player.id);
+    socket.serializeAttachment({ playerId: player.id } satisfies SocketAttachment);
     await this.persist();
     this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
     // Reconnecting mid-round must not lose the player's private role/word: start() only pushes
@@ -170,7 +181,7 @@ export class ImposterRoom {
     this.room.status = 'playing'; this.room.round += 1;
     this.roles = new Map(this.room.players.map((player, index) => [player.id, index === this.roundState!.imposter ? { round: this.room!.round, role: 'imposter', hint: this.roundState!.settings.hints ? this.roundState!.word.category : undefined } : { round: this.room!.round, role: 'friend', word: this.roundState!.word.text }]));
     await this.persist(); this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
-    for (const [client, id] of this.sockets) { const role = this.roles.get(id); if (role) this.send(client, { type: 'role', role }); }
+    for (const client of this.state.getWebSockets()) { const id = attachedPlayerId(client); const role = id ? this.roles.get(id) : undefined; if (role) this.send(client, { type: 'role', role }); }
   }
 
   private async action(socket: WebSocket, playerId: string, message: Extract<ClientMessage, { type: 'action' }>) {
@@ -189,9 +200,28 @@ export class ImposterRoom {
     await this.persist(); this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
   }
 
-  private disconnect(socket: WebSocket) { const id = this.sockets.get(socket); if (!id || !this.room) return; this.sockets.delete(socket); const player = this.room.players.find(candidate => candidate.id === id); if (player) { player.connected = false; if (player.id === this.room.hostId) { const successor = this.room.players.find(candidate => candidate.connected); if (successor) { this.room.hostId = successor.id; this.room.players.forEach(candidate => { candidate.isHost = candidate.id === successor.id; }); } } } void this.persist().then(() => this.broadcast({ type: 'room', room: publicRoom(this.room!, this.roundState) })); }
+  // Called directly by the runtime (Hibernation API) when a socket closes or errors — this object may
+  // have just been freshly re-instantiated to handle it, so load() first rather than assuming
+  // in-memory state from an earlier message is still there.
+  async webSocketClose(socket: WebSocket) { await this.disconnect(socket); }
+  async webSocketError(socket: WebSocket) { await this.disconnect(socket); }
+  private async disconnect(socket: WebSocket) {
+    await this.load();
+    const id = attachedPlayerId(socket);
+    if (!id || !this.room) return;
+    const player = this.room.players.find(candidate => candidate.id === id);
+    if (player) {
+      player.connected = false;
+      if (player.id === this.room.hostId) {
+        const successor = this.room.players.find(candidate => candidate.connected);
+        if (successor) { this.room.hostId = successor.id; this.room.players.forEach(candidate => { candidate.isHost = candidate.id === successor.id; }); }
+      }
+    }
+    await this.persist();
+    this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
+  }
   private send(socket: WebSocket, message: ServerMessage) { try { socket.send(json(message)); } catch { /* disconnected sockets are cleaned up by close */ } }
-  private broadcast(message: ServerMessage) { for (const socket of this.sockets.keys()) this.send(socket, message); }
+  private broadcast(message: ServerMessage) { for (const socket of this.state.getWebSockets()) this.send(socket, message); }
   private async persist() { if (!this.room) return; await this.state.storage.put({ room: this.room, round: this.roundState, roles: [...this.roles] }); this.state.storage.setAlarm(Date.now() + ROOM_TTL_MS); }
 }
 

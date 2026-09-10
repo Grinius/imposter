@@ -69,3 +69,15 @@ What automated tests cannot cover, by nature: the real Stripe API's actual behav
 ## Privacy policy (adopted)
 
 A `/privacy/` page is live, linked from the homepage and generator footers and from `/premium/`, and included in the sitemap. Written to accurately reflect what this specific system actually does: no accounts, ephemeral Durable Object room data, what's kept in browser localStorage, Stripe handling all payment/card data (we only ever receive a Checkout session ID, verified server-side), transient IP use for rate limiting, no analytics/ads/tracking. Contact: justinas@appcognita.com. This has not been reviewed by a lawyer — treat it as a solid, honest starting point, not a substitute for legal review before handling personal data at real scale.
+
+## WebSocket Hibernation migration (adopted)
+
+`ImposterRoom` (`src/worker.ts`) now uses Cloudflare's Hibernation WebSocket API (`state.acceptWebSocket`, `state.getWebSockets`, `ws.serializeAttachment`/`deserializeAttachment`) instead of `server.accept()` + in-memory event listeners and a `Map<WebSocket, playerId>`. Purely a cost/scale optimization — the object can now spin down to zero compute between messages instead of staying billed for the whole time any socket is connected — with no functional or visible change for players. Ambient types added to `src/cloudflare.d.ts` (this project hand-rolls Durable Object types rather than depending on `@cloudflare/workers-types`). Verified: 53 Vitest tests (updated stubs plus a new reconnect-kick test exercising exactly the logic this touched most) pass, and a full 3-player round — join, roles, three clues, a disconnect — plus the room-not-found and rate-limit protections were re-confirmed live against `wrangler dev`, not just stubs.
+
+## Online room setup parity (adopted)
+
+The online lobby was missing category, discussion-duration, and imposter-hint controls entirely — `start()` hardcoded `category: 'mixed', minutes: 3, hints: true` with no way for the host to change any of it. `components/online.tsx` now shows the same category grid (with premium categories tagged and paywalled, mirroring pass-and-play) plus duration/hint controls to the host in the lobby before starting. Also added an optional "Expecting how many players?" selector on room creation (3–20): picking above the free cap shows an immediate premium heads-up, but never blocks creating the room or restricts who can actually join beyond the real server-enforced cap (5 free / 20 premium) — it's a heads-up based on what the host expects, not a new hard limit.
+
+## Local dev server for the real Worker
+
+`.claude/launch.json` gained a `worker` configuration (`wrangler dev --port 3000 --local`) alongside the existing plain `next dev` one, since online-mode features need the actual Worker (API routes, Durable Objects), not just the Next.js dev server.
