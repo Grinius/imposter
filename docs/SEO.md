@@ -4,6 +4,14 @@
 
 The user will supply keyword research later. No volume, difficulty, country, seasonality, or revenue metric is currently verified. The initial search found multiple dedicated competitors; it did not establish exact Google positions in the intended market.
 
+### 2026-09-10 competitive check (source: Claude WebSearch/WebFetch, US market, no login/location control — not a rank tracker)
+
+- The user supplied a 7-site "top of Google for imposter game generator" list (impostergamegenerator.com, imposter-game-generator.com, impostergamesgenerator.com, psycatgames.com/app/imposter, imposter.app, imposterwho.com, imposterword.com). A same-day WebSearch for the identical phrase returned a **different** set of top results (play.gameonfamily.com, playimposter.com, impostergames.org, imposter.app, impostergenerator.com, impostergamewords.com; a second query also surfaced imposter-game-generator.com, impostergamegenerator.com, charades-generator.com). Only `imposter.app` and `imposter-game-generator.com`/`impostergamegenerator.com` appeared in both. This confirms the SERP for this phrase is volatile/personalized and not a fixed top-7 — no source here is an authoritative rank tracker (SERP API, Search Console, or similar), so treat all of it as directional, not a verified position.
+- At least 10 distinct competitor domains were observed across both lists, several of them exact- or near-exact-match domains for "imposter game generator" (a domain-relevance signal, though no longer a strong Google ranking factor on its own).
+- Sampled competitor content depth: impostergamegenerator.com is a real interactive generator (~650 words, FAQ, 15 categories, 3–20 players) — comparable in shape to our own `/imposter-game-generator/`. imposterwho.com is a thin app-store landing page (~85 words), not a real competitor for this on-page intent despite ranking for the brand term. Could not fetch imposter.app/online/ (403) or verify the others in this batch.
+- `site:laughtable.com` returned **zero results** — the production domain is not indexed by Google at all yet, and Search Console submission is still unimplemented (confirmed against `docs/STATUS.md`). This is the actual current blocker, ahead of ranking position: an unindexed page cannot rank top-3 for anything, regardless of on-page quality or competitor weakness.
+- No backlink, domain-age, or traffic data for any competitor was available through these tools; do not infer competitor authority from page content alone.
+
 When data arrives, retain its source and date. Capture keyword, country, language, volume, difficulty, intent, current ranking URLs, and proposed destination. Distinguish the party game from unrelated meanings of “imposter.” Group synonyms by intent before creating pages. Cover both spellings naturally where useful.
 
 ## Candidate pages
