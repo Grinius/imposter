@@ -3,15 +3,16 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleHelp, Clock3, Eye, EyeOff, Feather, Fingerprint, Gem, Heart, LockKeyhole, MapPin, Pause, PawPrint, Play, Plus, RotateCcw, ShieldCheck, Shuffle, Smartphone, Sparkles, Utensils, Users, Volume2, VolumeX, Vote, Wifi, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleHelp, Clock3, Eye, EyeOff, Feather, Fingerprint, Gem, Gift, Heart, LockKeyhole, MapPin, Pause, PawPrint, Play, Plus, RotateCcw, ShieldCheck, Shuffle, Smartphone, Sparkles, Utensils, Users, Volume2, VolumeX, Vote, Wifi, X, type LucideIcon } from 'lucide-react';
 import { categories, type Category } from '@/lib/words';
 import { createRound, normalizeGuess, secureRandom, transition, validateSettings, type Action, type Round, type Settings } from '@/lib/game';
 import UpgradeCard from '@/components/premium/upgrade-card';
+import PremiumPaywallNotice from '@/components/premium/paywall-notice';
 import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '@/lib/limits';
-import { premiumFeatures } from '@/lib/premium';
+import { describePremiumRequirements, premiumFeatures } from '@/lib/premium';
 import { usePremiumStatus } from '@/lib/premium-client';
 
-const categoryIcons = { mixed: Shuffle, food: Utensils, animals: PawPrint, places: MapPin, objects: Gem, activities: Sparkles };
+const categoryIcons: Record<Category, LucideIcon> = { mixed: Shuffle, food: Utensils, animals: PawPrint, places: MapPin, objects: Gem, activities: Sparkles, 'date-night': Heart, holidays: Gift };
 const playerColors = ['#b77d5c', '#65847c', '#a09564', '#82758f', '#6886a0', '#aa6c78', '#8a9862', '#b58b56', '#729594', '#997c66', '#827e9e', '#809164'];
 function Avatar({ index, name, large = false }: { index: number; name: string; large?: boolean }) {
   return <span className={`avatar ${large ? 'avatar-large' : ''}`} style={{ '--avatar-color': playerColors[index % playerColors.length] } as CSSProperties} aria-hidden="true">{name.trim().slice(0, 1).toUpperCase() || '?'}</span>;
@@ -38,6 +39,7 @@ export default function Game() {
   const [round, setRound] = useState<Round | null>(null);
   const [roundNumber, setRoundNumber] = useState(1);
   const [error, setError] = useState('');
+  const [paywallReasons, setPaywallReasons] = useState<string[] | null>(null);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
   const [sound, setSound] = useState(false);
@@ -68,12 +70,20 @@ export default function Game() {
   }
   function act(action: Action) { setRound(current => current ? transition(current, action) : null); chime(); }
   function start(replay = false) {
-    const message = validateSettings(settings, maxPlayers); if (message) { setError(message); return; }
-    setError(''); setGuess(''); setSelectedVote(null); setRunning(false); setSeconds(settings.minutes * 60);
-    setRound(createRound(settings, secureRandom, round?.word.id, maxPlayers));
+    if (!premium) {
+      const reasons = describePremiumRequirements(settings);
+      if (reasons.length) { setPaywallReasons(reasons); setError(''); return; }
+    }
+    const message = validateSettings(settings, { maxPlayers, premium }); if (message) { setError(message); return; }
+    setPaywallReasons(null); setError(''); setGuess(''); setSelectedVote(null); setRunning(false); setSeconds(settings.minutes * 60);
+    setRound(createRound(settings, secureRandom, round?.word.id, { maxPlayers, premium }));
     setRoundNumber(replay ? roundNumber + 1 : 1); requestAnimationFrame(() => document.getElementById('game')?.scrollIntoView({ block: 'start' })); chime();
   }
   function stopRound() { setRound(null); setExitOpen(false); setRunning(false); setSelectedVote(null); setGuess(''); }
+  function useFreeSetup() {
+    setSettings(current => ({ ...current, names: current.names.slice(0, freePlayerLimit), category: categories.find(item => item.id === current.category)?.premium ? 'mixed' : current.category }));
+    setPaywallReasons(null);
+  }
   function toggleTimer() {
     if (!running && seconds > 0) deadline.current = Date.now() + seconds * 1000;
     setRunning(!running && seconds > 0);
@@ -125,20 +135,22 @@ export default function Game() {
           <h1>Trust your friends.<br /><em>Question everything.</em></h1>
           <p className="intro-copy">One secret word. One convincing liar.<br />A table full of people you thought you knew.</p>
           <div className="scene" role="img" aria-label="An illustrated group of mysterious suspects gathered around a green card table"><Image src="/art/detective-club.webp" alt="" width="1536" height="1024" loading="eager" fetchPriority="high" /><div className="scene-shade" /><span className="scene-label"><Eye size={15} /> THERE’S AN IMPOSTER AMONG US.</span></div>
-          <div className="intro-facts"><span><Users size={16} /> 3–5 free players</span><span><Clock3 size={16} /> 5-minute rounds</span><span><Smartphone size={16} /> Just one phone</span></div>
+          <div className="intro-facts"><span><Users size={16} /> Up to 20 players</span><span><Clock3 size={16} /> 5-minute rounds</span><span><Smartphone size={16} /> One phone or online</span></div>
+          <Link className="intro-online-cta" href="/online/"><Wifi size={16} /><span>Not in the same room? <strong>Play online with friends</strong> in a private code-based room.</span><span className="intro-online-cta-button">Start a room <ArrowRight size={14} /></span></Link>
         </section>
         <section className="setup-panel" aria-labelledby="setup-title">
           <div className="panel-topline"><span><Smartphone size={15} /> PASS & PLAY</span><span className="edition">THE ORIGINAL EDITION</span></div>
           <div className="panel-heading"><h2 id="setup-title">Gather your suspects.</h2><p>No sign-ups. No downloads. Just a good poker face.</p></div>
           <form onSubmit={event => { event.preventDefault(); start(); }}>
-            <div className="field-heading"><label id="players-label"><span className="step-number">01</span> Who’s at the table?</label><span className="count-label">{settings.names.length} / {maxPlayers} players</span></div>
-            <div className="player-inputs" role="group" aria-labelledby="players-label">{settings.names.map((name, index) => <div className="player-input" key={index}><Avatar index={index} name={name} /><input aria-label={`Player ${index + 1} name`} value={name} maxLength={20} autoComplete="off" onChange={event => { setSettings({ ...settings, names: settings.names.map((value, i) => i === index ? event.target.value : value) }); setError(''); }} /><button type="button" aria-label={`Remove player ${index + 1}`} disabled={settings.names.length <= minPlayerLimit} onClick={() => setSettings({ ...settings, names: settings.names.filter((_, i) => i !== index) })}><X size={14} /></button></div>)}</div>
-            <button className="add-player" type="button" disabled={settings.names.length >= maxPlayers} onClick={() => { let number = settings.names.length + 1; while (settings.names.includes(`Player ${number}`)) number++; setSettings({ ...settings, names: [...settings.names, `Player ${number}`] }); }}><Plus size={15} /> Add a player</button>
+            <div className="field-heading"><label id="players-label"><span className="step-number">01</span> Who’s at the table?</label><span className="count-label">{settings.names.length} / {premium ? premiumPlayerLimit : `${freePlayerLimit} free`}</span></div>
+            <div className="player-inputs" role="group" aria-labelledby="players-label">{settings.names.map((name, index) => { const isPremiumSlot = !premium && index >= freePlayerLimit; return <div className={`player-input ${isPremiumSlot ? 'premium-slot' : ''}`} key={index}><Avatar index={index} name={name} /><input aria-label={`Player ${index + 1} name`} value={name} maxLength={20} autoComplete="off" onChange={event => { setSettings({ ...settings, names: settings.names.map((value, i) => i === index ? event.target.value : value) }); setError(''); setPaywallReasons(null); }} /><button type="button" aria-label={`Remove player ${index + 1}`} disabled={settings.names.length <= minPlayerLimit} onClick={() => { setSettings({ ...settings, names: settings.names.filter((_, i) => i !== index) }); setPaywallReasons(null); }}><X size={14} /></button>{isPremiumSlot && <small className="premium-tag"><LockKeyhole size={10} /> Premium</small>}</div>; })}</div>
+            <button className="add-player" type="button" disabled={settings.names.length >= premiumPlayerLimit} onClick={() => { let number = settings.names.length + 1; while (settings.names.includes(`Player ${number}`)) number++; setSettings({ ...settings, names: [...settings.names, `Player ${number}`] }); setPaywallReasons(null); }}><Plus size={15} /> Add a player{!premium && settings.names.length >= freePlayerLimit && <span className="premium-tag inline"><LockKeyhole size={10} /> Premium</span>}</button>
             <div className="field-heading category-heading"><label id="category-label"><span className="step-number">02</span> Choose your secret category.</label></div>
-            <div className="category-grid" role="group" aria-labelledby="category-label">{categories.map(item => { const Icon = categoryIcons[item.id]; return <button type="button" className={`category-button ${settings.category === item.id ? 'selected' : ''}`} key={item.id} aria-pressed={settings.category === item.id} onClick={() => setSettings({ ...settings, category: item.id as Category })}><Icon size={19} strokeWidth={1.5} /><span>{item.short}</span>{settings.category === item.id && <Check size={11} className="category-check" />}</button>; })}</div>
+            <div className="category-grid" role="group" aria-labelledby="category-label">{categories.map(item => { const Icon = categoryIcons[item.id]; const locked = item.premium && !premium; return <button type="button" className={`category-button ${settings.category === item.id ? 'selected' : ''} ${locked ? 'premium-slot' : ''}`} key={item.id} aria-pressed={settings.category === item.id} onClick={() => { setSettings({ ...settings, category: item.id as Category }); setPaywallReasons(null); }}><Icon size={19} strokeWidth={1.5} /><span>{item.short}</span>{locked && <small className="premium-tag"><LockKeyhole size={10} /> Premium</small>}{settings.category === item.id && <Check size={11} className="category-check" />}</button>; })}</div>
             <div className="game-options"><label className="time-option"><Clock3 size={16} /><span>Discussion</span><select aria-label="Discussion duration" value={settings.minutes} onChange={event => setSettings({ ...settings, minutes: Number(event.target.value) })}><option value={2}>2 min</option><option value={3}>3 min</option><option value={5}>5 min</option></select><ChevronDown size={12} /></label><label className="hint-option"><span>Imposter hint</span><input type="checkbox" checked={settings.hints} onChange={event => setSettings({ ...settings, hints: event.target.checked })} /><span className="switch" aria-hidden="true" /></label></div>
             <p className="hint-description">{settings.hints ? 'The imposter gets a category hint. A little help with the bluff.' : 'No hint for the imposter. Let your poker face do the work.'}</p>
             {error && <p role="alert" className="form-error">{error}</p>}
+            {paywallReasons && <PremiumPaywallNotice reasons={paywallReasons} onUseFree={useFreeSetup} />}
             <button className="start-button" type="submit"><span><Fingerprint size={21} /> Let the bluffing begin</span><ArrowRight size={20} /></button>
             <div className="setup-links"><a className="online-link" href="/online/"><Wifi size={16} /> Play online with friends <ArrowRight size={15} /></a><a className="online-link" href="/imposter-game-generator/"><Shuffle size={16} /> Open game generator <ArrowRight size={15} /></a><a className="online-link" href="/premium/"><Gem size={16} /> Premium packs <ArrowRight size={15} /></a><a className="online-link" href="/imposter-game-rules/"><CircleHelp size={16} /> Read rules <ArrowRight size={15} /></a></div><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'more-players')} compact unlocked={premium} available />
             <div className="setup-footnote"><LockKeyhole size={12} /> Secret roles. Real friends. Absolutely no accounts.</div>
@@ -193,7 +205,7 @@ export default function Game() {
         </div>
         <div className="round-bottom"><span><LockKeyhole size={13} /> One phone. All together.</span><span>{category.short} <span className="tiny-star">✦</span> One imposter</span></div>
       </section>}
-      {isSetup && <section className="how-section" id="how-to-play"><div className="how-heading"><span className="eyebrow">A MINUTE TO LEARN. ALL NIGHT TO ARGUE.</span><h2>Good friends. <em>Great liars.</em></h2><p>The imposter word game, also spelled “impostor,” is a social deduction game for 3–5 free players. Gather around one phone and find out who can keep a straight face.</p></div><div className="quick-rules"><article><span className="rule-icon"><Eye size={24} strokeWidth={1.3} /></span><span className="quick-step">01 / THE SECRET</span><h3>Know your role.</h3><p>Everyone gets a secret word. One of you gets a very different assignment.</p></article><article><span className="rule-icon"><Feather size={24} strokeWidth={1.3} /></span><span className="quick-step">02 / THE BLUFF</span><h3>Keep them guessing.</h3><p>Give a one-word clue. Be convincing, but don’t give the whole game away.</p></article><article><span className="rule-icon"><Fingerprint size={24} strokeWidth={1.3} /></span><span className="quick-step">03 / THE REVEAL</span><h3>Trust your instinct.</h3><p>Talk it out, cast your votes, and see who was hiding in plain sight.</p></article></div><button className="text-button full-rules" onClick={() => setRulesOpen(true)}>Read the full rules <ArrowRight size={15} /></button></section>}
+      {isSetup && <section className="how-section" id="how-to-play"><div className="how-heading"><span className="eyebrow">A MINUTE TO LEARN. ALL NIGHT TO ARGUE.</span><h2>Good friends. <em>Great liars.</em></h2><p>The imposter word game, also spelled “impostor,” is a social deduction game for 3 to 20 players. Gather around one phone, or bring in friends online, and find out who can keep a straight face.</p></div><div className="quick-rules"><article><span className="rule-icon"><Eye size={24} strokeWidth={1.3} /></span><span className="quick-step">01 / THE SECRET</span><h3>Know your role.</h3><p>Everyone gets a secret word. One of you gets a very different assignment.</p></article><article><span className="rule-icon"><Feather size={24} strokeWidth={1.3} /></span><span className="quick-step">02 / THE BLUFF</span><h3>Keep them guessing.</h3><p>Give a one-word clue. Be convincing, but don’t give the whole game away.</p></article><article><span className="rule-icon"><Fingerprint size={24} strokeWidth={1.3} /></span><span className="quick-step">03 / THE REVEAL</span><h3>Trust your instinct.</h3><p>Talk it out, cast your votes, and see who was hiding in plain sight.</p></article></div><button className="text-button full-rules" onClick={() => setRulesOpen(true)}>Read the full rules <ArrowRight size={15} /></button></section>}
     </main>
     <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> imposter.</span><span>A little mystery brings people together.</span><span>Made for a good night in <Heart size={12} /></span></footer>
     <dialog className="modal" ref={rulesDialog} aria-labelledby="rules-title" onCancel={() => setRulesOpen(false)} onClick={event => { if (event.target === event.currentTarget) setRulesOpen(false); }}><div className="modal-inner"><button className="modal-close" aria-label="Close rules" onClick={() => setRulesOpen(false)}><X size={20} /></button><span className="eyebrow">THE HOUSE RULES</span><h2 id="rules-title">A good bluff goes a long way.</h2><Rules /><p className="rules-tip"><Sparkles size={17} /> First time? Turn on imposter hints and choose Food & drink.</p><button className="start-button" onClick={() => setRulesOpen(false)}>Got it. Let’s play.<ArrowRight size={18} /></button></div></dialog>

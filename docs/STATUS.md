@@ -34,9 +34,15 @@ The online round now synchronizes clue submissions, private ballot handoffs, dis
 
 `/imposter-word-generator/`, `/imposter-game-categories/`, `/imposter-game-online/`, and `/imposter-game-strategy/` are implemented as a second finite SEO side-page batch. They cover word-only generation, category selection, online-play intent, and clue/bluff/voting strategy without creating mass keyword-variant pages. The sitemap now lists nine public canonical routes including `/premium/`. The shared Open Graph image is `/og/laughtable-imposter.svg`.
 
+## Premium conversion UX (adopted)
+
+More players and premium categories are selectable up front, not blocked — adding a 6th+ player or picking Date night/Holidays is allowed, visually tagged "Premium," and only turns into a paywall prompt (with "Unlock with Stripe" and "Use free setup instead") when the player actually tries to start, in both `components/game.tsx` (pass-and-play) and `components/generator/imposter-generator.tsx`. `lib/game.ts`'s `validateSettings`/`createRound` enforce the same premium-category rule server-side (defense in depth for the online Worker, which now also rejects a premium category without a verified room). The homepage's "Play online with friends" link is now also a prominent bordered banner in the hero, not just a small footer link. Fixed a live bug where every premium upsell card on `/premium/` linked back to `/premium/` itself (a dead click) when Stripe wasn't yet configured — `components/premium/upgrade-card.tsx` now detects that with `usePathname()`.
+
+Two new premium-only word categories exist with real content (`lib/words.ts`): Date night and Holidays & celebrations, 24 words each, same format/quality bar as the existing free packs. These are a first draft — worth the owner's sanity check before wide exposure, same playtesting caveat as the original five packs.
+
 ## Not implemented
 
-Authentication, analytics, ads, real-time 3D, and Google Search Console submission remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified. Six of the seven listed premium features (custom word packs, classroom/family mode, branded rooms, longer history, premium word packs, printable cards) are still unbuilt — only the bigger player cap is live.
+Authentication, analytics, ads, real-time 3D, and Google Search Console submission remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words (including the two new premium categories) still need user playtesting; no claims of keyword volume or ranking difficulty have been verified. Five of the seven listed premium features (custom word packs, classroom/family mode, branded rooms, longer history, printable cards) are still unbuilt — the player cap and the two premium categories are live.
 
 ## Next work
 

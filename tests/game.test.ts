@@ -9,7 +9,7 @@ describe('setup and word packs', () => {
   it('rejects invalid counts, empty and duplicate names, durations and categories', () => {
     expect(validateSettings({ ...settings, names: ['A', 'B'] })).not.toBeNull();
     expect(validateSettings({ ...settings, names: ['A', 'B', 'C', 'D', 'E', 'F'] })).toBe('Invite 3–5 players to the table.');
-    expect(validateSettings({ ...settings, names: ['A', 'B', 'C', 'D', 'E', 'F'] }, 20)).toBeNull();
+    expect(validateSettings({ ...settings, names: ['A', 'B', 'C', 'D', 'E', 'F'] }, { maxPlayers: 20 })).toBeNull();
     expect(validateSettings({ ...settings, names: ['Alex', ' alex ', 'C'] })).not.toBeNull();
     expect(validateSettings({ ...settings, names: ['A', '', 'C'] })).not.toBeNull();
     expect(validateSettings({ ...settings, minutes: -1 })).not.toBeNull();
@@ -19,6 +19,12 @@ describe('setup and word packs', () => {
   it('never repeats the previous word when replaying', () => { const one = make(); for (let i = 0; i < 100; i++) { expect(createRound(settings, () => i / 100, one.word.id).word.id).not.toBe(one.word.id); } });
   it('keeps category pools nonempty and word IDs unique', () => { for (const c of categories) expect(getWords(c.id).length).toBeGreaterThan(10); const all = getWords('mixed'); expect(new Set(all.map(w => w.id)).size).toBe(all.length); });
   it('rejects invalid randomness', () => { expect(() => createRound(settings, () => 1)).toThrow(); expect(() => createRound(settings, () => NaN)).toThrow(); });
+  it('refuses a premium category without a verified entitlement, even if the client asked for it', () => {
+    expect(validateSettings({ ...settings, category: 'date-night' })).toMatch(/premium category/);
+    expect(validateSettings({ ...settings, category: 'date-night' }, { premium: true })).toBeNull();
+    expect(() => createRound({ ...settings, category: 'holidays' }, () => 0)).toThrow(/premium category/);
+    expect(createRound({ ...settings, category: 'holidays' }, () => 0, undefined, { premium: true }).word.category).toBe('holidays');
+  });
 });
 describe('private reveals', () => {
   it('requires a fresh reveal for each player', () => { const initial = make(); expect(transition(initial, { type: 'hide' })).toBe(initial); const hidden = transition(transition(initial, { type: 'reveal' }), { type: 'hide' }); expect(hidden.phase).toBe('handoff'); expect(hidden.cursor).toBe(1); expect(transition(hidden, { type: 'hide' })).toBe(hidden); });

@@ -1,4 +1,6 @@
 import { freePlayerLimit, premiumPlayerLimit } from './limits';
+import { categories } from './words';
+import type { Settings } from './game';
 export type PremiumFeatureId = 'premium-packs' | 'custom-packs' | 'classroom-family' | 'branded-rooms' | 'room-history' | 'more-players' | 'printable-packs';
 
 export interface PremiumFeature {
@@ -19,3 +21,13 @@ export const premiumFeatures: PremiumFeature[] = [
 
 export const stripePaymentLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? '';
 export const premiumConfigured = /^https:\/\/(buy\.stripe\.com|checkout\.stripe\.com)\//.test(stripePaymentLink);
+
+// Human-readable reasons a chosen setup needs premium, for the "you picked premium things, here's
+// what to do about it" prompt shown at start time rather than blocking selection up front.
+export function describePremiumRequirements(settings: Settings): string[] {
+  const reasons: string[] = [];
+  if (settings.names.length > freePlayerLimit) reasons.push(`${settings.names.length} players (free games support up to ${freePlayerLimit})`);
+  const category = categories.find(candidate => candidate.id === settings.category);
+  if (category?.premium) reasons.push(`${category.name} category`);
+  return reasons;
+}

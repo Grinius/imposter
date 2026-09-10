@@ -9,12 +9,18 @@ export interface Round {
   reason: 'caught' | 'escaped' | 'tie' | 'guessed' | null; settings: Settings;
 }
 export type Action = { type: 'reveal' | 'hide' | 'privacy' | 'start-vote' | 'open-ballot' | 'skip-guess' } | { type: 'clue'; text: string } | { type: 'vote'; target: number } | { type: 'guess'; word: string };
-export function validateSettings(settings: Settings, maxPlayers = freePlayerLimit): string | null {
+export interface EntitlementOptions { maxPlayers?: number; premium?: boolean; }
+export function validateSettings(settings: Settings, options: EntitlementOptions = {}): string | null {
+  const { maxPlayers = freePlayerLimit, premium = false } = options;
   if (settings.names.length < minPlayerLimit || settings.names.length > maxPlayers) return `Invite ${minPlayerLimit}–${maxPlayers} players to the table.`;
   const names = settings.names.map(name => name.trim());
   if (names.some(name => !name || name.length > 20)) return 'Give everyone a name (up to 20 characters).';
   if (new Set(names.map(name => name.toLocaleLowerCase())).size !== names.length) return 'Use a different name for each player.';
-  if (!categories.some(category => category.id === settings.category)) return 'Choose a category.';
+  const category = categories.find(candidate => candidate.id === settings.category);
+  if (!category) return 'Choose a category.';
+  // Server-side defense in depth: a premium category must never be playable without a verified
+  // entitlement, even if a client bypasses the UI (e.g. an online room host crafting messages by hand).
+  if (category.premium && !premium) return `${category.name} is a premium category. Upgrade to Imposter Premium to play it.`;
   if (![2, 3, 5].includes(settings.minutes)) return 'Choose a 2, 3, or 5 minute discussion.';
   return null;
 }
@@ -23,8 +29,8 @@ function pick(length: number, random: () => number) {
   if (!Number.isFinite(value) || value < 0 || value >= 1) throw new Error('Random value must be in [0, 1).');
   return Math.floor(value * length);
 }
-export function createRound(settings: Settings, random: () => number, previousWord?: string, maxPlayers = freePlayerLimit): Round {
-  const error = validateSettings(settings, maxPlayers); if (error) throw new Error(error);
+export function createRound(settings: Settings, random: () => number, previousWord?: string, options: EntitlementOptions = {}): Round {
+  const error = validateSettings(settings, options); if (error) throw new Error(error);
   const pool = getWords(settings.category).filter(word => word.id !== previousWord);
   const normalized = { ...settings, names: settings.names.map(name => name.trim()) };
   return { names: normalized.names, settings: normalized, word: pool[pick(pool.length, random)], imposter: pick(settings.names.length, random), firstClue: pick(settings.names.length, random), phase: 'handoff', cursor: 0, votes: [], clues: [], accused: null, winner: null, reason: null };
