@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ImposterRoom, type Env } from '../src/worker';
+import { ImposterRoom, RateLimiter, type Env } from '../src/worker';
 import { signEntitlement } from '../lib/entitlement';
 import { freePlayerLimit, premiumPlayerLimit } from '../lib/limits';
 import type { PublicRoom } from '../lib/online';
@@ -22,7 +22,22 @@ function makeState() {
 }
 
 function makeEnv(overrides: Partial<Env> = {}): Env {
-  return { ASSETS: {} as Env['ASSETS'], ROOMS: {} as Env['ROOMS'], STRIPE_SECRET_KEY: 'sk_test_fake', ENTITLEMENT_SECRET: 'a'.repeat(64), ...overrides };
+  return { ASSETS: {} as Env['ASSETS'], ROOMS: {} as Env['ROOMS'], RATE_LIMITER: {} as Env['RATE_LIMITER'], STRIPE_SECRET_KEY: 'sk_test_fake', ENTITLEMENT_SECRET: 'a'.repeat(64), ...overrides };
+}
+
+// A real, working RATE_LIMITER binding — one persistent RateLimiter instance per key, mirroring how
+// Durable Object idFromName/get resolves to the *same* instance for the same name in production.
+function makeRateLimiterNamespace(): Env['RATE_LIMITER'] {
+  const instances = new Map<string, RateLimiter>();
+  return {
+    idFromName: (name: string) => ({ name }),
+    get: (id: { name?: string }) => {
+      const name = id.name ?? '';
+      let instance = instances.get(name);
+      if (!instance) { instance = new RateLimiter(makeState()); instances.set(name, instance); }
+      return instance;
+    },
+  } as unknown as Env['RATE_LIMITER'];
 }
 
 function makeSocket() {
@@ -96,5 +111,25 @@ describe('ImposterRoom room-not-found protection', () => {
     await room.join(socket, { type: 'join', name: 'Jamie' }); // no create needed -- the room already exists
     expect(room.room?.players).toHaveLength(2);
     expect(received.some(message => (message as { type?: string }).type === 'error')).toBe(false);
+  });
+});
+
+describe('ImposterRoom room-creation rate limiting', () => {
+  it('caps how many rooms the same client can spin up in a window, independent of which code each used', async () => {
+    // Every ImposterRoom instance here shares one RATE_LIMITER namespace and defaults to the same
+    // clientIp ('unknown', since fetch() -- which sets it from a real request -- is never called in
+    // these direct-join tests), matching how the same real visitor hitting many different room codes
+    // shares one rate-limit bucket in production.
+    const env = makeEnv({ RATE_LIMITER: makeRateLimiterNamespace() });
+    const outcomes: boolean[] = [];
+    for (let i = 0; i < 8; i += 1) {
+      const room = new ImposterRoom(makeState(), env) as unknown as Room;
+      const { socket, received } = makeSocket();
+      await room.join(socket, { type: 'join', name: `Host${i}`, create: true });
+      outcomes.push(room.room !== null);
+      if (room.room === null) expect((received.at(-1) as { message: string }).message).toMatch(/too many rooms/i);
+    }
+    expect(outcomes.filter(Boolean).length).toBe(6); // the configured limit
+    expect(outcomes.slice(6)).toEqual([false, false]);
   });
 });

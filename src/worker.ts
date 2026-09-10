@@ -6,8 +6,39 @@ import { publicRoom, roomIdIsValid, type PrivateRole, type PublicRoom } from '..
 export interface Env {
   ASSETS: Fetcher;
   ROOMS: DurableObjectNamespace;
+  RATE_LIMITER: DurableObjectNamespace;
   STRIPE_SECRET_KEY: string;
   ENTITLEMENT_SECRET: string;
+}
+
+// Cloudflare sets this at the edge from the real TCP connection; a client cannot spoof it the way
+// it could an X-Forwarded-For header, so it is the one trustworthy per-visitor key available here.
+function clientIp(request: Request): string { return request.headers.get('CF-Connecting-IP') ?? 'unknown'; }
+
+// A tiny fixed-window counter, one Durable Object instance per rate-limit key (so per IP+endpoint).
+// Fails open on any error — a rate-limiter bug must never be the reason legitimate traffic breaks.
+async function checkRateLimit(env: Env, key: string, limit: number, windowMs: number): Promise<boolean> {
+  try {
+    const stub = env.RATE_LIMITER.get(env.RATE_LIMITER.idFromName(key));
+    const response = await stub.fetch(new Request('https://rate-limiter.internal/', { method: 'POST', body: JSON.stringify({ limit, windowMs }) }));
+    return ((await response.json()) as { allowed: boolean }).allowed;
+  } catch { return true; }
+}
+
+export class RateLimiter {
+  private state: DurableObjectState;
+  constructor(state: DurableObjectState) { this.state = state; }
+  async fetch(request: Request): Promise<Response> {
+    const { limit, windowMs } = await request.json() as { limit: number; windowMs: number };
+    const now = Date.now();
+    const bucket = (await this.state.storage.get<{ count: number; resetAt: number }>('bucket')) ?? { count: 0, resetAt: now + windowMs };
+    if (now > bucket.resetAt) { bucket.count = 0; bucket.resetAt = now + windowMs; }
+    bucket.count += 1;
+    await this.state.storage.put({ bucket });
+    this.state.storage.setAlarm(bucket.resetAt);
+    return Response.json({ allowed: bucket.count <= limit });
+  }
+  async alarm() { await this.state.storage.deleteAll(); }
 }
 
 type ClientMessage =
@@ -37,6 +68,7 @@ export class ImposterRoom {
   private room: PublicRoom | null = null;
   private roundState: ReturnType<typeof createRound> | null = null;
   private roles = new Map<string, PrivateRole>();
+  private clientIp = 'unknown';
 
   constructor(state: DurableObjectState, env: Env) { this.state = state; this.env = env; }
 
@@ -52,6 +84,7 @@ export class ImposterRoom {
 
   async fetch(request: Request) {
     if (request.headers.get('Upgrade') !== 'websocket') return new Response('WebSocket upgrade required', { status: 426 });
+    this.clientIp = clientIp(request);
     await this.load();
     const id = new URL(request.url).pathname.split('/').pop();
     if (id && roomIdIsValid(id)) { this.roomId = id; if (this.room && !this.room.roomId) this.room.roomId = id; }
@@ -93,6 +126,9 @@ export class ImposterRoom {
       // would silently spin up a fresh, empty room instead of a clear "room not found."  Only the
       // official create-room flow (which already generated this code itself) sets `create`.
       if (!message.create) { this.send(socket, { type: 'error', message: 'That room code doesn’t exist. Double-check it with whoever sent it.' }); return; }
+      // Room creation is the one action here that actually spins up a persistent Durable Object, so
+      // it is the meaningful thing to cap per IP — not the cheap /api/rooms code-mint that precedes it.
+      if (!(await checkRateLimit(this.env, `create-room:${this.clientIp}`, 6, 15 * 60 * 1000))) { this.send(socket, { type: 'error', message: 'Too many rooms created recently. Please wait a few minutes and try again.' }); return; }
       const id = message.playerId && /^[a-f0-9-]{36}$/.test(message.playerId) ? message.playerId : randomId();
       // The room-creating player's token (if any) decides this room's player cap for its whole
       // lifetime. Verified server-side against our own signing secret — never trusted as-is.
@@ -164,13 +200,22 @@ export default { async fetch(request: Request, env: Env) {
   const match = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{6})$/);
   if (match && request.method === 'GET') {
     const roomId = match[1]; const id = env.ROOMS.idFromName(roomId); const room = env.ROOMS.get(id);
-    return room.fetch(new Request(`https://room.internal/${roomId}`, { headers: { Upgrade: 'websocket' } }));
+    // Forward the real client IP so the room's own rate limiting (room creation) has something
+    // trustworthy to key on — a fresh internal Request carries none of the original headers otherwise.
+    return room.fetch(new Request(`https://room.internal/${roomId}`, { headers: { Upgrade: 'websocket', 'CF-Connecting-IP': clientIp(request) } }));
   }
   if (url.pathname === '/api/rooms' && request.method === 'POST') {
+    if (!(await checkRateLimit(env, `mint-code:${clientIp(request)}`, 20, 15 * 60 * 1000))) return Response.json({ error: 'Too many attempts. Please wait a few minutes and try again.' }, { status: 429 });
     return Response.json({ roomId: randomRoomId() }, { headers: { 'Cache-Control': 'no-store' } });
   }
-  if (url.pathname === '/api/premium/verify' && request.method === 'POST') return verifyPremiumCheckout(request, env);
-  if (url.pathname === '/api/premium/status' && request.method === 'GET') return premiumStatus(url, env);
+  if (url.pathname === '/api/premium/verify' && request.method === 'POST') {
+    if (!(await checkRateLimit(env, `premium-verify:${clientIp(request)}`, 10, 10 * 60 * 1000))) return Response.json({ error: 'Too many attempts. Please wait a few minutes and try again.' }, { status: 429 });
+    return verifyPremiumCheckout(request, env);
+  }
+  if (url.pathname === '/api/premium/status' && request.method === 'GET') {
+    if (!(await checkRateLimit(env, `premium-status:${clientIp(request)}`, 60, 60 * 1000))) return Response.json({ premium: false }, { status: 429, headers: { 'Cache-Control': 'no-store' } });
+    return premiumStatus(url, env);
+  }
   return env.ASSETS.fetch(request);
 } };
 

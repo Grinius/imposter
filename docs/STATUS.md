@@ -8,6 +8,10 @@ Initial pass-the-phone game is playable locally. Next.js 16.3.4 + React + TypeSc
 
 Features: 3–5 free editable players, 120 starter words in five packs plus mixed, category hints, secure browser randomness, private role handoffs, a 650 ms rapid-tap guard, secret hiding on blur/visibility loss, optional sound, pause/resume discussion timer, private non-self voting, tie/plurality resolution, final imposter guess, results, and replay. Rules dialog and guarded exit are implemented. Settings stay across rounds but not refreshes.
 
+## Rate limiting (adopted)
+
+A `RateLimiter` Durable Object (`src/worker.ts`) gives a fixed-window per-IP counter, keyed per rate-limited action (`create-room:<ip>`, `mint-code:<ip>`, `premium-verify:<ip>`, `premium-status:<ip>`), failing open on any internal error so a rate-limiter bug can never take down the feature it's protecting. Enforced: room creation via WebSocket join (the action that actually allocates a persistent Durable Object) at 6/15min, the cheap `POST /api/rooms` code-mint at 20/15min, `POST /api/premium/verify` at 10/10min (protects the Stripe API call budget), `GET /api/premium/status` at 60/min. Client IP comes from Cloudflare's own `CF-Connecting-IP` header, which a client cannot spoof. Verified live against `wrangler dev`: hit each threshold and got the expected 429/error exactly at the configured limit, one request early and one late. This does not replace Cloudflare's own network-layer DDoS protection (already automatic for anything behind Cloudflare) — it addresses application-level abuse (mass Durable Object creation, Stripe API exhaustion) that the network layer doesn't see.
+
 ## Validation completed
 
 - 18 Vitest domain tests pass: setup validation, word selection, replay exclusion, reveal ordering, illegal transitions, privacy transitions, vote authorization, duplicate actions, ties, wrong accusations, and final guesses.

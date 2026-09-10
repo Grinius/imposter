@@ -8,6 +8,7 @@ import { signEntitlement, verifyEntitlement } from '../lib/entitlement';
 const baseEnv: Env = {
   ASSETS: {} as Env['ASSETS'],
   ROOMS: {} as Env['ROOMS'],
+  RATE_LIMITER: {} as Env['RATE_LIMITER'],
   STRIPE_SECRET_KEY: 'sk_test_fake',
   ENTITLEMENT_SECRET: 'a'.repeat(64),
 };
