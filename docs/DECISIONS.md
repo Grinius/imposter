@@ -94,3 +94,40 @@ Token lifetime drops from 20 years to 3, and `/api/premium/status` returns a ren
 is inside its last two years, so a device that keeps playing stays unlocked indefinitely while an
 abandoned or copied token eventually dies. Full non-transferability and revocation are not
 achievable without accounts and are not attempted.
+
+## 2026-09-10 — Remaining security findings closed (adopted)
+
+The four lower-severity findings left over from the hardening pass are now fixed, leaving only the
+dev-only `sharp` advisory and the accepted transferability of an accountless entitlement
+(`docs/SECURITY-BACKLOG.md`).
+
+**The entitlement token stops travelling in a URL.** `/api/premium/status` is a `POST` that reads
+the token from the request body. It is a bearer credential, and query strings are written to request
+logs and analytics, where anyone with log access could lift and replay one.
+
+**Verifying a premium claim can no longer break what it is attached to.** `verifiedEntitlement` in
+`src/worker.ts` turns any failure — malformed token, unset or non-hex `ENTITLEMENT_SECRET` — into
+"not premium". Previously a well-formed two-part token was enough to reach `hexToBytes`, which threw
+whenever the secret was unconfigured (its state until launch) and took room creation down with it.
+
+**Static responses carry security headers.** `public/_headers` is served by Workers Static Assets
+and applies to every asset response, including the 404 page; API responses from the Worker do not
+pass through it. `script-src`/`style-src` allow `'unsafe-inline'` because a static export has no
+server to issue a per-request nonce and Next inlines its own hydration payload — the policy's real
+work here is blocking script and connection *origins*, which is what would stop an injected script
+or an exfiltrated premium token. `connect-src` names `wss://laughtable.com` alongside `'self'`:
+Chrome treats `'self'` as covering a same-origin WebSocket, verified here with a full three-client
+round, but that reading has not always held everywhere and a blocked socket would break online play
+silently. Keep that host in step with `lib/site.ts`. HSTS is set without `includeSubDomains`, so a
+future subdomain is not forced onto HTTPS before it is ready.
+
+**A socket cannot flood its room.** `ImposterRoom` allows 20 messages per second per socket, answers
+the first message over the line with one explanation, and drops the rest in silence — replying to a
+flood per message would double it. The counters are in memory, not storage: a flooder keeps the
+object awake so the counter lasts exactly as long as the flood, and a quiet room that hibernates
+loses only zeroes.
+
+**`wrangler.jsonc` now names the asset binding.** Found while verifying the headers rather than in
+the review itself: the Worker's `env.ASSETS` fallthrough threw on every unmatched URL because the
+assets block declared no `binding`, so missing pages answered 500 instead of serving the 404 page.
+Crawlers would have seen 500s for every probe of a URL that does not exist.

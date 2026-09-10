@@ -56,24 +56,35 @@ describe('POST /api/premium/verify', () => {
   });
 });
 
-describe('GET /api/premium/status', () => {
+// The token travels in the body rather than the URL so it stays out of request logs.
+const statusRequest = (token?: string) => new Request('https://x/api/premium/status', { method: 'POST', body: JSON.stringify(token === undefined ? {} : { token }) });
+
+describe('POST /api/premium/status', () => {
   it('reports not premium when no token is given', async () => {
-    const response = await premiumStatus(new URL('https://x/api/premium/status'), baseEnv);
+    expect(await (await premiumStatus(statusRequest(), baseEnv)).json()).toEqual({ premium: false });
+  });
+  it('reports not premium for a body that is not valid JSON, rather than throwing', async () => {
+    const response = await premiumStatus(new Request('https://x/api/premium/status', { method: 'POST', body: 'not json' }), baseEnv);
+    expect(await response.json()).toEqual({ premium: false });
+  });
+  it('reports not premium when the signing secret is not valid hex, rather than throwing', async () => {
+    const { token } = await signEntitlement(baseEnv.ENTITLEMENT_SECRET, 'cs_test_abc123');
+    const response = await premiumStatus(statusRequest(token), { ...baseEnv, ENTITLEMENT_SECRET: 'not-hex-at-all' });
     expect(await response.json()).toEqual({ premium: false });
   });
   it('reports not premium when the entitlement secret is not configured', async () => {
     const { token } = await signEntitlement(baseEnv.ENTITLEMENT_SECRET, 'cs_test_abc123');
-    const response = await premiumStatus(new URL(`https://x/api/premium/status?token=${token}`), { ...baseEnv, ENTITLEMENT_SECRET: '' });
+    const response = await premiumStatus(statusRequest(token), { ...baseEnv, ENTITLEMENT_SECRET: '' });
     expect(await response.json()).toEqual({ premium: false });
   });
   it('reports premium for a legitimately signed, unexpired token', async () => {
     const { token } = await signEntitlement(baseEnv.ENTITLEMENT_SECRET, 'cs_test_abc123');
-    const response = await premiumStatus(new URL(`https://x/api/premium/status?token=${token}`), baseEnv);
+    const response = await premiumStatus(statusRequest(token), baseEnv);
     expect(await response.json()).toEqual({ premium: true });
   });
   it('rejects a token signed with a different secret (e.g. a forged client-side claim)', async () => {
     const { token } = await signEntitlement('b'.repeat(64), 'cs_test_abc123');
-    const response = await premiumStatus(new URL(`https://x/api/premium/status?token=${token}`), baseEnv);
+    const response = await premiumStatus(statusRequest(token), baseEnv);
     expect(await response.json()).toEqual({ premium: false });
   });
 });

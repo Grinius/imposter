@@ -34,17 +34,28 @@ tests; the rationale is in `docs/DECISIONS.md`.
   years with silent renewal on `/api/premium/status`, replacing an effectively permanent 20-year
   token.
 
-Remaining findings — the entitlement token in a URL query string, an unhandled throw when
-`ENTITLEMENT_SECRET` is unset, missing CSP/security headers, no per-socket message rate limit, and a
-dev-only `sharp` advisory — are written up with fixes in `docs/SECURITY-BACKLOG.md` and were left
-for the owner to schedule.
+The four lower-severity findings are now fixed too: the entitlement token moved out of the URL into
+a POST body, a client-supplied premium token can no longer throw and take room creation with it,
+`public/_headers` sets CSP/`frame-ancestors`/nosniff/`Referrer-Policy`/`Permissions-Policy`/HSTS on
+every static response, and a socket is capped at 20 messages per second. Verifying the headers also
+turned up a pre-existing bug outside the review: `wrangler.jsonc` declared no `binding` for the
+asset namespace, so the Worker's fallthrough threw and **every 404 answered 500** — crawlers
+included. Adding the binding fixes it. Only the dev-only `sharp` advisory and the accepted
+transferability of an accountless entitlement remain open (`docs/SECURITY-BACKLOG.md`).
 
 ## Validation completed
 
-- 68 Vitest tests pass, including 14 added for the hardening pass: seat secrets absent from every broadcast, hijack attempts with a correct player id refused, legitimate reconnect still restoring the private role, off-turn clues and stuffed ballots refused, host-only vote calls, imposter-only final guesses, foreign-origin sockets refused, room-probe rate limiting, and the per-payment mint cap.
+- 73 Vitest tests pass, including 19 added for the hardening pass: seat secrets absent from every broadcast, hijack attempts with a correct player id refused, legitimate reconnect still restoring the private role, off-turn clues and stuffed ballots refused, host-only vote calls, imposter-only final guesses, foreign-origin sockets refused, room-probe rate limiting, the per-payment mint cap, per-socket
+  flood limiting counted separately per socket, and an unverifiable premium token reading as "not
+  premium" instead of throwing.
 - Domain tests cover setup validation, word selection, replay exclusion, reveal ordering, illegal transitions, privacy transitions, vote authorization, duplicate actions, ties, wrong accusations, and final guesses.
 - TypeScript and ESLint pass. Production static build passes.
 - Playwright E2E passes for online multiplayer and sitemap coverage. The multiplayer spec now also runs two attacks against the real Worker over real sockets: a raw WebSocket re-join using a victim's public player id (refused, victim stays connected) and an out-of-turn clue sent straight down the socket past the UI (refused, no clue recorded). Both were confirmed to fail against the pre-fix code, so they are not vacuous.
+- Three new E2E checks pass against a real wrangler response, which is the only thing that can
+  prove `public/_headers` is honoured: the security headers on `/`, a missing page answering 404
+  rather than 500, and `/api/premium/status` rejecting the old `?token=` form while accepting a POST
+  body. A full three-client online round also passes under the CSP, confirming the same-origin
+  WebSocket and the room API are not blocked by `connect-src`.
 - Two E2E specs fail against the current code and are stale rather than regressions: `generator.spec.ts` still expects "Add player" to be disabled at 5/5, which the premium conversion UX deliberately changed, and `seo-pages.spec.ts` still expects "Stripe link pending" on `/premium/`, which no longer renders now that `.env.local` carries a real Payment Link. Neither is caused by the hardening pass; both need the assertions updated to the intended behaviour.
 - Browser: checked the turn-gated online panels at 1280 and 390 px across three separate browser contexts — the player on the cursor sees the clue box or ballot, everyone else sees a waiting note, and the vote grid excludes the voter. No horizontal overflow at either size.
 - Cloudflare Wrangler deployment dry run passes: 94 asset files, no runtime bindings. This did not publish anything.
@@ -80,9 +91,7 @@ Authentication, analytics, ads, and real-time 3D remain unimplemented. The owner
 
 ## Next work
 
-Fix or retire the two stale E2E assertions above, then consider `docs/SECURITY-BACKLOG.md` item 2
-(the one-line `verifyEntitlement` guard) before setting the Worker secrets, since until they are set
-every premium-token join throws. Keep local play available. Set the `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` Worker secrets, then do one real end-to-end payment as the owner to confirm the verify → unlock flow works before exposing the checkout button to real visitors (see README's "Premium checkout" section). After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all nine canonical URLs.
+Fix or retire the two stale E2E assertions above. Keep local play available. Set the `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` Worker secrets, then do one real end-to-end payment as the owner to confirm the verify → unlock flow works before exposing the checkout button to real visitors (see README's "Premium checkout" section). After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all nine canonical URLs.
 
 ## Local preview
 

@@ -1,5 +1,5 @@
 import { actionIsAuthorized, createRound, transition, type Action, type Settings } from '../lib/game';
-import { signEntitlement, verifyEntitlement } from '../lib/entitlement';
+import { signEntitlement, verifyEntitlement, type EntitlementPayload } from '../lib/entitlement';
 import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '../lib/limits';
 import { publicRoom, roomIdIsValid, type PrivateRole, type PublicRoom, type RoomPlayer, type RoomState } from '../lib/online';
 
@@ -15,6 +15,15 @@ export interface Env {
 // Cloudflare sets this at the edge from the real TCP connection; a client cannot spoof it the way
 // it could an X-Forwarded-For header, so it is the one trustworthy per-visitor key available here.
 function clientIp(request: Request): string { return request.headers.get('CF-Connecting-IP') ?? 'unknown'; }
+
+// A premium claim from a client must never be able to break what it is attached to: any failure to
+// verify — a malformed token, an unset or non-hex ENTITLEMENT_SECRET — simply means "not premium".
+// Before this, a well-formed two-part token like "YWJj.ZGVm" made hexToBytes throw and took room
+// creation down with it whenever the secret was not configured, which is its state until launch.
+async function verifiedEntitlement(env: Env, token: string | undefined): Promise<EntitlementPayload | null> {
+  if (!token || !env.ENTITLEMENT_SECRET) return null;
+  try { return await verifyEntitlement(env.ENTITLEMENT_SECRET, token); } catch { return null; }
+}
 
 // A tiny fixed-window counter, one Durable Object instance per rate-limit key (so per IP+endpoint).
 // Fails open on any error — a rate-limiter bug must never be the reason legitimate traffic breaks.
@@ -87,6 +96,10 @@ type ServerMessage =
   | { type: 'pong' };
 
 const ROOM_TTL_MS = 1000 * 60 * 60 * 12;
+// Per-socket ceiling on messages. Well above anything a person playing can produce (a clue, a vote,
+// the occasional ping), low enough that a joined client cannot make the room write storage and
+// broadcast to everyone in a loop.
+const MESSAGES_PER_SECOND = 20;
 // Renew a premium token once it is inside its final two years, i.e. after roughly a year of use.
 const RENEW_WITHIN_MS = 1000 * 60 * 60 * 24 * 365 * 2;
 
@@ -114,6 +127,10 @@ export class ImposterRoom {
   // reconnect-kick check both happen on the first message right after a socket connects, before the
   // object could hibernate) — safe despite resetting to 'unknown' whenever the object is re-instantiated.
   private clientIp = 'unknown';
+  // Flood counters live in memory rather than in storage or the socket attachment, so the guard
+  // costs nothing per message. A flooding client keeps this object awake, so the counter lasts
+  // exactly as long as the flood does; a quiet room that hibernates loses only zeroes.
+  private messageRate = new Map<WebSocket, { count: number; resetAt: number }>();
 
   constructor(state: DurableObjectState, env: Env) { this.state = state; this.env = env; }
 
@@ -150,7 +167,21 @@ export class ImposterRoom {
     this.roles = new Map(storedRoles ?? []);
   }
 
+  // 'warn' is the first message over the ceiling and gets one explanation; everything after it is
+  // dropped in silence, since answering a flood with a reply per message doubles it.
+  private floodCheck(socket: WebSocket): 'ok' | 'warn' | 'drop' {
+    const now = Date.now();
+    const bucket = this.messageRate.get(socket);
+    if (!bucket || now > bucket.resetAt) { this.messageRate.set(socket, { count: 1, resetAt: now + 1000 }); return 'ok'; }
+    bucket.count += 1;
+    if (bucket.count <= MESSAGES_PER_SECOND) return 'ok';
+    return bucket.count === MESSAGES_PER_SECOND + 1 ? 'warn' : 'drop';
+  }
+
   async webSocketMessage(socket: WebSocket, raw: string | ArrayBuffer) {
+    const flood = this.floodCheck(socket);
+    if (flood === 'drop') return;
+    if (flood === 'warn') { this.send(socket, { type: 'error', message: 'That is too many actions at once. Slow down and try again.' }); return; }
     await this.load();
     let message: ClientMessage;
     try { message = JSON.parse(String(raw)) as ClientMessage; } catch { this.send(socket, { type: 'error', message: 'That message was not valid JSON.' }); return; }
@@ -177,7 +208,7 @@ export class ImposterRoom {
       if (!(await checkRateLimit(this.env, `create-room:${this.clientIp}`, 6, 15 * 60 * 1000))) { this.send(socket, { type: 'error', message: 'Too many rooms created recently. Please wait a few minutes and try again.' }); return; }
       // The room-creating player's token (if any) decides this room's player cap for its whole
       // lifetime. Verified server-side against our own signing secret — never trusted as-is.
-      const premium = message.premiumToken ? !!(await verifyEntitlement(this.env.ENTITLEMENT_SECRET, message.premiumToken)) : false;
+      const premium = !!(await verifiedEntitlement(this.env, message.premiumToken));
       // Both halves of a seat are minted here, never accepted from the client: a client-chosen id
       // could deliberately collide with a seat it wants, and a client-chosen secret would be no
       // secret at all.
@@ -249,6 +280,7 @@ export class ImposterRoom {
   async webSocketClose(socket: WebSocket) { await this.disconnect(socket); }
   async webSocketError(socket: WebSocket) { await this.disconnect(socket); }
   private async disconnect(socket: WebSocket) {
+    this.messageRate.delete(socket);
     await this.load();
     const id = attachedPlayerId(socket);
     if (!id || !this.room) return;
@@ -293,9 +325,9 @@ export default { async fetch(request: Request, env: Env) {
     if (!(await checkRateLimit(env, `premium-verify:${clientIp(request)}`, 10, 10 * 60 * 1000))) return Response.json({ error: 'Too many attempts. Please wait a few minutes and try again.' }, { status: 429 });
     return verifyPremiumCheckout(request, env);
   }
-  if (url.pathname === '/api/premium/status' && request.method === 'GET') {
+  if (url.pathname === '/api/premium/status' && request.method === 'POST') {
     if (!(await checkRateLimit(env, `premium-status:${clientIp(request)}`, 60, 60 * 1000))) return Response.json({ premium: false }, { status: 429, headers: { 'Cache-Control': 'no-store' } });
-    return premiumStatus(url, env);
+    return premiumStatus(request, env);
   }
   return env.ASSETS.fetch(request);
 } };
@@ -319,13 +351,17 @@ export async function verifyPremiumCheckout(request: Request, env: Env): Promise
   return Response.json({ token, expiresAt }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
-// Lets a client (or the room worker) check whether a stored token is still a legitimately signed,
-// unexpired entitlement, without exposing the signing secret itself to anyone.
-export async function premiumStatus(url: URL, env: Env): Promise<Response> {
-  const token = url.searchParams.get('token') ?? '';
-  if (!env.ENTITLEMENT_SECRET || !token) return Response.json({ premium: false }, { headers: { 'Cache-Control': 'no-store' } });
-  const payload = await verifyEntitlement(env.ENTITLEMENT_SECRET, token);
-  if (!payload) return Response.json({ premium: false }, { headers: { 'Cache-Control': 'no-store' } });
+// Lets a client check whether a stored token is still a legitimately signed, unexpired entitlement,
+// without exposing the signing secret itself to anyone. The token arrives in the request body, not
+// in the URL: it is a bearer credential, and query strings are written to request logs and analytics
+// where anyone with log access could lift and replay one.
+export async function premiumStatus(request: Request, env: Env): Promise<Response> {
+  const notPremium = Response.json({ premium: false }, { headers: { 'Cache-Control': 'no-store' } });
+  let body: unknown;
+  try { body = await request.json(); } catch { return notPremium; }
+  const token = body && typeof body === 'object' && 'token' in body ? (body as { token: unknown }).token : undefined;
+  const payload = typeof token === 'string' ? await verifiedEntitlement(env, token) : null;
+  if (!payload) return notPremium;
   // Tokens now carry a bounded life instead of an effectively permanent one, so a copied or
   // abandoned token eventually dies. A device that keeps playing renews silently well before then,
   // so a real buyer never has to go back through checkout — see docs/DECISIONS.md.

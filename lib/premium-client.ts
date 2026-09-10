@@ -22,7 +22,8 @@ export function usePremiumStatus() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!token) { setChecked(true); return; }
     let cancelled = false;
-    fetch(`/api/premium/status?token=${encodeURIComponent(token)}`)
+    // POST, not a query string: the token is a bearer credential and URLs end up in request logs.
+    fetch('/api/premium/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
       .then(response => response.ok ? response.json() as Promise<{ premium?: boolean; token?: string }> : { premium: false, token: undefined })
       // Entitlements have a bounded life, and the Worker hands back a renewed token once one is
       // near the end of it. Storing it here is what keeps a device that keeps playing unlocked

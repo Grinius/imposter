@@ -59,7 +59,7 @@ function makeSocket(state: TestState) {
 }
 
 type Room = {
-  join: (socket: WebSocket, message: { type: 'join'; name: string; playerId?: string; seat?: string; create?: boolean }) => Promise<void>;
+  join: (socket: WebSocket, message: { type: 'join'; name: string; playerId?: string; seat?: string; premiumToken?: string; create?: boolean }) => Promise<void>;
   start: (socket: WebSocket, playerId: string, settings: object) => Promise<void>;
   action: (socket: WebSocket, playerId: string, message: { type: 'action'; action: Action; round: number }) => Promise<void>;
   room: RoomState | null;
@@ -248,5 +248,49 @@ describe('one payment cannot unlock unlimited devices', () => {
       globalThis.fetch = (async () => paidStripe()) as typeof fetch;
       expect((await verify(env, 'cs_test_unpaid')).status).toBe(200); // the buyer's quota is intact
     } finally { globalThis.fetch = original; }
+  });
+});
+
+describe('one socket cannot flood the room', () => {
+  it('serves messages up to the ceiling, explains itself once, then goes quiet', async () => {
+    const state = makeState();
+    const room = new ImposterRoom(state as unknown as ConstructorParameters<typeof ImposterRoom>[0], makeEnv());
+    const client = makeSocket(state);
+
+    for (let i = 0; i < 26; i += 1) await room.webSocketMessage(client.socket, JSON.stringify({ type: 'ping' }));
+
+    expect(messagesOfType(client.received, 'pong')).toHaveLength(20); // MESSAGES_PER_SECOND
+    expect(lastError(client.received)?.message).toMatch(/too many actions/i);
+    expect(client.received).toHaveLength(21); // one warning, and then silence rather than a reply per message
+  });
+
+  it('counts each socket on its own, so one flooder cannot mute the room', async () => {
+    const state = makeState();
+    const room = new ImposterRoom(state as unknown as ConstructorParameters<typeof ImposterRoom>[0], makeEnv());
+    const flooder = makeSocket(state), bystander = makeSocket(state);
+
+    for (let i = 0; i < 26; i += 1) await room.webSocketMessage(flooder.socket, JSON.stringify({ type: 'ping' }));
+    await room.webSocketMessage(bystander.socket, JSON.stringify({ type: 'ping' }));
+
+    expect(messagesOfType(bystander.received, 'pong')).toHaveLength(1);
+    expect(messagesOfType(bystander.received, 'error')).toHaveLength(0);
+  });
+});
+
+describe('a premium claim cannot break the room it arrives on', () => {
+  it('reads an unverifiable token as "not premium" rather than throwing', async () => {
+    // A two-part token is enough to reach the HMAC step, where an unset or non-hex secret used to
+    // throw and take room creation down with it. The secret is unset in production until launch.
+    for (const secret of ['', 'not-hex-at-all']) {
+      const state = makeState();
+      const room = new ImposterRoom(state as unknown as ConstructorParameters<typeof ImposterRoom>[0], makeEnv({ ENTITLEMENT_SECRET: secret })) as unknown as Room;
+      const client = makeSocket(state);
+
+      await room.join(client.socket, { type: 'join', name: 'Alex', create: true, premiumToken: 'YWJj.ZGVm' });
+
+      expect(room.room?.players).toHaveLength(1); // the room still exists
+      expect(room.room?.premium).toBe(false);
+      expect(lastError(client.received)).toBeUndefined();
+    }
   });
 });
