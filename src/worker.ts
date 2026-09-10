@@ -172,7 +172,7 @@ export default { async fetch(request: Request, env: Env) {
 // Confirms a Stripe Checkout session was actually paid (asking Stripe directly, with our secret
 // key — never trusting the session id's mere presence) and, only then, mints a signed entitlement
 // token the client can present later. A client-supplied session id alone proves nothing on its own.
-async function verifyPremiumCheckout(request: Request, env: Env): Promise<Response> {
+export async function verifyPremiumCheckout(request: Request, env: Env): Promise<Response> {
   if (!env.STRIPE_SECRET_KEY || !env.ENTITLEMENT_SECRET) return Response.json({ error: 'Payments are not configured yet.' }, { status: 503 });
   let body: unknown;
   try { body = await request.json(); } catch { return Response.json({ error: 'That request was not valid JSON.' }, { status: 400 }); }
@@ -188,7 +188,7 @@ async function verifyPremiumCheckout(request: Request, env: Env): Promise<Respon
 
 // Lets a client (or the room worker) check whether a stored token is still a legitimately signed,
 // unexpired entitlement, without exposing the signing secret itself to anyone.
-async function premiumStatus(url: URL, env: Env): Promise<Response> {
+export async function premiumStatus(url: URL, env: Env): Promise<Response> {
   const token = url.searchParams.get('token') ?? '';
   if (!env.ENTITLEMENT_SECRET || !token) return Response.json({ premium: false }, { headers: { 'Cache-Control': 'no-store' } });
   const payload = await verifyEntitlement(env.ENTITLEMENT_SECRET, token);
