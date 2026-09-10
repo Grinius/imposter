@@ -24,9 +24,13 @@ export default function UpgradeCard({ feature, compact = false, unlocked = false
     <h2>{title}</h2>
     <p>{summary}</p>
     {unlocked ? <span className="upgrade-note">{active ? 'Thanks for going premium — this one\'s active.' : 'Thanks for going premium — this one\'s still on the way.'}</span>
-      : premiumConfigured ? <a className="gold-button" href={stripePaymentLink}>Unlock with Stripe <ArrowRight size={17} /></a>
-        // Linking to /premium/ from /premium/ itself is a dead click (you're already there) — say so instead.
-        : onPremiumPage ? <span className="outline-button disabled-link" aria-disabled="true">Checkout coming soon</span>
-          : <Link className="outline-button" href="/premium/"><Sparkles size={16} /> View premium options</Link>}
+      // One Premium purchase unlocks everything, not one purchase per feature — so a still-unbuilt
+      // card must never carry its own "pay now" button, which would wrongly imply paying gets you
+      // this specific thing today. It arrives automatically, at no extra cost, once it ships.
+      : !available ? <span className="upgrade-note">Included in Premium — arrives at no extra cost once it ships.</span>
+        : premiumConfigured ? <a className="gold-button" href={stripePaymentLink}>Unlock with Stripe <ArrowRight size={17} /></a>
+          // Linking to /premium/ from /premium/ itself is a dead click (you're already there) — say so instead.
+          : onPremiumPage ? <span className="outline-button disabled-link" aria-disabled="true">Checkout coming soon</span>
+            : <Link className="outline-button" href="/premium/"><Sparkles size={16} /> View premium options</Link>}
   </aside>;
 }
