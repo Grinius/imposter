@@ -2,6 +2,13 @@ import { minPlayerLimit } from './limits';
 
 export type OnlinePlayer = { id: string; name: string; connected: boolean; isHost: boolean };
 
+// A seat as the server stores it. `secret` is the credential that proves "I am this seat" on
+// reconnect; `id` is only a public handle. They must stay separate: `id` is broadcast to every
+// player in the room, so if it doubled as the credential (as it used to) anyone who saw the room
+// list could re-join as someone else, kick them off, and be handed their private role and word.
+export type RoomPlayer = OnlinePlayer & { secret: string };
+export type RoomState = Omit<PublicRoom, 'players'> & { players: RoomPlayer[] };
+
 export type PublicRoom = {
   roomId: string;
   hostId: string;
@@ -39,7 +46,9 @@ export function playerCanAct(room: PublicRoom, playerId: string) {
   return room.players.some(player => player.id === playerId && player.connected);
 }
 
-export function publicRoom(room: PublicRoom, game?: import('./game').Round | null): PublicRoom {
+// The only projection of room state that ever reaches a client. Seat secrets are dropped here by
+// construction: players are rebuilt from an explicit four-field pick, never spread.
+export function publicRoom(room: RoomState, game?: import('./game').Round | null): PublicRoom {
   return {
     roomId: room.roomId,
     hostId: room.hostId,

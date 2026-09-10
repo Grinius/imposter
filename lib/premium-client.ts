@@ -23,8 +23,11 @@ export function usePremiumStatus() {
     if (!token) { setChecked(true); return; }
     let cancelled = false;
     fetch(`/api/premium/status?token=${encodeURIComponent(token)}`)
-      .then(response => response.ok ? response.json() as Promise<{ premium?: boolean }> : { premium: false })
-      .then(data => { if (!cancelled) { setPremium(!!data.premium); setChecked(true); } })
+      .then(response => response.ok ? response.json() as Promise<{ premium?: boolean; token?: string }> : { premium: false, token: undefined })
+      // Entitlements have a bounded life, and the Worker hands back a renewed token once one is
+      // near the end of it. Storing it here is what keeps a device that keeps playing unlocked
+      // indefinitely without ever going back through checkout.
+      .then(data => { if (data.token) storePremiumToken(data.token); if (!cancelled) { setPremium(!!data.premium); setChecked(true); } })
       .catch(() => { if (!cancelled) setChecked(true); });
     return () => { cancelled = true; };
   }, []);

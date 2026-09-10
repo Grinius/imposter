@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ImposterRoom, RateLimiter, type Env } from '../src/worker';
 import { signEntitlement } from '../lib/entitlement';
 import { freePlayerLimit, premiumPlayerLimit } from '../lib/limits';
-import type { PublicRoom } from '../lib/online';
+import type { RoomState } from '../lib/online';
 
 // ImposterRoom talks to Cloudflare's Durable Object runtime only through `state.storage`, the
 // Hibernation WebSocket API (acceptWebSocket/getWebSockets, ws.serialize/deserializeAttachment), and
@@ -27,7 +27,7 @@ function makeState() {
 type TestState = ReturnType<typeof makeState>;
 
 function makeEnv(overrides: Partial<Env> = {}): Env {
-  return { ASSETS: {} as Env['ASSETS'], ROOMS: {} as Env['ROOMS'], RATE_LIMITER: {} as Env['RATE_LIMITER'], STRIPE_SECRET_KEY: 'sk_test_fake', ENTITLEMENT_SECRET: 'a'.repeat(64), ...overrides };
+  return { ASSETS: {} as Env['ASSETS'], ROOMS: {} as Env['ROOMS'], RATE_LIMITER: {} as Env['RATE_LIMITER'], REDEMPTIONS: {} as Env['REDEMPTIONS'], STRIPE_SECRET_KEY: 'sk_test_fake', ENTITLEMENT_SECRET: 'a'.repeat(64), ...overrides };
 }
 
 // A real, working RATE_LIMITER binding — one persistent RateLimiter instance per key, mirroring how
@@ -62,7 +62,13 @@ function makeSocket(state: TestState) {
 
 // join/start/action are private; TS privacy is compile-time only, and testing them directly here
 // is more honest than duplicating this logic behind a public wrapper just for tests.
-type Room = { join: (socket: WebSocket, message: { type: 'join'; name: string; playerId?: string; premiumToken?: string; create?: boolean }) => Promise<void>; room: PublicRoom | null };
+type Room = { join: (socket: WebSocket, message: { type: 'join'; name: string; playerId?: string; seat?: string; premiumToken?: string; create?: boolean }) => Promise<void>; room: RoomState | null };
+
+// The seat credential the server issues to one socket. Tests read it the only way a real client
+// can: out of that socket's own `seat` message.
+function seatOf(received: unknown[]) {
+  return received.find((message): message is { type: 'seat'; playerId: string; seat: string } => (message as { type?: string }).type === 'seat')!;
+}
 
 describe('ImposterRoom premium player cap', () => {
   it('marks a room premium only when the creating join carries a token that verifies, and raises the cap', async () => {
@@ -137,13 +143,13 @@ describe('ImposterRoom room-not-found protection', () => {
     const room = new ImposterRoom(state, makeEnv()) as unknown as Room;
     const first = makeSocket(state);
     await room.join(first.socket, { type: 'join', name: 'Host', create: true });
-    const hostId = room.room!.players[0].id;
+    const credentials = seatOf(first.received);
 
     let closed = false;
     (first.socket as unknown as { close: () => void }).close = () => { closed = true; };
 
     const second = makeSocket(state);
-    await room.join(second.socket, { type: 'join', name: 'Host', playerId: hostId });
+    await room.join(second.socket, { type: 'join', name: 'Host', playerId: credentials.playerId, seat: credentials.seat });
     expect(closed).toBe(true);
     expect(room.room?.players).toHaveLength(1); // still one seat, just re-attached to the new socket
   });

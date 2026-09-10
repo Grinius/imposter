@@ -1,6 +1,6 @@
 # Current status
 
-Updated: 2026-09-09.
+Updated: 2026-09-10.
 
 ## Built
 
@@ -12,11 +12,41 @@ Features: 3–5 free editable players, 120 starter words in five packs plus mixe
 
 A `RateLimiter` Durable Object (`src/worker.ts`) gives a fixed-window per-IP counter, keyed per rate-limited action (`create-room:<ip>`, `mint-code:<ip>`, `premium-verify:<ip>`, `premium-status:<ip>`), failing open on any internal error so a rate-limiter bug can never take down the feature it's protecting. Enforced: room creation via WebSocket join (the action that actually allocates a persistent Durable Object) at 6/15min, the cheap `POST /api/rooms` code-mint at 20/15min, `POST /api/premium/verify` at 10/10min (protects the Stripe API call budget), `GET /api/premium/status` at 60/min. Client IP comes from Cloudflare's own `CF-Connecting-IP` header, which a client cannot spoof. Verified live against `wrangler dev`: hit each threshold and got the expected 429/error exactly at the configured limit, one request early and one late. This does not replace Cloudflare's own network-layer DDoS protection (already automatic for anything behind Cloudflare) — it addresses application-level abuse (mass Durable Object creation, Stripe API exhaustion) that the network layer doesn't see.
 
+## Security hardening (adopted)
+
+A review of the Worker on 2026-09-10 found four issues, all now fixed and covered by regression
+tests; the rationale is in `docs/DECISIONS.md`.
+
+- **Seat hijacking (was: any player could read another player's secret word).** Player ids are
+  broadcast to the whole room, and an id alone used to be enough to re-join as that player, which
+  kicked them off their socket and delivered their private role to the attacker. Seats now carry a
+  server-minted secret that goes to one socket only and is required to reconnect.
+- **No turn authorization (was: any player could speak and vote in everyone else's name).** The
+  Worker accepted `clue`, `vote`, `open-ballot`, `privacy` and `start-vote` from any connected
+  player and attributed them to whoever's turn it actually was; one player could submit every clue
+  and cast every ballot. `actionIsAuthorized` in `lib/game.ts` now states who may take each action,
+  and the online client only shows the clue box and ballot to the player whose turn it is.
+- **Free room probing.** `GET /api/rooms/{code}` now rejects a foreign `Origin` and is capped at 30
+  connections per 5 minutes per IP, so room codes cannot be swept and Durable Objects cannot be
+  spun up for free from any web page.
+- **Unlimited entitlement minting.** A `RedemptionLedger` Durable Object caps `/api/premium/verify`
+  at 5 tokens per Stripe session, charged only after payment is confirmed. Token lifetime is 3
+  years with silent renewal on `/api/premium/status`, replacing an effectively permanent 20-year
+  token.
+
+Remaining findings — the entitlement token in a URL query string, an unhandled throw when
+`ENTITLEMENT_SECRET` is unset, missing CSP/security headers, no per-socket message rate limit, and a
+dev-only `sharp` advisory — are written up with fixes in `docs/SECURITY-BACKLOG.md` and were left
+for the owner to schedule.
+
 ## Validation completed
 
-- 18 Vitest domain tests pass: setup validation, word selection, replay exclusion, reveal ordering, illegal transitions, privacy transitions, vote authorization, duplicate actions, ties, wrong accusations, and final guesses.
+- 68 Vitest tests pass, including 14 added for the hardening pass: seat secrets absent from every broadcast, hijack attempts with a correct player id refused, legitimate reconnect still restoring the private role, off-turn clues and stuffed ballots refused, host-only vote calls, imposter-only final guesses, foreign-origin sockets refused, room-probe rate limiting, and the per-payment mint cap.
+- Domain tests cover setup validation, word selection, replay exclusion, reveal ordering, illegal transitions, privacy transitions, vote authorization, duplicate actions, ties, wrong accusations, and final guesses.
 - TypeScript and ESLint pass. Production static build passes.
-- Playwright E2E passes for generator, online multiplayer, SEO support pages, and sitemap coverage.
+- Playwright E2E passes for online multiplayer and sitemap coverage. The multiplayer spec now also runs two attacks against the real Worker over real sockets: a raw WebSocket re-join using a victim's public player id (refused, victim stays connected) and an out-of-turn clue sent straight down the socket past the UI (refused, no clue recorded). Both were confirmed to fail against the pre-fix code, so they are not vacuous.
+- Two E2E specs fail against the current code and are stale rather than regressions: `generator.spec.ts` still expects "Add player" to be disabled at 5/5, which the premium conversion UX deliberately changed, and `seo-pages.spec.ts` still expects "Stripe link pending" on `/premium/`, which no longer renders now that `.env.local` carries a real Payment Link. Neither is caused by the hardening pass; both need the assertions updated to the intended behaviour.
+- Browser: checked the turn-gated online panels at 1280 and 390 px across three separate browser contexts — the player on the cursor sees the clue box or ballot, everyone else sees a waiting note, and the vote grid excludes the voter. No horizontal overflow at either size.
 - Cloudflare Wrangler deployment dry run passes: 94 asset files, no runtime bindings. This did not publish anything.
 - Browser: completed a four-player round with all private cards, timer start/pause, private ballots, caught imposter, correct final guess, matching vote totals, and replay to a different word.
 - Browser: checked duplicate-name validation, a rapid double click at handoff, opening rules hides the secret, exit confirmation, and preserved settings after returning to setup.
@@ -46,11 +76,13 @@ Two new premium-only word categories exist with real content (`lib/words.ts`): D
 
 ## Not implemented
 
-Authentication, analytics, ads, real-time 3D, and Google Search Console submission remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words (including the two new premium categories) still need user playtesting; no claims of keyword volume or ranking difficulty have been verified. Five of the seven listed premium features (custom word packs, classroom/family mode, branded rooms, longer history, printable cards) are still unbuilt — the player cap and the two premium categories are live.
+Authentication, analytics, ads, and real-time 3D remain unimplemented. The owner submitted `https://laughtable.com/sitemap.xml` to Google Search Console on 2026-09-09 (per owner report, not independently verified from this repo — no GSC access here); indexing/coverage/query data has not yet been checked and is too early to expect (same-day `site:laughtable.com` search still returned nothing, consistent with a fresh submission, not a problem). Keyword data remains pending. The production domain is `laughtable.com`. Starter words (including the two new premium categories) still need user playtesting; no claims of keyword volume or ranking difficulty have been verified. Five of the seven listed premium features (custom word packs, classroom/family mode, branded rooms, longer history, printable cards) are still unbuilt — the player cap and the two premium categories are live.
 
 ## Next work
 
-Keep local play available. Set the `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` Worker secrets, then do one real end-to-end payment as the owner to confirm the verify → unlock flow works before exposing the checkout button to real visitors (see README's "Premium checkout" section). After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all nine canonical URLs.
+Fix or retire the two stale E2E assertions above, then consider `docs/SECURITY-BACKLOG.md` item 2
+(the one-line `verifyEntitlement` guard) before setting the Worker secrets, since until they are set
+every premium-token join throws. Keep local play available. Set the `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` Worker secrets, then do one real end-to-end payment as the owner to confirm the verify → unlock flow works before exposing the checkout button to real visitors (see README's "Premium checkout" section). After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all nine canonical URLs.
 
 ## Local preview
 

@@ -6,8 +6,24 @@ test('three browsers complete a private online round', async ({ browser }) => {
   const names = ['Alex', 'Jamie', 'Taylor'];
   await pages[0].goto('/online/'); await pages[0].getByLabel('Your name').fill(names[0]); await pages[0].getByRole('button', { name: /Create a private room/i }).click();
   const code = (await pages[0].locator('.room-code strong').textContent())!;
+  // Record the room broadcasts the host's socket receives: the player list every player is sent,
+  // and the only place another player's id is legitimately visible.
+  await pages[0].evaluate(() => { const scope = window as Window & { __imposterSocket?: WebSocket; __rooms?: { players: { id: string; name: string }[] }[] }; scope.__rooms = []; scope.__imposterSocket?.addEventListener('message', event => { const message = JSON.parse((event as MessageEvent<string>).data) as { type: string; room?: { players: { id: string; name: string }[] } }; if (message.type === 'room' && message.room) scope.__rooms!.push(message.room); }); });
   for (let index = 1; index < pages.length; index += 1) { await pages[index].goto('/online/'); await pages[index].getByLabel('Your name').fill(names[index]); await pages[index].getByLabel('Room code').fill(code); await pages[index].getByRole('button', { name: /Join with code/i }).click(); }
   for (const page of pages) await expect(page.locator('.online-player')).toHaveCount(3);
+  // A player id is public by design (it is in every room broadcast). Holding one must not be
+  // enough to take that seat -- doing so would kick the real player off and hand over their role.
+  const victimId = await pages[0].evaluate(() => { const scope = window as Window & { __rooms?: { players: { id: string; name: string }[] }[] }; return scope.__rooms!.at(-1)!.players.find(player => player.name === 'Jamie')!.id; });
+  expect(victimId).toBeTruthy();
+  const hijack = await pages[0].evaluate(async ({ code, victimId }) => await new Promise<string>(resolve => {
+    const socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/rooms/${code}`);
+    socket.onopen = () => socket.send(JSON.stringify({ type: 'join', name: 'Jamie', playerId: victimId }));
+    socket.onmessage = event => { const message = JSON.parse((event as MessageEvent<string>).data) as { type: string; message?: string }; if (['error', 'role', 'seat'].includes(message.type)) { resolve(`${message.type}:${message.message ?? ''}`); socket.close(); } };
+    setTimeout(() => resolve('timeout'), 5_000);
+  }), { code, victimId });
+  expect(hijack).toMatch(/^error:.*belongs to another player/i);
+  await expect(pages[0].locator('.presence.connected')).toHaveCount(3); // the real Jamie was never dropped
+
   await pages[0].getByRole('button', { name: /Start the round/i }).click();
   for (const page of pages) await expect(page.locator('.online-role')).toBeVisible({ timeout: 15_000 });
   const roles = await Promise.all(pages.map(page => page.locator('.online-role').textContent())); expect(roles.filter(role => role?.includes('imposter'))).toHaveLength(1); expect(roles.filter(role => role?.includes('friend'))).toHaveLength(2); for (const [index, role] of roles.entries()) { if (index === roles.findIndex(value => value?.includes('imposter'))) expect(role).not.toContain('Secret word'); else expect(role).not.toContain('imposter'); } const imposterIndex = roles.findIndex(role => role?.includes('imposter')); const imposterName = names[imposterIndex];
@@ -17,6 +33,13 @@ test('three browsers complete a private online round', async ({ browser }) => {
   await expect(hijackPage.locator('.form-error')).toContainText(/already started/i);
   await expect(pages[1].locator('.presence.connected')).toHaveCount(3, { timeout: 5_000 }); // nobody got disconnected by the impersonation attempt
   await hijackContext.close();
+  // Only the player the cursor is on may speak. The UI already hides the clue box from everyone
+  // else, so this bypasses it and sends the action straight down the socket.
+  const offTurn = (await Promise.all(pages.map(async page => await page.getByPlaceholder('Your clue').isVisible().catch(() => false) ? null : page))).find(Boolean)!;
+  await offTurn.evaluate(() => (window as Window & { __imposterSocket?: WebSocket }).__imposterSocket?.send(JSON.stringify({ type: 'action', round: 1, action: { type: 'clue', text: 'stolen turn' } })));
+  await expect(offTurn.locator('.form-error')).toContainText(/not yours|not available/i);
+  for (const page of pages) await expect(page.locator('.clue-list p')).toHaveCount(0);
+
   for (let turn = 0; turn < names.length; turn += 1) { let acted = false; const deadline = Date.now() + 12_000; while (!acted && Date.now() < deadline) { for (const page of pages) { const input = page.getByPlaceholder('Your clue'); if (!await input.isVisible().catch(() => false)) continue; try { await input.fill(`clue ${turn + 1}`, { timeout: 1_000 }); await page.getByRole('button', { name: /Submit clue/i }).click({ timeout: 1_000 }); acted = true; break; } catch { /* another client advanced the room; try the current turn again */ } } } expect(acted).toBe(true); }
   await expect(pages[0].getByRole('button', { name: /Start voting/i })).toBeVisible(); await pages[0].getByRole('button', { name: /Start voting/i }).click();
   for (let turn = 0; turn < names.length; turn += 1) { let acted = false; const deadline = Date.now() + 15_000; while (!acted && Date.now() < deadline) { for (const page of pages) { const ballot = page.getByRole('button', { name: /Open my ballot/i }); if (!await ballot.isVisible().catch(() => false)) continue; try { await ballot.click({ timeout: 1_000 }); const target = turn === imposterIndex ? names[(turn + 1) % names.length] : imposterName; await page.getByRole('button', { name: target, exact: true }).click({ timeout: 1_000 }); acted = true; break; } catch { /* another room update replaced this ballot */ } } } expect(acted).toBe(true); }

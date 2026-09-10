@@ -35,6 +35,24 @@ export function createRound(settings: Settings, random: () => number, previousWo
   const normalized = { ...settings, names: settings.names.map(name => name.trim()) };
   return { names: normalized.names, settings: normalized, word: pool[pick(pool.length, random)], imposter: pick(settings.names.length, random), firstClue: pick(settings.names.length, random), phase: 'handoff', cursor: 0, votes: [], clues: [], accused: null, winner: null, reason: null };
 }
+// Who is allowed to take which action, given the round's own phase machine. Pass-and-play has one
+// device speaking for everyone, so only the online worker consults this — but it is a rule, not
+// transport: it answers the same "whose turn is it" question `transition` already encodes, and
+// keeping it here means it can be tested without a socket. Exhaustive by design: a new action type
+// fails to compile until its authorization is stated, rather than defaulting to "anyone may".
+export interface Actor { index: number; isHost: boolean; }
+export function actionIsAuthorized(round: Round, actor: Actor, action: Action): boolean {
+  switch (action.type) {
+    // Only the player the cursor is on may speak, vote, open their own ballot, or panic-hide their
+    // own private view. Without this, any player could submit clues and ballots in someone else's
+    // name -- `transition` attributes both to `round.cursor`, not to whoever sent the message.
+    case 'clue': case 'vote': case 'open-ballot': case 'privacy': return actor.index === round.cursor;
+    case 'start-vote': return actor.isHost;
+    case 'guess': case 'skip-guess': return actor.index === round.imposter;
+    // Handoff phases exist only for one shared device; online rounds start at 'discussion'.
+    case 'reveal': case 'hide': return false;
+  }
+}
 export function normalizeGuess(word: string) { return word.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 export function transition(round: Round, action: Action): Round {
   switch (action.type) {

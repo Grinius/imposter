@@ -9,6 +9,7 @@ const baseEnv: Env = {
   ASSETS: {} as Env['ASSETS'],
   ROOMS: {} as Env['ROOMS'],
   RATE_LIMITER: {} as Env['RATE_LIMITER'],
+  REDEMPTIONS: {} as Env['REDEMPTIONS'],
   STRIPE_SECRET_KEY: 'sk_test_fake',
   ENTITLEMENT_SECRET: 'a'.repeat(64),
 };

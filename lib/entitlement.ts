@@ -4,9 +4,11 @@
 // verified server-side (never trusted from the client alone) wherever it gates a feature.
 export interface EntitlementPayload { v: 1; paid: true; iat: number; exp: number; sessionId: string; }
 
-// A one-time purchase should stay unlocked on that device indefinitely; this is a ceiling
-// against a token drifting forever if something goes wrong, not a real subscription window.
-const DEFAULT_TTL_MS = 1000 * 60 * 60 * 24 * 365 * 20;
+// A one-time purchase should stay unlocked on that device for as long as the device keeps playing:
+// /api/premium/status renews a token silently once it is inside its last two years, so an active
+// buyer never sees this expire. The bound exists so a token that is copied elsewhere, or left in an
+// abandoned browser, eventually dies instead of being good more or less forever.
+const DEFAULT_TTL_MS = 1000 * 60 * 60 * 24 * 365 * 3;
 
 function hexToBytes(hex: string): Uint8Array {
   if (!/^[0-9a-fA-F]+$/.test(hex) || hex.length % 2 !== 0) throw new Error('ENTITLEMENT_SECRET must be a hex string (e.g. from `openssl rand -hex 32`).');

@@ -1,12 +1,13 @@
-import { createRound, transition, type Action, type Settings } from '../lib/game';
+import { actionIsAuthorized, createRound, transition, type Action, type Settings } from '../lib/game';
 import { signEntitlement, verifyEntitlement } from '../lib/entitlement';
 import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '../lib/limits';
-import { publicRoom, roomIdIsValid, type PrivateRole, type PublicRoom } from '../lib/online';
+import { publicRoom, roomIdIsValid, type PrivateRole, type PublicRoom, type RoomPlayer, type RoomState } from '../lib/online';
 
 export interface Env {
   ASSETS: Fetcher;
   ROOMS: DurableObjectNamespace;
   RATE_LIMITER: DurableObjectNamespace;
+  REDEMPTIONS: DurableObjectNamespace;
   STRIPE_SECRET_KEY: string;
   ENTITLEMENT_SECRET: string;
 }
@@ -41,19 +42,53 @@ export class RateLimiter {
   async alarm() { await this.state.storage.deleteAll(); }
 }
 
+// How many entitlement tokens one paid Stripe Checkout session may ever mint. High enough for a
+// buyer's own phone, laptop, and a cleared browser or two; low enough that a shared receipt link
+// cannot unlock premium for an audience. Without accounts there is no way to tell those apart, so
+// this bounds the damage rather than preventing sharing outright.
+const MINTS_PER_SESSION = 5;
+
+// Fails open for the same reason checkRateLimit does: a ledger outage must never stand between a
+// real buyer and the thing they already paid for.
+async function claimRedemption(env: Env, sessionId: string): Promise<boolean> {
+  try {
+    const stub = env.REDEMPTIONS.get(env.REDEMPTIONS.idFromName(sessionId));
+    const response = await stub.fetch(new Request('https://redemptions.internal/', { method: 'POST', body: JSON.stringify({ limit: MINTS_PER_SESSION }) }));
+    return ((await response.json()) as { allowed: boolean }).allowed;
+  } catch { return true; }
+}
+
+// One instance per Stripe Checkout session id, holding a permanent tally of the tokens that single
+// payment has minted. Deliberately has no alarm and no expiry: forgetting a redemption would hand
+// the quota back.
+export class RedemptionLedger {
+  private state: DurableObjectState;
+  constructor(state: DurableObjectState) { this.state = state; }
+  async fetch(request: Request): Promise<Response> {
+    const { limit } = await request.json() as { limit: number };
+    const used = (await this.state.storage.get<number>('mints')) ?? 0;
+    if (used >= limit) return Response.json({ allowed: false, used });
+    await this.state.storage.put({ mints: used + 1 });
+    return Response.json({ allowed: true, used: used + 1 });
+  }
+}
+
 type ClientMessage =
-  | { type: 'join'; name: string; playerId?: string; premiumToken?: string; create?: boolean }
+  | { type: 'join'; name: string; playerId?: string; seat?: string; premiumToken?: string; create?: boolean }
   | { type: 'start'; settings: Settings }
   | { type: 'action'; action: Action; round: number }
   | { type: 'ping' };
 
 type ServerMessage =
   | { type: 'room'; room: PublicRoom }
+  | { type: 'seat'; playerId: string; seat: string }
   | { type: 'role'; role: PrivateRole }
   | { type: 'error'; message: string }
   | { type: 'pong' };
 
 const ROOM_TTL_MS = 1000 * 60 * 60 * 12;
+// Renew a premium token once it is inside its final two years, i.e. after roughly a year of use.
+const RENEW_WITHIN_MS = 1000 * 60 * 60 * 24 * 365 * 2;
 
 function json(message: ServerMessage) { return JSON.stringify(message); }
 function randomId() { return crypto.randomUUID(); }
@@ -72,7 +107,7 @@ export class ImposterRoom {
   private state: DurableObjectState;
   private env: Env;
   private roomId = '';
-  private room: PublicRoom | null = null;
+  private room: RoomState | null = null;
   private roundState: ReturnType<typeof createRound> | null = null;
   private roles = new Map<string, PrivateRole>();
   // Only ever read within the same wake as the fetch() call that set it (room creation and the
@@ -109,7 +144,7 @@ export class ImposterRoom {
 
   private async load() {
     if (this.room) return;
-    this.room = await this.state.storage.get<PublicRoom>('room') ?? null;
+    this.room = await this.state.storage.get<RoomState>('room') ?? null;
     this.roundState = await this.state.storage.get<ReturnType<typeof createRound>>('round') ?? null;
     const storedRoles = await this.state.storage.get<[string, PrivateRole][]>('roles');
     this.roles = new Map(storedRoles ?? []);
@@ -130,7 +165,7 @@ export class ImposterRoom {
   private async join(socket: WebSocket, message: Extract<ClientMessage, { type: 'join' }>) {
     const name = message.name.trim();
     if (!name || name.length > 20) { this.send(socket, { type: 'error', message: 'Choose a name from 1–20 characters.' }); return; }
-    let player: PublicRoom['players'][number];
+    let player: RoomPlayer;
     if (!this.room) {
       // Durable Objects are created lazily on first access, so without this flag there is no way to
       // tell "this room doesn't exist yet" from "someone mistyped/guessed a code" — every random code
@@ -140,17 +175,21 @@ export class ImposterRoom {
       // Room creation is the one action here that actually spins up a persistent Durable Object, so
       // it is the meaningful thing to cap per IP — not the cheap /api/rooms code-mint that precedes it.
       if (!(await checkRateLimit(this.env, `create-room:${this.clientIp}`, 6, 15 * 60 * 1000))) { this.send(socket, { type: 'error', message: 'Too many rooms created recently. Please wait a few minutes and try again.' }); return; }
-      const id = message.playerId && /^[a-f0-9-]{36}$/.test(message.playerId) ? message.playerId : randomId();
       // The room-creating player's token (if any) decides this room's player cap for its whole
       // lifetime. Verified server-side against our own signing secret — never trusted as-is.
       const premium = message.premiumToken ? !!(await verifyEntitlement(this.env.ENTITLEMENT_SECRET, message.premiumToken)) : false;
-      player = { id, name, connected: true, isHost: true };
-      this.room = { roomId: this.roomId, hostId: id, status: 'lobby', players: [player], round: 0, premium };
+      // Both halves of a seat are minted here, never accepted from the client: a client-chosen id
+      // could deliberately collide with a seat it wants, and a client-chosen secret would be no
+      // secret at all.
+      player = { id: randomId(), secret: randomId(), name, connected: true, isHost: true };
+      this.room = { roomId: this.roomId, hostId: player.id, status: 'lobby', players: [player], round: 0, premium };
     } else {
-      // Only a matching playerId re-attaches an existing seat. A name match alone must never grant
-      // someone else's seat: names are public, so trusting them would let anyone hijack another
-      // connected player's identity (and disconnect them) just by joining with the same name.
+      // Re-attaching to an existing seat takes that seat's secret, which only ever went to the one
+      // socket that owns it. Neither a name nor a player id is enough: both are public — every
+      // player id is in every room broadcast — so accepting either would let any player in the room
+      // re-join as someone else, kick them off their socket, and be handed their private role.
       const existing = message.playerId ? this.room.players.find(candidate => candidate.id === message.playerId) : undefined;
+      if (existing && (!message.seat || existing.secret !== message.seat)) { this.send(socket, { type: 'error', message: 'That seat belongs to another player. Join with a new name instead.' }); return; }
       const cap = this.room.premium ? premiumPlayerLimit : freePlayerLimit;
       if (this.room.status !== 'lobby' && !existing) { this.send(socket, { type: 'error', message: 'This round has already started.' }); return; }
       if (this.room.players.length >= cap && !existing) { this.send(socket, { type: 'error', message: this.room.premium ? `This room is full (${cap} players).` : `This free room is full. Premium will unlock up to ${premiumPlayerLimit} players.` }); return; }
@@ -160,11 +199,14 @@ export class ImposterRoom {
         existing.name = name; existing.connected = true;
         player = existing;
       } else {
-        player = { id: randomId(), name, connected: true, isHost: false };
+        player = { id: randomId(), secret: randomId(), name, connected: true, isHost: false };
         this.room.players.push(player);
       }
     }
     socket.serializeAttachment({ playerId: player.id } satisfies SocketAttachment);
+    // The seat credential goes to this one socket and nowhere else — never into a broadcast, and
+    // never into publicRoom(), which is why it lives outside PublicRoom's player shape entirely.
+    this.send(socket, { type: 'seat', playerId: player.id, seat: player.secret });
     await this.persist();
     this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
     // Reconnecting mid-round must not lose the player's private role/word: start() only pushes
@@ -189,8 +231,9 @@ export class ImposterRoom {
     if (!this.room.players.some(player => player.id === playerId && player.connected)) { this.send(socket, { type: 'error', message: 'You are not an active player in this room.' }); return; }
     const playerIndex = this.room.players.findIndex(player => player.id === playerId);
     const action = message.action.type === 'guess' ? { ...message.action, word: message.action.word.slice(0, 60) } : message.action;
-    const allowed = action.type === 'start-vote' || action.type === 'skip-guess' || action.type === 'guess' || action.type === 'privacy' || action.type === 'open-ballot' || action.type === 'clue' || action.type === 'vote';
-    if (!allowed || (action.type === 'guess' && playerIndex !== this.roundState.imposter)) {
+    // `transition` attributes a clue or a ballot to `round.cursor`, not to whoever sent it, so
+    // without this check any player could speak and vote in every other player's name.
+    if (!actionIsAuthorized(this.roundState, { index: playerIndex, isHost: this.room.hostId === playerId }, action)) {
       this.send(socket, { type: 'error', message: 'That action is not yours or is not available yet.' }); return;
     }
     const before = JSON.stringify(this.roundState);
@@ -229,6 +272,14 @@ export default { async fetch(request: Request, env: Env) {
   const url = new URL(request.url);
   const match = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{6})$/);
   if (match && request.method === 'GET') {
+    // WebSockets are exempt from the same-origin policy, so without this any third-party page could
+    // open sockets into rooms from a visitor's browser. A missing Origin (curl, tests, native
+    // clients) is allowed; a foreign one is not.
+    const origin = request.headers.get('Origin');
+    if (origin && origin !== url.origin) return new Response('Forbidden', { status: 403 });
+    // Probing room codes is otherwise free and unmetered, and every attempt instantiates a Durable
+    // Object. 32^6 codes only stay out of reach while guesses cost the guesser something.
+    if (!(await checkRateLimit(env, `join-room:${clientIp(request)}`, 30, 5 * 60 * 1000))) return Response.json({ error: 'Too many room connections. Please wait a few minutes and try again.' }, { status: 429 });
     const roomId = match[1]; const id = env.ROOMS.idFromName(roomId); const room = env.ROOMS.get(id);
     // Forward the real client IP so the room's own rate limiting (room creation) has something
     // trustworthy to key on — a fresh internal Request carries none of the original headers otherwise.
@@ -262,6 +313,8 @@ export async function verifyPremiumCheckout(request: Request, env: Env): Promise
   if (!stripeResponse.ok) return Response.json({ error: 'Could not look up that checkout session with Stripe.' }, { status: 502 });
   const session = await stripeResponse.json() as { payment_status?: string; status?: string };
   if (session.status !== 'complete' || session.payment_status !== 'paid') return Response.json({ error: 'That checkout has not been completed and paid yet.' }, { status: 402 });
+  // Only charged once payment is confirmed, so failed or unpaid attempts never burn a buyer's quota.
+  if (!(await claimRedemption(env, sessionId))) return Response.json({ error: `This payment has already unlocked premium on ${MINTS_PER_SESSION} devices. Get in touch if you need it moved to another one.` }, { status: 409 });
   const { token, expiresAt } = await signEntitlement(env.ENTITLEMENT_SECRET, sessionId);
   return Response.json({ token, expiresAt }, { headers: { 'Cache-Control': 'no-store' } });
 }
@@ -272,5 +325,10 @@ export async function premiumStatus(url: URL, env: Env): Promise<Response> {
   const token = url.searchParams.get('token') ?? '';
   if (!env.ENTITLEMENT_SECRET || !token) return Response.json({ premium: false }, { headers: { 'Cache-Control': 'no-store' } });
   const payload = await verifyEntitlement(env.ENTITLEMENT_SECRET, token);
-  return Response.json({ premium: !!payload }, { headers: { 'Cache-Control': 'no-store' } });
+  if (!payload) return Response.json({ premium: false }, { headers: { 'Cache-Control': 'no-store' } });
+  // Tokens now carry a bounded life instead of an effectively permanent one, so a copied or
+  // abandoned token eventually dies. A device that keeps playing renews silently well before then,
+  // so a real buyer never has to go back through checkout — see docs/DECISIONS.md.
+  const renewed = payload.exp - Date.now() < RENEW_WITHIN_MS ? (await signEntitlement(env.ENTITLEMENT_SECRET, payload.sessionId)).token : undefined;
+  return Response.json({ premium: true, ...(renewed ? { token: renewed } : {}) }, { headers: { 'Cache-Control': 'no-store' } });
 }
