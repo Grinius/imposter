@@ -18,6 +18,9 @@ export default function UpgradeCard({ feature, compact = false, unlocked = false
 
   return <aside className={`upgrade-card ${compact ? 'compact' : ''} ${unlocked ? 'unlocked' : ''}`} aria-label={`${title} is a ${unlocked ? 'premium feature you’ve unlocked' : 'premium feature'}`}>
     <span className="upgrade-badge">{unlocked ? <><Check size={13} /> Unlocked</> : <><LockKeyhole size={13} /> Premium</>}</span>
+    {/* Shown pre-purchase too, not just after: a buyer deciding whether to pay should see which of
+        these are actually built today, not just that all seven look equally "ready to unlock." */}
+    {!unlocked && <span className={`feature-status ${available ? 'status-live' : 'status-soon'}`}>{available ? 'Available now' : 'Coming soon'}</span>}
     <h2>{title}</h2>
     <p>{summary}</p>
     {unlocked ? <span className="upgrade-note">{active ? 'Thanks for going premium — this one\'s active.' : 'Thanks for going premium — this one\'s still on the way.'}</span>
