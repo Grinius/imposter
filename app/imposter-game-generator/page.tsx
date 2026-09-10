@@ -52,6 +52,6 @@ export default function ImposterGameGeneratorPage() {
         <div><Link className="gold-button" href="/">Play on one phone <ArrowRight size={17} /></Link><Link className="outline-button" href="/imposter-game-words/">Browse words <ArrowRight size={16} /></Link><Link className="outline-button" href="/online/">Create online room <ArrowRight size={16} /></Link></div>
       </section>
     </main>
-    <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> imposter.</span><span>Free imposter word game generator.</span><span>Private cards. Better bluffs.</span></footer>
+    <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> imposter.</span><span>Free imposter word game generator.</span><span>Private cards. Better bluffs.</span><Link href="/privacy/">Privacy</Link></footer>
   </div>;
 }

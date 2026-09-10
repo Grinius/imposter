@@ -28,6 +28,7 @@ export default function PremiumPage() {
           <Link className="outline-button" href="/">Keep playing free <ArrowRight size={16} /></Link>
         </div>
         {!premium && checked && <p className="upgrade-note">Already paid on this device? Entitlement is checked automatically — if it&rsquo;s not showing, try the confirmation link from your Stripe receipt again.</p>}
+        <p className="upgrade-note">Payment is handled entirely by Stripe — we never see your card details. See our <Link href="/privacy/">privacy policy</Link> for what we do collect.</p>
       </section>
       <section className="premium-grid" aria-labelledby="premium-features-title">
         <h2 id="premium-features-title">Premium features {premium ? 'unlocked on this device' : 'waiting behind payment'}</h2>
