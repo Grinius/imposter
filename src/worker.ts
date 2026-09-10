@@ -11,7 +11,7 @@ export interface Env {
 }
 
 type ClientMessage =
-  | { type: 'join'; name: string; playerId?: string; premiumToken?: string }
+  | { type: 'join'; name: string; playerId?: string; premiumToken?: string; create?: boolean }
   | { type: 'start'; settings: Settings }
   | { type: 'action'; action: Action; round: number }
   | { type: 'ping' };
@@ -88,6 +88,11 @@ export class ImposterRoom {
     if (!name || name.length > 20) { this.send(socket, { type: 'error', message: 'Choose a name from 1–20 characters.' }); return; }
     let player: PublicRoom['players'][number];
     if (!this.room) {
+      // Durable Objects are created lazily on first access, so without this flag there is no way to
+      // tell "this room doesn't exist yet" from "someone mistyped/guessed a code" — every random code
+      // would silently spin up a fresh, empty room instead of a clear "room not found."  Only the
+      // official create-room flow (which already generated this code itself) sets `create`.
+      if (!message.create) { this.send(socket, { type: 'error', message: 'That room code doesn’t exist. Double-check it with whoever sent it.' }); return; }
       const id = message.playerId && /^[a-f0-9-]{36}$/.test(message.playerId) ? message.playerId : randomId();
       // The room-creating player's token (if any) decides this room's player cap for its whole
       // lifetime. Verified server-side against our own signing secret — never trusted as-is.

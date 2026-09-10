@@ -33,7 +33,7 @@ function makeSocket() {
 
 // join/start/action are private; TS privacy is compile-time only, and testing them directly here
 // is more honest than duplicating this logic behind a public wrapper just for tests.
-type Room = { join: (socket: WebSocket, message: { type: 'join'; name: string; playerId?: string; premiumToken?: string }) => Promise<void>; room: PublicRoom | null };
+type Room = { join: (socket: WebSocket, message: { type: 'join'; name: string; playerId?: string; premiumToken?: string; create?: boolean }) => Promise<void>; room: PublicRoom | null };
 
 describe('ImposterRoom premium player cap', () => {
   it('marks a room premium only when the creating join carries a token that verifies, and raises the cap', async () => {
@@ -41,7 +41,7 @@ describe('ImposterRoom premium player cap', () => {
     const { token } = await signEntitlement(env.ENTITLEMENT_SECRET, 'cs_test_abc123');
     const room = new ImposterRoom(makeState(), env) as unknown as Room;
 
-    await room.join(makeSocket().socket, { type: 'join', name: 'Host', premiumToken: token });
+    await room.join(makeSocket().socket, { type: 'join', name: 'Host', premiumToken: token, create: true });
     expect(room.room?.premium).toBe(true);
 
     for (let i = 0; i < 8; i += 1) await room.join(makeSocket().socket, { type: 'join', name: `Player${i}` });
@@ -54,7 +54,7 @@ describe('ImposterRoom premium player cap', () => {
     const env = makeEnv();
     const room = new ImposterRoom(makeState(), env) as unknown as Room;
 
-    await room.join(makeSocket().socket, { type: 'join', name: 'Host', premiumToken: 'not-a-real-token' });
+    await room.join(makeSocket().socket, { type: 'join', name: 'Host', premiumToken: 'not-a-real-token', create: true });
     expect(room.room?.premium).toBe(false);
 
     const outcomes: unknown[] = [];
@@ -70,7 +70,31 @@ describe('ImposterRoom premium player cap', () => {
     const { token } = await signEntitlement('b'.repeat(64), 'cs_test_abc123'); // different secret than the room's env
     const room = new ImposterRoom(makeState(), env) as unknown as Room;
 
-    await room.join(makeSocket().socket, { type: 'join', name: 'Host', premiumToken: token });
+    await room.join(makeSocket().socket, { type: 'join', name: 'Host', premiumToken: token, create: true });
     expect(room.room?.premium).toBe(false);
+  });
+});
+
+describe('ImposterRoom room-not-found protection', () => {
+  it('refuses to spin up a brand-new room for a code nobody officially created (a mistyped/guessed code)', async () => {
+    const room = new ImposterRoom(makeState(), makeEnv()) as unknown as Room;
+    const { socket, received } = makeSocket();
+
+    await room.join(socket, { type: 'join', name: 'Alex' }); // no create flag -- this is a "join with code" attempt
+    expect(room.room).toBeNull();
+    const last = received.at(-1) as { type: string; message: string };
+    expect(last.type).toBe('error');
+    expect(last.message).toMatch(/room code/i);
+  });
+
+  it('lets the official create flow spin up a room, and later plain joins into it succeed normally', async () => {
+    const room = new ImposterRoom(makeState(), makeEnv()) as unknown as Room;
+    await room.join(makeSocket().socket, { type: 'join', name: 'Host', create: true });
+    expect(room.room?.players).toHaveLength(1);
+
+    const { socket, received } = makeSocket();
+    await room.join(socket, { type: 'join', name: 'Jamie' }); // no create needed -- the room already exists
+    expect(room.room?.players).toHaveLength(2);
+    expect(received.some(message => (message as { type?: string }).type === 'error')).toBe(false);
   });
 });
