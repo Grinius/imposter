@@ -10,6 +10,7 @@ const publicRoutes = [
   '/imposter-game-online/',
   '/imposter-game-strategy/',
   '/premium/',
+  '/privacy/',
 ] as const;
 
 test('seo support pages expose crawlable content and links', async ({ page }) => {
@@ -48,7 +49,11 @@ test('seo support pages expose crawlable content and links', async ({ page }) =>
   await expect(page.getByRole('heading', { name: 'Imposter premium' })).toBeVisible();
   await expect(page.getByText('Premium word packs')).toBeVisible();
   await expect(page.getByText('Custom word packs')).toBeVisible();
-  await expect(page.getByText('Stripe link pending')).toBeVisible();
+  // Which checkout affordance renders depends on whether NEXT_PUBLIC_STRIPE_PAYMENT_LINK was baked
+  // into this build, so assert that the page offers one either way rather than pinning the build's
+  // Stripe configuration — a real link once it's set, "Stripe link pending" before that.
+  await expect(page.getByRole('link', { name: /Unlock with Stripe/i })
+    .or(page.getByText('Stripe link pending')).first()).toBeVisible();
 });
 
 test('sitemap includes every canonical public route', async ({ page }) => {

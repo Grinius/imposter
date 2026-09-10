@@ -56,7 +56,7 @@ transferability of an accountless entitlement remain open (`docs/SECURITY-BACKLO
   rather than 500, and `/api/premium/status` rejecting the old `?token=` form while accepting a POST
   body. A full three-client online round also passes under the CSP, confirming the same-origin
   WebSocket and the room API are not blocked by `connect-src`.
-- Two E2E specs fail against the current code and are stale rather than regressions: `generator.spec.ts` still expects "Add player" to be disabled at 5/5, which the premium conversion UX deliberately changed, and `seo-pages.spec.ts` still expects "Stripe link pending" on `/premium/`, which no longer renders now that `.env.local` carries a real Payment Link. Neither is caused by the hardening pass; both need the assertions updated to the intended behaviour.
+- The full Playwright suite passes, 7/7. The two previously stale specs are fixed: `generator.spec.ts` now asserts "Add player" is *enabled* at the free cap and walks the intended conversion path (overshoot to 6 players → "This setup needs Premium" naming the reason → "Use free setup instead" → back to 5 and generate), and it asserts the premium-only upgrade cards are absent for an unpaid visitor. `seo-pages.spec.ts` no longer pins the build's Stripe configuration: it accepts either the real "Unlock with Stripe" link or the "Stripe link pending" placeholder, so it passes with or without `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` baked in. Its sitemap route list also gained the missing `/privacy/`, so all ten canonical routes are now covered.
 - Browser: checked the turn-gated online panels at 1280 and 390 px across three separate browser contexts — the player on the cursor sees the clue box or ballot, everyone else sees a waiting note, and the vote grid excludes the voter. No horizontal overflow at either size.
 - Cloudflare Wrangler deployment dry run passes: 94 asset files, no runtime bindings. This did not publish anything.
 - Browser: completed a four-player round with all private cards, timer start/pause, private ballots, caught imposter, correct final guess, matching vote totals, and replay to a different word.
@@ -99,7 +99,7 @@ Authentication, analytics, ads, and real-time 3D remain unimplemented. The owner
 
 ## Next work
 
-Fix or retire the two stale E2E assertions above. Keep local play available. Set the `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` Worker secrets, then do one real end-to-end payment as the owner to confirm the verify → unlock flow works before exposing the checkout button to real visitors (see README's "Premium checkout" section). After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all ten canonical URLs (`lib/seo.ts` has listed ten since `/privacy/` was added; the live sitemap was verified to carry all ten).
+Deploy: `main` now carries the security fixes (seat hijacking, turn authorization) and production is still serving pre-fix code. Keep local play available. Set the `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` Worker secrets, then do one real end-to-end payment as the owner to confirm the verify → unlock flow works before exposing the checkout button to real visitors (see README's "Premium checkout" section). After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all ten canonical URLs (`lib/seo.ts` has listed ten since `/privacy/` was added; the live sitemap was verified to carry all ten).
 
 ## Local preview
 
