@@ -85,13 +85,21 @@ More players and premium categories are selectable up front, not blocked — add
 
 Two new premium-only word categories exist with real content (`lib/words.ts`): Date night and Holidays & celebrations, 24 words each, same format/quality bar as the existing free packs. These are a first draft — worth the owner's sanity check before wide exposure, same playtesting caveat as the original five packs.
 
+## Premium prompts off the acquisition path (adopted)
+
+The standing `UpgradeCard`s in `components/game.tsx` and `components/generator/imposter-generator.tsx` now render only for a viewer who is already premium (`{premium && …}`). Rationale is in `docs/DECISIONS.md`: the category/player-slot premium tags plus `PremiumPaywallNotice` at start-or-generate time already do the selling, at a better moment, and the `premium-packs` card could never convert anyone because those packs are unbuilt and the card therefore carries no checkout button. On `/imposter-game-generator/` the two cards were also pushing the how-it-works content and word categories — the content that has to earn that page's ranking — below two ad blocks.
+
+Prompted by a visual review of the live site at 1280 and 390 px in the context of submitting to party-game directories, which list "free browser party games": the free tier genuinely qualifies (full game, three free categories, five players, online rooms, no signup), but five of eight categories carrying lock badges plus a Stripe card above the fold read as more paywalled than the product is.
+
+Validation: 73 Vitest tests, TypeScript, ESLint (2 pre-existing warnings, unrelated), and the static build all pass. In the browser against `npm run dev`, both pages render without the cards, the premium tags remain on the category grid, and the paywall still fires correctly — selecting Date night and pressing "Generate roles" produces the inline "This setup needs premium" notice naming the reason, with "Unlock with Stripe" and "Use free setup instead". Not verified: the already-premium rendering path (needs a verified entitlement token in the browser), and the homepage paywall was not re-clicked separately — it is the same component and the same edit as the generator's, which was verified.
+
 ## Not implemented
 
 Authentication, analytics, ads, and real-time 3D remain unimplemented. The owner submitted `https://laughtable.com/sitemap.xml` to Google Search Console on 2026-09-09 (per owner report, not independently verified from this repo — no GSC access here); indexing/coverage/query data has not yet been checked and is too early to expect (same-day `site:laughtable.com` search still returned nothing, consistent with a fresh submission, not a problem). Keyword data remains pending. The production domain is `laughtable.com`. Starter words (including the two new premium categories) still need user playtesting; no claims of keyword volume or ranking difficulty have been verified. Five of the seven listed premium features (custom word packs, classroom/family mode, branded rooms, longer history, printable cards) are still unbuilt — the player cap and the two premium categories are live.
 
 ## Next work
 
-Fix or retire the two stale E2E assertions above. Keep local play available. Set the `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` Worker secrets, then do one real end-to-end payment as the owner to confirm the verify → unlock flow works before exposing the checkout button to real visitors (see README's "Premium checkout" section). After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all nine canonical URLs.
+Fix or retire the two stale E2E assertions above. Keep local play available. Set the `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` Worker secrets, then do one real end-to-end payment as the owner to confirm the verify → unlock flow works before exposing the checkout button to real visitors (see README's "Premium checkout" section). After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all ten canonical URLs (`lib/seo.ts` has listed ten since `/privacy/` was added; the live sitemap was verified to carry all ten).
 
 ## Local preview
 

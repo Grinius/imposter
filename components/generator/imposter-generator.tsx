@@ -94,7 +94,14 @@ export default function ImposterGenerator() {
         </div>
         {error && <p role="alert" className="form-error">{error}</p>}
         {paywallReasons && <PremiumPaywallNotice reasons={paywallReasons} onUseFree={useFreeSetup} />}
-        <button className="start-button generator-start" type="button" onClick={generate}><span><Fingerprint size={20} /> Generate roles</span><ArrowRight size={18} /></button><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'more-players')} compact unlocked={premium} available /><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'premium-packs')} compact unlocked={premium} />
+        <button className="start-button generator-start" type="button" onClick={generate}><span><Fingerprint size={20} /> Generate roles</span><ArrowRight size={18} /></button>
+        {/* Premium-only, same reasoning as the pass-and-play setup: the tags above plus the paywall
+            at generate time do the selling. The "premium packs" card in particular could never
+            convert a visitor — those packs aren't built, so it carries no checkout button at all —
+            and this is the page that has to earn the "imposter game generator" ranking, so it was
+            pushing the real explanatory content below two ad blocks. A paid viewer still sees both,
+            since "what have I got, and what's still coming" is genuinely useful to them. */}
+        {premium && <><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'more-players')} compact unlocked available /><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'premium-packs')} compact unlocked /></>}
       </div>
     </div>
     <div className="generator-output" aria-live="polite">

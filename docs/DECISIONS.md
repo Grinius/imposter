@@ -131,3 +131,30 @@ loses only zeroes.
 the review itself: the Worker's `env.ASSETS` fallthrough threw on every unmatched URL because the
 assets block declared no `binding`, so missing pages answered 500 instead of serving the 404 page.
 Crawlers would have seen 500s for every probe of a URL that does not exist.
+
+## Premium prompts moved off the acquisition path (2026-09-10)
+
+**The always-on upgrade cards no longer render for visitors who have not paid.** `components/game.tsx`
+and `components/generator/imposter-generator.tsx` wrapped their `UpgradeCard`s in `{premium && …}`.
+A paid viewer still sees them, because "what have I got and what is still coming" is real information
+to that person; a first-time visitor does not.
+
+Two things were doing the same job in the same column. The premium tags on the category grid and the
+player rows create the desire, and `PremiumPaywallNotice` asks for the money at the moment the player
+presses start or generate — after they have named six friends or picked Date night, with the reason
+spelled out. That prompt is better timed than a card sitting above the fold before anyone has played
+a round. The cards were the redundant half.
+
+The `premium-packs` card was the clearer cut: those packs are not built, so `UpgradeCard` renders it
+with no checkout button at all. It could not convert anyone by construction, and it sat on the page
+that has to earn the "imposter game generator" ranking, pushing the explanatory content and the word
+categories below two ad blocks.
+
+The reasoning behind this is a bet, not a measurement. There is no conversion rate to protect yet —
+the Stripe round trip has never run with real money and the site has no organic traffic — so the cost
+of being wrong is currently near zero and the change is a one-line revert. Revisit it with real
+numbers once payments are live-verified and traffic exists; putting the cards back and watching what
+happens is the experiment, and it needs traffic to mean anything.
+
+The category tags, the player-slot tags, the `/premium/` link in the setup links, and every
+server-side premium rule are untouched.

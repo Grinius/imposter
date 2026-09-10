@@ -152,7 +152,12 @@ export default function Game() {
             {error && <p role="alert" className="form-error">{error}</p>}
             {paywallReasons && <PremiumPaywallNotice reasons={paywallReasons} onUseFree={useFreeSetup} />}
             <button className="start-button" type="submit"><span><Fingerprint size={21} /> Let the bluffing begin</span><ArrowRight size={20} /></button>
-            <div className="setup-links"><a className="online-link" href="/online/"><Wifi size={16} /> Play online with friends <ArrowRight size={15} /></a><a className="online-link" href="/imposter-game-generator/"><Shuffle size={16} /> Open game generator <ArrowRight size={15} /></a><a className="online-link" href="/premium/"><Gem size={16} /> Premium packs <ArrowRight size={15} /></a><a className="online-link" href="/imposter-game-rules/"><CircleHelp size={16} /> Read rules <ArrowRight size={15} /></a></div><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'more-players')} compact unlocked={premium} available />
+            <div className="setup-links"><a className="online-link" href="/online/"><Wifi size={16} /> Play online with friends <ArrowRight size={15} /></a><a className="online-link" href="/imposter-game-generator/"><Shuffle size={16} /> Open game generator <ArrowRight size={15} /></a><a className="online-link" href="/premium/"><Gem size={16} /> Premium packs <ArrowRight size={15} /></a><a className="online-link" href="/imposter-game-rules/"><CircleHelp size={16} /> Read rules <ArrowRight size={15} /></a></div>
+            {/* Shown only to someone who already paid, as confirmation of what they hold. A first-time
+                visitor doesn't need a sales card here: the premium tags on the grid above create the
+                intent, and `PremiumPaywallNotice` asks for the money at the moment they press start —
+                a better-timed prompt than an ad sitting above the fold before they've played a round. */}
+            {premium && <UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'more-players')} compact unlocked available />}
             <div className="setup-footnote"><LockKeyhole size={12} /> Secret roles. Real friends. Absolutely no accounts.</div>
           </form>
         </section>
