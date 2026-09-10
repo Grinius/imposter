@@ -8,6 +8,7 @@ export type PublicRoom = {
   status: 'lobby' | 'playing' | 'finished';
   players: OnlinePlayer[];
   round: number;
+  premium: boolean;
   game?: PublicGame;
 };
 
@@ -44,6 +45,7 @@ export function publicRoom(room: PublicRoom, game?: import('./game').Round | nul
     hostId: room.hostId,
     status: room.status,
     round: room.round,
+    premium: room.premium,
     players: room.players.map(({ id, name, connected, isHost }) => ({ id, name, connected, isHost })),
     ...(game ? { game: { phase: game.phase, cursor: game.cursor, cursorPlayerId: room.players[game.cursor]?.id ?? '', firstClue: game.firstClue, clues: game.clues, votesSubmitted: game.votes.length, playerCount: game.names.length, accused: game.accused, winner: game.winner, reason: game.reason } } : {}),
   };

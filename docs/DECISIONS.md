@@ -45,3 +45,9 @@ Expose premium features as locked upgrade surfaces until Stripe is connected. Do
 ## 2026-09-09 — Free player cap for premium positioning (adopted)
 
 Set the free player limit to 5 for pass-and-play, the role-card generator, and online rooms. Keep the premium target at 20 players, but do not unlock it until Stripe payment is connected and entitlement is verified server-side.
+
+## 2026-09-09 — Stripe entitlement architecture (adopted)
+
+Live Stripe (not test mode), one-time payment via a Shareable Payment Link, product category "Software as a service (SaaS) – personal use." No account system exists, so entitlement is device-bound: the buyer returns from Checkout to `/premium/success/?session_id={CHECKOUT_SESSION_ID}`, the Worker's `POST /api/premium/verify` confirms payment directly against the Stripe API and mints a signed (HMAC-SHA256, `lib/entitlement.ts`) token stored in that browser's `localStorage`; `GET /api/premium/status` re-verifies it wherever a page needs to know if the current browser is premium. Only `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` (Worker secrets, never client-visible) can produce a valid token — nothing trusts a client-reported premium claim on its own. This intentionally does not survive a cleared browser or a new device; revisit if/when an account system exists (e.g. for room history, which needs one anyway).
+
+Only the player cap (`freePlayerLimit` → `premiumPlayerLimit`) is actually gated on this so far, since it is the only premium feature with real mechanics already built. The other six listed premium features remain unbuilt and say so honestly in the UI once a viewer is verified premium, rather than implying they are delivered. Deployment of the frontend build with the live Payment Link baked in is intentionally deferred until the owner sets both Worker secrets and completes one real end-to-end payment themselves.

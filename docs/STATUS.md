@@ -36,16 +36,18 @@ The online round now synchronizes clue submissions, private ballot handoffs, dis
 
 ## Not implemented
 
-Authentication, analytics, ads, Stripe payment verification, real-time 3D, and Google Search Console submission remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified.
+Authentication, analytics, ads, real-time 3D, and Google Search Console submission remain unimplemented. Keyword data remains pending. The production domain is `laughtable.com`. Starter words still need user playtesting; no claims of keyword volume or ranking difficulty have been verified. Six of the seven listed premium features (custom word packs, classroom/family mode, branded rooms, longer history, premium word packs, printable cards) are still unbuilt — only the bigger player cap is live.
 
 ## Next work
 
-Keep local play available. Connect Stripe Checkout with server-side entitlement verification before unlocking premium features. After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all nine canonical URLs.
+Keep local play available. Set the `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET` Worker secrets, then do one real end-to-end payment as the owner to confirm the verify → unlock flow works before exposing the checkout button to real visitors (see README's "Premium checkout" section). After deployment, verify `https://laughtable.com/premium/` and confirm `https://laughtable.com/sitemap.xml` lists all nine canonical URLs.
 
 ## Local preview
 
 `npm run dev` serves http://localhost:3000. See README for reproducible install, check, build, and Cloudflare preview commands.
 
-## Premium foundation
+## Premium payment (implemented, not yet live-verified)
 
-A locked premium surface is implemented at `/premium/` and in the local generator, pass-and-play setup, and online room lobby. The prepared premium feature set includes premium word packs, custom word packs, classroom/family mode, branded private rooms, longer room history, more players, and printable cards/PDF party packs. Access remains locked until Stripe payment is connected and verified. The optional `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` environment variable only supplies the outbound checkout link; it does not prove entitlement.
+Stripe Checkout is wired end to end: `/premium/`, the local generator, pass-and-play setup, and the online room lobby show a real "Unlock with Stripe" link once `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` is baked into a build. The buyer returns to `/premium/success/?session_id=…`, which calls the Worker's `POST /api/premium/verify` — this checks the session directly against the Stripe API (never trusting the session id alone) and, only if paid, mints a signed entitlement token stored in that browser's `localStorage`. `GET /api/premium/status` re-verifies that token's signature and expiry wherever a page needs to know if the current browser is premium. The Worker never sees or needs the actual Stripe secret key or signing secret from a client.
+
+The only feature actually gated on this so far is the player cap (`freePlayerLimit` → `premiumPlayerLimit`, `lib/limits.ts`) in local pass-and-play, the generator, and online rooms (fixed per-room at creation by whether the host presented a valid token). Verified locally with `wrangler dev`: token sign/verify round-trips (Vitest, `tests/entitlement.test.ts`), the Worker's `/api/premium/verify` and `/api/premium/status` error paths (missing/malformed session id, invalid JSON, Stripe auth failure), and a live WebSocket smoke test confirming a room created with a valid token accepts more than 5 players while a room without one is capped at 5. Not yet verified: an actual real-money Stripe Checkout round trip end to end — that still needs the owner to set the two Worker secrets and complete one real payment before this goes live to visitors.

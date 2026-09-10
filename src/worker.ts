@@ -1,14 +1,17 @@
 import { createRound, transition, type Action, type Settings } from '../lib/game';
-import { freePlayerLimit, minPlayerLimit } from '../lib/limits';
+import { signEntitlement, verifyEntitlement } from '../lib/entitlement';
+import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '../lib/limits';
 import { publicRoom, roomIdIsValid, type PrivateRole, type PublicRoom } from '../lib/online';
 
 export interface Env {
   ASSETS: Fetcher;
   ROOMS: DurableObjectNamespace;
+  STRIPE_SECRET_KEY: string;
+  ENTITLEMENT_SECRET: string;
 }
 
 type ClientMessage =
-  | { type: 'join'; name: string; playerId?: string }
+  | { type: 'join'; name: string; playerId?: string; premiumToken?: string }
   | { type: 'start'; settings: Settings }
   | { type: 'action'; action: Action; round: number }
   | { type: 'ping' };
@@ -28,13 +31,14 @@ function random() { return crypto.getRandomValues(new Uint32Array(1))[0] / 42949
 
 export class ImposterRoom {
   private state: DurableObjectState;
+  private env: Env;
   private sockets = new Map<WebSocket, string>();
   private roomId = '';
   private room: PublicRoom | null = null;
   private roundState: ReturnType<typeof createRound> | null = null;
   private roles = new Map<string, PrivateRole>();
 
-  constructor(state: DurableObjectState) { this.state = state; }
+  constructor(state: DurableObjectState, env: Env) { this.state = state; this.env = env; }
 
   async alarm() {
     await this.load();
@@ -85,15 +89,19 @@ export class ImposterRoom {
     let player: PublicRoom['players'][number];
     if (!this.room) {
       const id = message.playerId && /^[a-f0-9-]{36}$/.test(message.playerId) ? message.playerId : randomId();
+      // The room-creating player's token (if any) decides this room's player cap for its whole
+      // lifetime. Verified server-side against our own signing secret — never trusted as-is.
+      const premium = message.premiumToken ? !!(await verifyEntitlement(this.env.ENTITLEMENT_SECRET, message.premiumToken)) : false;
       player = { id, name, connected: true, isHost: true };
-      this.room = { roomId: this.roomId, hostId: id, status: 'lobby', players: [player], round: 0 };
+      this.room = { roomId: this.roomId, hostId: id, status: 'lobby', players: [player], round: 0, premium };
     } else {
       // Only a matching playerId re-attaches an existing seat. A name match alone must never grant
       // someone else's seat: names are public, so trusting them would let anyone hijack another
       // connected player's identity (and disconnect them) just by joining with the same name.
       const existing = message.playerId ? this.room.players.find(candidate => candidate.id === message.playerId) : undefined;
+      const cap = this.room.premium ? premiumPlayerLimit : freePlayerLimit;
       if (this.room.status !== 'lobby' && !existing) { this.send(socket, { type: 'error', message: 'This round has already started.' }); return; }
-      if (this.room.players.length >= freePlayerLimit && !existing) { this.send(socket, { type: 'error', message: 'This free room is full. Premium will unlock up to 20 players.' }); return; }
+      if (this.room.players.length >= cap && !existing) { this.send(socket, { type: 'error', message: this.room.premium ? `This room is full (${cap} players).` : `This free room is full. Premium will unlock up to ${premiumPlayerLimit} players.` }); return; }
       if (existing) {
         const previous = [...this.sockets.entries()].find(([, id]) => id === existing.id);
         if (previous) { this.sockets.delete(previous[0]); try { previous[0].close(4001, 'Reconnected elsewhere'); } catch { /* already closed */ } }
@@ -116,7 +124,7 @@ export class ImposterRoom {
   private async start(socket: WebSocket, playerId: string, settings: Settings) {
     if (!this.room || this.room.hostId !== playerId || this.room.players.length < minPlayerLimit) { this.send(socket, { type: 'error', message: `The host needs at least ${minPlayerLimit} players to start.` }); return; }
     if (!['lobby', 'finished'].includes(this.room.status)) { this.send(socket, { type: 'error', message: 'This room is already in progress.' }); return; }
-    try { const freshRound = createRound({ ...settings, names: this.room.players.map(player => player.name) }, random); this.roundState = { ...freshRound, phase: 'discussion', cursor: freshRound.firstClue }; }
+    try { const freshRound = createRound({ ...settings, names: this.room.players.map(player => player.name) }, random, undefined, this.room.premium ? premiumPlayerLimit : freePlayerLimit); this.roundState = { ...freshRound, phase: 'discussion', cursor: freshRound.firstClue }; }
     catch (error) { this.send(socket, { type: 'error', message: error instanceof Error ? error.message : 'Those settings were invalid.' }); return; }
     this.room.status = 'playing'; this.room.round += 1;
     this.roles = new Map(this.room.players.map((player, index) => [player.id, index === this.roundState!.imposter ? { round: this.room!.round, role: 'imposter', hint: this.roundState!.settings.hints ? this.roundState!.word.category : undefined } : { round: this.room!.round, role: 'friend', word: this.roundState!.word.text }]));
@@ -156,5 +164,33 @@ export default { async fetch(request: Request, env: Env) {
   if (url.pathname === '/api/rooms' && request.method === 'POST') {
     return Response.json({ roomId: randomRoomId() }, { headers: { 'Cache-Control': 'no-store' } });
   }
+  if (url.pathname === '/api/premium/verify' && request.method === 'POST') return verifyPremiumCheckout(request, env);
+  if (url.pathname === '/api/premium/status' && request.method === 'GET') return premiumStatus(url, env);
   return env.ASSETS.fetch(request);
 } };
+
+// Confirms a Stripe Checkout session was actually paid (asking Stripe directly, with our secret
+// key — never trusting the session id's mere presence) and, only then, mints a signed entitlement
+// token the client can present later. A client-supplied session id alone proves nothing on its own.
+async function verifyPremiumCheckout(request: Request, env: Env): Promise<Response> {
+  if (!env.STRIPE_SECRET_KEY || !env.ENTITLEMENT_SECRET) return Response.json({ error: 'Payments are not configured yet.' }, { status: 503 });
+  let body: unknown;
+  try { body = await request.json(); } catch { return Response.json({ error: 'That request was not valid JSON.' }, { status: 400 }); }
+  const sessionId = body && typeof body === 'object' && 'sessionId' in body ? (body as { sessionId: unknown }).sessionId : undefined;
+  if (typeof sessionId !== 'string' || !/^cs_(test|live)_[A-Za-z0-9]+$/.test(sessionId)) return Response.json({ error: 'That does not look like a Stripe Checkout session id.' }, { status: 400 });
+  const stripeResponse = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, { headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` } });
+  if (!stripeResponse.ok) return Response.json({ error: 'Could not look up that checkout session with Stripe.' }, { status: 502 });
+  const session = await stripeResponse.json() as { payment_status?: string; status?: string };
+  if (session.status !== 'complete' || session.payment_status !== 'paid') return Response.json({ error: 'That checkout has not been completed and paid yet.' }, { status: 402 });
+  const { token, expiresAt } = await signEntitlement(env.ENTITLEMENT_SECRET, sessionId);
+  return Response.json({ token, expiresAt }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
+// Lets a client (or the room worker) check whether a stored token is still a legitimately signed,
+// unexpired entitlement, without exposing the signing secret itself to anyone.
+async function premiumStatus(url: URL, env: Env): Promise<Response> {
+  const token = url.searchParams.get('token') ?? '';
+  if (!env.ENTITLEMENT_SECRET || !token) return Response.json({ premium: false }, { headers: { 'Cache-Control': 'no-store' } });
+  const payload = await verifyEntitlement(env.ENTITLEMENT_SECRET, token);
+  return Response.json({ premium: !!payload }, { headers: { 'Cache-Control': 'no-store' } });
+}

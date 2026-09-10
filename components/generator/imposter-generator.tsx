@@ -6,8 +6,9 @@ import { ArrowRight, Check, Eye, EyeOff, Feather, Fingerprint, Plus, RotateCcw, 
 import { categories, getWords, type Category, type Word } from '@/lib/words';
 import { secureRandom } from '@/lib/game';
 import UpgradeCard from '@/components/premium/upgrade-card';
-import { freePlayerLimit, minPlayerLimit } from '@/lib/limits';
+import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '@/lib/limits';
 import { premiumFeatures } from '@/lib/premium';
+import { usePremiumStatus } from '@/lib/premium-client';
 
 type GeneratedPlayer = { name: string; isImposter: boolean };
 type GeneratedGame = { word: Word; players: GeneratedPlayer[] };
@@ -26,6 +27,8 @@ function makeGame(names: string[], category: Category): GeneratedGame {
 }
 
 export default function ImposterGenerator() {
+  const { premium } = usePremiumStatus();
+  const maxPlayers = premium ? premiumPlayerLimit : freePlayerLimit;
   const [names, setNames] = useState(['Alex', 'Jamie', 'Taylor', 'Morgan']);
   const [category, setCategory] = useState<Category>('mixed');
   const [game, setGame] = useState<GeneratedGame | null>(null);
@@ -41,7 +44,7 @@ export default function ImposterGenerator() {
 
   function generate() {
     const trimmed = names.map(name => name.trim());
-    if (trimmed.length < minPlayerLimit || trimmed.length > freePlayerLimit) { setError(`Use ${minPlayerLimit}-${freePlayerLimit} players for the free imposter game. Premium larger rooms are locked until payment is connected.`); return; }
+    if (trimmed.length < minPlayerLimit || trimmed.length > maxPlayers) { setError(premium ? `Use ${minPlayerLimit}-${maxPlayers} players.` : `Use ${minPlayerLimit}-${maxPlayers} players for the free imposter game. Premium unlocks up to ${premiumPlayerLimit}.`); return; }
     if (trimmed.some(name => !name || name.length > 20)) { setError('Give every player a name up to 20 characters.'); return; }
     if (new Set(trimmed.map(name => name.toLocaleLowerCase())).size !== trimmed.length) { setError('Each player needs a different name.'); return; }
     setError('');
@@ -57,7 +60,7 @@ export default function ImposterGenerator() {
         <p>Create a secret word, assign one imposter, and reveal private role cards for 3-5 free players.</p>
         <div className="generator-field">
           <label id="generator-players"><Users size={16} /> Players</label>
-          <span>{names.length} / {freePlayerLimit}</span>
+          <span>{names.length} / {maxPlayers}</span>
         </div>
         <div className="generator-names" role="group" aria-labelledby="generator-players">
           {names.map((name, index) => <div className="generator-name" key={index}>
@@ -65,7 +68,7 @@ export default function ImposterGenerator() {
             <button type="button" aria-label={`Remove player ${index + 1}`} disabled={names.length <= minPlayerLimit} onClick={() => setNames(names.filter((_, i) => i !== index))}><X size={14} /></button>
           </div>)}
         </div>
-        <button className="generator-add" type="button" disabled={names.length >= freePlayerLimit} onClick={addPlayer}><Plus size={15} /> Add player</button>
+        <button className="generator-add" type="button" disabled={names.length >= maxPlayers} onClick={addPlayer}><Plus size={15} /> Add player</button>
         <div className="generator-field generator-category-label">
           <label>Category</label>
           <span>{getWords(category).length} words</span>
@@ -78,7 +81,7 @@ export default function ImposterGenerator() {
           </button>)}
         </div>
         {error && <p role="alert" className="form-error">{error}</p>}
-        <button className="start-button generator-start" type="button" onClick={generate}><span><Fingerprint size={20} /> Generate roles</span><ArrowRight size={18} /></button><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'premium-packs')} compact />
+        <button className="start-button generator-start" type="button" onClick={generate}><span><Fingerprint size={20} /> Generate roles</span><ArrowRight size={18} /></button><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'more-players')} compact unlocked={premium} available /><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'premium-packs')} compact unlocked={premium} />
       </div>
     </div>
     <div className="generator-output" aria-live="polite">

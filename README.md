@@ -35,7 +35,7 @@ npm run preview                 # Local Cloudflare runtime
 npx wrangler deploy --dry-run    # Validate without publishing
 ```
 
-For an authorized public launch, set `SITE_URL=https://laughtable.com` in the build environment, then run `npm run deploy` while authenticated to the intended Cloudflare account. The code defaults to `https://laughtable.com` for canonical URLs, robots, and sitemap output so the production sitemap does not build empty. The build includes original artwork and self-hosted fonts. No analytics, ads, accounts, or payments are enabled.
+For an authorized public launch, set `SITE_URL=https://laughtable.com` in the build environment, then run `npm run deploy` while authenticated to the intended Cloudflare account. The code defaults to `https://laughtable.com` for canonical URLs, robots, and sitemap output so the production sitemap does not build empty. The build includes original artwork and self-hosted fonts. No analytics, ads, or accounts are enabled. Stripe Checkout for premium is implemented (see "Premium checkout" below) but stays inert until `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` is baked into a build and the `STRIPE_SECRET_KEY`/`ENTITLEMENT_SECRET` Worker secrets are set.
 
 ## What is built
 
@@ -67,6 +67,13 @@ The initial art uses an illustration with CSS motion, not a real-time 3D scene. 
 
 Project skills live in `.agents/skills`; `.claude/skills` links to the same sources. CLAUDE.md imports AGENTS.md. Use the relevant game, visual-design, and web-SEO skills for future work.
 
-### Premium checkout placeholder
+### Premium checkout
 
-Premium features are currently locked. Set `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` to a Stripe-hosted checkout URL to show an outbound unlock button on `/premium/`. Do not treat that public link as proof of payment; premium access still needs server-side Stripe verification before gated features are enabled.
+`NEXT_PUBLIC_STRIPE_PAYMENT_LINK` is baked into the Next.js build (public, not a secret) and shows an outbound "Unlock with Stripe" button on `/premium/` and elsewhere once set. That link alone proves nothing: the buyer returns to `/premium/success/?session_id={CHECKOUT_SESSION_ID}`, which calls the Worker's `POST /api/premium/verify` to confirm the session was actually paid directly with the Stripe API, and only then mints a signed entitlement token stored in that browser's `localStorage`. `GET /api/premium/status` re-verifies that token (signature + expiry) whenever a page needs to know if the current browser is premium — nothing trusts a client-reported "I'm premium" claim on its own.
+
+The Worker needs two secrets it never gets from a client, set with `npx wrangler secret put <NAME>` against the deployed Worker (or in a git-ignored `.dev.vars` for `wrangler dev`):
+
+- `STRIPE_SECRET_KEY` — Stripe's secret API key, used only server-side to look up a Checkout session's payment status.
+- `ENTITLEMENT_SECRET` — a random secret (e.g. `openssl rand -hex 32`) used to sign/verify entitlement tokens. Never reuse the Stripe key for this.
+
+Today the entitlement, once verified, only raises the player cap from `freePlayerLimit` to `premiumPlayerLimit` (`lib/limits.ts`) in local pass-and-play, the generator, and online rooms (the room's cap is fixed at creation by whether the host presented a valid token). The rest of the listed premium features (`lib/premium.ts`) are not built yet and say so honestly in the UI once unlocked.

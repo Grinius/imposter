@@ -9,8 +9,8 @@ export interface Round {
   reason: 'caught' | 'escaped' | 'tie' | 'guessed' | null; settings: Settings;
 }
 export type Action = { type: 'reveal' | 'hide' | 'privacy' | 'start-vote' | 'open-ballot' | 'skip-guess' } | { type: 'clue'; text: string } | { type: 'vote'; target: number } | { type: 'guess'; word: string };
-export function validateSettings(settings: Settings): string | null {
-  if (settings.names.length < minPlayerLimit || settings.names.length > freePlayerLimit) return `Invite ${minPlayerLimit}–${freePlayerLimit} players to the free table.`;
+export function validateSettings(settings: Settings, maxPlayers = freePlayerLimit): string | null {
+  if (settings.names.length < minPlayerLimit || settings.names.length > maxPlayers) return `Invite ${minPlayerLimit}–${maxPlayers} players to the table.`;
   const names = settings.names.map(name => name.trim());
   if (names.some(name => !name || name.length > 20)) return 'Give everyone a name (up to 20 characters).';
   if (new Set(names.map(name => name.toLocaleLowerCase())).size !== names.length) return 'Use a different name for each player.';
@@ -23,8 +23,8 @@ function pick(length: number, random: () => number) {
   if (!Number.isFinite(value) || value < 0 || value >= 1) throw new Error('Random value must be in [0, 1).');
   return Math.floor(value * length);
 }
-export function createRound(settings: Settings, random: () => number, previousWord?: string): Round {
-  const error = validateSettings(settings); if (error) throw new Error(error);
+export function createRound(settings: Settings, random: () => number, previousWord?: string, maxPlayers = freePlayerLimit): Round {
+  const error = validateSettings(settings, maxPlayers); if (error) throw new Error(error);
   const pool = getWords(settings.category).filter(word => word.id !== previousWord);
   const normalized = { ...settings, names: settings.names.map(name => name.trim()) };
   return { names: normalized.names, settings: normalized, word: pool[pick(pool.length, random)], imposter: pick(settings.names.length, random), firstClue: pick(settings.names.length, random), phase: 'handoff', cursor: 0, votes: [], clues: [], accused: null, winner: null, reason: null };
