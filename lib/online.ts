@@ -30,6 +30,9 @@ export type PublicGame = {
   accused: number | null;
   winner: 'friends' | 'imposter' | null;
   reason: 'caught' | 'escaped' | 'tie' | 'guessed' | null;
+  // Present only once the round has a result. Until then the imposter's seat and the word stay in
+  // private role messages, never in a broadcast.
+  reveal?: { imposter: number; word: string; votes: number[] };
 };
 
 export type PrivateRole = { round: number; role: 'friend' | 'imposter'; word?: string; hint?: string };
@@ -69,6 +72,6 @@ export function publicRoom(room: RoomState, game?: import('./game').Round | null
     round: room.round,
     premium: room.premium,
     players: room.players.map(({ id, name, connected, isHost }) => ({ id, name, connected, isHost })),
-    ...(game ? { game: { phase: game.phase, cursor: game.cursor, cursorPlayerId: room.players[game.cursor]?.id ?? '', firstClue: game.firstClue, clues: game.clues, votesSubmitted: game.votes.length, playerCount: game.names.length, accused: game.accused, winner: game.winner, reason: game.reason } } : {}),
+    ...(game ? { game: { phase: game.phase, cursor: game.cursor, cursorPlayerId: room.players[game.cursor]?.id ?? '', firstClue: game.firstClue, clues: game.clues, votesSubmitted: game.votes.length, playerCount: game.names.length, accused: game.accused, winner: game.winner, reason: game.reason, ...(game.phase === 'result' ? { reveal: { imposter: game.imposter, word: game.word.text, votes: game.votes } } : {}) } } : {}),
   };
 }

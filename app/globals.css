@@ -88,3 +88,19 @@
 @media(max-width:650px){.variant-hero{padding:32px 20px 4px}.variant-hero h1{font-size:40px}.variant-hero p{font-size:14px}.variant-tool{padding:18px 14px 36px}.stopwatch-button{width:200px;height:200px}}
 .more-games{margin:34px auto 0;max-width:720px;text-align:center;border-top:1px solid var(--line);padding-top:28px}.more-games .eyebrow{justify-content:center}.more-games>div{display:flex;justify-content:center;flex-wrap:wrap;gap:12px 20px;margin:14px 0 10px}.more-games p{font-size:13px;color:#9caf9f;margin:0}
 .variant-list{list-style:none;padding:0;margin:0;display:grid;gap:12px}.variant-list li{border-left:3px solid #c9a871;background:#1b382f66;padding:14px 18px;font-size:14px;line-height:1.7;color:#a9baac}.variant-list strong{font-family:var(--serif);font-size:20px;font-weight:500;color:var(--gold-light)}
+/* Reveal stage: full-bleed, portrait-composed, filmable. */
+.reveal-stage{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:32px 24px;text-align:center;background:radial-gradient(ellipse at 50% 30%,#2d5442 0%,#12302a 45%,#08161a 100%);color:var(--cream);animation:arrive .3s ease-out}
+.reveal-inner{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:560px;width:100%}.reveal-inner h2{font-size:52px;line-height:1.05;margin:0}.reveal-inner h2 em{color:var(--gold-light);font-style:italic}
+.reveal-hint{display:flex;align-items:center;gap:8px;font-size:13px;color:#b4c2b7;margin:4px 0 10px}.reveal-button{min-width:260px;justify-content:center}
+.reveal-brand{position:absolute;right:22px;bottom:22px;display:flex;align-items:center;gap:7px;font:600 13px/1 var(--sans);letter-spacing:1.6px;text-transform:uppercase;color:var(--gold)}
+.reveal-name{font-family:var(--serif);font-weight:600;font-size:clamp(64px,19vw,120px);line-height:1;letter-spacing:-2px;color:var(--cream);margin:8px 0;min-height:1em;overflow-wrap:anywhere}
+.reveal-spin{opacity:.55;transform:scale(.92);filter:blur(.6px)}
+.reveal-land{color:var(--gold-light);animation:land .55s cubic-bezier(.2,1.4,.4,1) both;text-shadow:0 0 60px #cfb17b66}
+@keyframes land{0%{transform:scale(1.6);opacity:0}45%{transform:scale(.96);opacity:1}100%{transform:scale(1)}}
+.stage-landed{animation:arrive .3s ease-out,flash .5s ease-out}@keyframes flash{0%{background-color:#cfb17b44}100%{background-color:transparent}}
+.reveal-secret{margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:8px;animation:arrive .5s ease-out both}.reveal-secret strong{font-family:var(--serif);font-size:clamp(34px,8vw,54px);font-weight:500;color:var(--cream);line-height:1.15;overflow-wrap:anywhere}
+.reveal-verdict{font-size:15px;color:#b4c2b7;margin:6px 0 4px;animation:arrive .5s ease-out .2s both}
+@media(prefers-reduced-motion:reduce){.reveal-stage,.reveal-land,.reveal-secret,.reveal-verdict{animation:none}}
+@media(max-width:480px){.reveal-stage{padding:28px 18px}.reveal-inner h2{font-size:42px}.reveal-brand{right:16px;bottom:16px;font-size:11px}}
+.recap-button{margin:-6px 0 18px}.round-surface .recap-button{align-self:center}
+.online-result{display:flex;flex-direction:column;align-items:center;text-align:center}.online-result .result-details{margin:18px 0 6px;max-width:100%}.online-result .result-details strong{color:#31563d}.online-result .result-details span{color:#7c805a}.online-result .result-brand{margin:4px 0 14px;color:#7c805a}.online-result .clue-list{width:100%;max-width:420px;text-align:left;margin:10px 0 16px}.online-result .clue-list .online-note{justify-content:center;letter-spacing:1.6px;font-size:9px;margin-bottom:6px}.online-result .recap-button{margin:0 0 16px}

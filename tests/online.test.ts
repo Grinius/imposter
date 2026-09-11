@@ -22,6 +22,12 @@ describe('online room protocol helpers', () => {
     expect(projection.players.every(player => !('secret' in player))).toBe(true);
     expect(projection.players.map(player => player.id)).toEqual(['host', 'guest']); // public handles still travel
   });
+  it('reveals the imposter, the word and the ballots to everyone at result, and not one phase earlier', () => {
+    const round = createRound({ names: ['Alex', 'Jamie', 'Taylor'], category: 'mixed', minutes: 3, hints: true }, () => 0.1);
+    for (const phase of ['handoff', 'discussion', 'voting', 'guess'] as const) expect(JSON.stringify(publicRoom(room, { ...round, phase }))).not.toMatch(/reveal|"word"|"imposter":/);
+    const done = { ...round, phase: 'result' as const, votes: [0, 0, 1], winner: 'friends' as const, reason: 'caught' as const };
+    expect(publicRoom(room, done).game?.reveal).toEqual({ imposter: round.imposter, word: round.word.text, votes: [0, 0, 1] });
+  });
   it('carries the room premium flag into the public projection', () => { expect(publicRoom(room).premium).toBe(false); expect(publicRoom({ ...room, premium: true }).premium).toBe(true); });
   it('synchronizes clue submissions in player order', () => {
     const round = { ...createRound({ names: ['Alex', 'Jamie', 'Taylor'], category: 'mixed', minutes: 3, hints: true }, () => 0), phase: 'discussion' as const, cursor: 0 };

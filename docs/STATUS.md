@@ -2,6 +2,29 @@
 
 Updated: 2026-09-11.
 
+## Filmable reveal and recap (2026-09-11, adopted)
+
+Every mode (word game, the three variants, online rooms) now ends on a tap-gated, full-screen
+reveal stage — roulette over the names, the imposter lands, the secret follows, domain in the corner,
+each step a tap — before the full result (`components/reveal-stage.tsx`). A "Share/Save recap
+image" button renders a 1080×1920 PNG in the browser (`lib/recap-card.ts`, `components/recap-button.tsx`)
+with the imposter, secret, rows (clues online, times in Timer, votes elsewhere) and the domain. The
+online room's public projection gains `game.reveal` (imposter, word, votes) at result only; the online
+result screen now shows the imposter, the word, and the clues with the imposter marked.
+Reasoning in `docs/DECISIONS.md`.
+
+Validation: 90 Vitest (1 new: reveal absent in every pre-result phase, present at result), TypeScript,
+ESLint (2 pre-existing warnings), static build, 11 Playwright (updated: each mode walks the reveal —
+blank until tapped, lands on the real imposter, shows the secret, domain present — then the result; the
+online spec asserts no broadcast carried `reveal` before the result and that all three phones see the
+imposter, word and clues; the timer and online specs capture the recap download and check its
+filename). Reveal states and both recap PNGs were inspected from Playwright captures at desktop and at
+390×844. The pane's mobile emulation misplaces screenshots, so phone visuals came from Playwright, not
+the pane; the real share sheet on a phone is untested here.
+
+Next step: deploy; the owner films the 20-second Timer Imposter demo (shot list in the session
+notes); then the free-cap decision and analytics.
+
 ## Variant modes (2026-09-11, adopted)
 
 Three pass-and-play variants ship at their own indexable URLs, from `docs/GROWTH.md` bet 2:

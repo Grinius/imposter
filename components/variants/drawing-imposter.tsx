@@ -7,6 +7,8 @@ import { createDrawingRound, drawingTransition, totalTurns, validateDrawingSetti
 import { freePlayerLimit, premiumPlayerLimit } from '@/lib/limits';
 import { usePremiumStatus } from '@/lib/premium-client';
 import PremiumPaywallNotice from '@/components/premium/paywall-notice';
+import RevealStage from '@/components/reveal-stage';
+import RecapButton from '@/components/recap-button';
 import SketchPad from './sketch-pad';
 import { Ballot, Handoff, PlayerNames, ResultBrand, ResultHeader, RoundChrome, VariantLinks, VoteResults, playerColors, useHeadingFocus, usePrivacyGuard } from './shared';
 
@@ -21,6 +23,7 @@ export default function DrawingImposter() {
   const [paywallReasons, setPaywallReasons] = useState<string[] | null>(null);
   const [pending, setPending] = useState<Point[] | null>(null);
   const [guess, setGuess] = useState('');
+  const [revealed, setRevealed] = useState(false);
   const heading = useHeadingFocus(round ? `${round.phase}-${round.cursor}-${round.turn}` : null);
   const act = useCallback((action: DrawingAction) => setRound(current => current ? drawingTransition(current, action) : null), []);
   usePrivacyGuard(!!round && round.phase !== 'result', useCallback(() => act({ type: 'privacy' }), [act]));
@@ -30,7 +33,7 @@ export default function DrawingImposter() {
     const reasons = premium ? [] : [...(settings.names.length > freePlayerLimit ? [`${settings.names.length} players`] : []), ...(chosen?.premium ? [`${chosen.name} category`] : [])];
     if (reasons.length) { setPaywallReasons(reasons); setError(''); return; }
     const message = validateDrawingSettings(settings, { maxPlayers, premium }); if (message) { setError(message); return; }
-    setPaywallReasons(null); setError(''); setGuess(''); setPending(null);
+    setPaywallReasons(null); setError(''); setGuess(''); setPending(null); setRevealed(false);
     setRound(createDrawingRound(settings, secureRandom, round?.word.id, { maxPlayers, premium })); setRoundNumber(replay ? roundNumber + 1 : 1);
     requestAnimationFrame(() => document.getElementById('drawing-imposter')?.scrollIntoView({ block: 'start' }));
   }
@@ -98,10 +101,12 @@ export default function DrawingImposter() {
         <SketchPad strokes={round.strokes} pending={null} active={false} onStrokeEnd={() => undefined} label="The finished drawing" />
         <form className="guess-form" onSubmit={event => { event.preventDefault(); act({ type: 'guess', word: guess }); }}><label htmlFor="drawing-guess">What were they drawing?</label><input id="drawing-guess" value={guess} onChange={event => setGuess(event.target.value)} placeholder="Your one and only guess…" maxLength={60} autoComplete="off" /><button className="gold-button" disabled={!normalizeGuess(guess)} type="submit">Make my final guess<ArrowRight size={17} /></button></form><button className="text-button" onClick={() => act({ type: 'skip-guess' })}>I’ve got nothing. Reveal the word.</button>
       </>}
-      {round.phase === 'result' && round.winner && <>
+      {round.phase === 'result' && round.winner && !revealed && <RevealStage names={round.names} imposter={round.imposter} secretLabel="THEY WERE DRAWING" secret={round.word.text} winner={round.winner} onDone={() => setRevealed(true)} />}
+      {round.phase === 'result' && round.winner && revealed && <>
         <ResultHeader winner={round.winner} heading={heading} subtitle={round.reason === 'tie' ? 'A split vote. Just enough doubt to get away.' : round.reason === 'escaped' ? `${round.names[round.accused!]} took the blame. The real imposter slipped away.` : round.reason === 'guessed' ? 'Caught in the act, but they named the drawing and stole the win.' : 'You saw through the scribble. The secret stayed safe.'} />
         <div className="result-details"><div><span>THE IMPOSTER</span><strong>{round.names[round.imposter]}</strong></div><div><span>THE DRAWING</span><strong>{round.word.text}</strong></div></div>
         <ResultBrand />
+        <RecapButton data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THEY WERE DRAWING', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but named the drawing. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((player, index) => ({ label: player, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
         <SketchPad strokes={round.strokes} pending={null} active={false} onStrokeEnd={() => undefined} label={`The finished drawing of ${round.word.text}`} />
         {legend}
         <VoteResults names={round.names} votes={round.votes} />

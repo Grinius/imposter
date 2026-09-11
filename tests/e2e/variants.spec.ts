@@ -27,6 +27,19 @@ async function voteAll(page: Page, names: string[], target: (voter: number) => s
   }
 }
 const names = ['Alex', 'Jamie', 'Taylor', 'Morgan'];
+// The reveal stage: blank until tapped, then the roulette must land on the real imposter, then the
+// secret, then a tap through to the full result.
+async function watchReveal(page: Page, imposter: string, secret: RegExp) {
+  await expect(page.locator('.reveal-stage')).toBeVisible();
+  await expect(page.locator('.reveal-stage')).not.toContainText(imposter);
+  await expect(page.locator('.reveal-stage')).toContainText('laughtable.com');
+  await page.getByRole('button', { name: /Reveal the imposter/ }).click();
+  await expect(page.locator('.reveal-land')).toHaveText(imposter, { timeout: 10_000 });
+  await expect(page.locator('.reveal-secret')).toContainText(secret, { timeout: 5_000 });
+  await shot(page, `reveal-${imposter}`);
+  await page.getByRole('button', { name: /See the full result/ }).click();
+  await expect(page.locator('.reveal-stage')).toHaveCount(0);
+}
 
 test('timer imposter: hidden stopwatch runs, vote, final guess, times revealed', async ({ page }) => {
   await page.goto('/timer-imposter/');
@@ -49,8 +62,11 @@ test('timer imposter: hidden stopwatch runs, vote, final guess, times revealed',
   await expect(page.getByRole('heading', { name: new RegExp(`One last chance, ${imposter}`) })).toBeVisible();
   await page.getByLabel(/What was the target/).fill('99');
   await page.getByRole('button', { name: /Make my final guess/ }).click();
+  await watchReveal(page, imposter, new RegExp(target));
   await expect(page.getByRole('heading', { name: /The friends win/ })).toBeVisible();
   await expect(page.locator('.result-details')).toContainText(target);
+  const download = page.waitForEvent('download'); await page.getByRole('button', { name: /recap image/ }).click();
+  const file = await download; expect(file.suggestedFilename()).toBe('imposter-recap.png'); if (shots) await file.saveAs(`${shots}/recap-timer.png`);
   await expect(page.locator('.times-list .vote-result')).toHaveCount(4);
   await expect(page.locator('.result-brand')).toContainText('laughtable.com');
   await page.locator('.result-emblem').scrollIntoViewIfNeeded(); await shot(page, 'timer-result');
@@ -65,7 +81,8 @@ test('question imposter: identical cards, one odd question, no final guess', asy
   const odd = names[cards.findIndex(card => counts.get(card) === 1)];
   await expect(page.getByRole('heading', { name: /Whose answer doesn/ })).toBeVisible();
   await voteAll(page, names, voter => names[voter] === odd ? names.find(n => n !== odd)! : odd);
-  await expect(page.getByRole('heading', { name: /The friends win/ })).toBeVisible(); // straight to result: no guess phase
+  await watchReveal(page, odd, /\?/); // straight to the reveal: no guess phase
+  await expect(page.getByRole('heading', { name: /The friends win/ })).toBeVisible();
   await expect(page.locator('.result-details')).toContainText(`${odd.toUpperCase()} WAS ASKED`);
   await expect(page.locator('.result-brand')).toContainText('laughtable.com');
   await page.locator('.result-emblem').scrollIntoViewIfNeeded(); await shot(page, 'question-result');
@@ -94,6 +111,7 @@ test('drawing imposter: one stroke per turn on a shared canvas, redo, vote, word
   await voteAll(page, names, voter => names[voter] === imposter ? names.find(n => n !== imposter)! : imposter);
   await page.getByLabel(/What were they drawing/).fill(word.toLowerCase());
   await page.getByRole('button', { name: /Make my final guess/ }).click();
+  await watchReveal(page, imposter, new RegExp(word));
   await expect(page.getByRole('heading', { name: /The imposter wins/ })).toBeVisible(); // named the word: stolen
   await expect(page.locator('.result-details')).toContainText(word);
   await expect(page.locator('.result-brand')).toContainText('laughtable.com');

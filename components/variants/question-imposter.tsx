@@ -6,6 +6,8 @@ import { createQuestionRound, questionFor, questionTransition, validateQuestionS
 import { freePlayerLimit, premiumPlayerLimit } from '@/lib/limits';
 import { usePremiumStatus } from '@/lib/premium-client';
 import PremiumPaywallNotice from '@/components/premium/paywall-notice';
+import RevealStage from '@/components/reveal-stage';
+import RecapButton from '@/components/recap-button';
 import { Avatar, Ballot, Handoff, PlayerNames, ResultBrand, ResultHeader, RoundChrome, VariantLinks, VoteResults, useHeadingFocus, usePrivacyGuard } from './shared';
 
 const steps = ['Secret question', 'Answer out loud', 'Cast your vote', 'The reveal'];
@@ -17,6 +19,7 @@ export default function QuestionImposter() {
   const [roundNumber, setRoundNumber] = useState(1);
   const [error, setError] = useState('');
   const [paywall, setPaywall] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const heading = useHeadingFocus(round ? `${round.phase}-${round.cursor}` : null);
   const act = useCallback((action: QuestionAction) => setRound(current => current ? questionTransition(current, action) : null), []);
   usePrivacyGuard(!!round && round.phase !== 'result', useCallback(() => act({ type: 'privacy' }), [act]));
@@ -24,7 +27,7 @@ export default function QuestionImposter() {
   function start(replay = false) {
     if (!premium && settings.names.length > freePlayerLimit) { setPaywall(true); setError(''); return; }
     const message = validateQuestionSettings(settings, maxPlayers); if (message) { setError(message); return; }
-    setPaywall(false); setError('');
+    setPaywall(false); setError(''); setRevealed(false);
     setRound(createQuestionRound(settings, secureRandom, round?.pair.id, maxPlayers)); setRoundNumber(replay ? roundNumber + 1 : 1);
     requestAnimationFrame(() => document.getElementById('question-imposter')?.scrollIntoView({ block: 'start' }));
   }
@@ -65,10 +68,12 @@ export default function QuestionImposter() {
       </>}
       {round.phase === 'vote-handoff' && <Handoff eyebrow={`PRIVATE VOTE ${round.cursor + 1} OF ${round.names.length}`} name={name} subtitle="Your vote stays secret until everyone has voted." label="Open my ballot" onOpen={() => act({ type: 'open-ballot' })} heading={heading} />}
       {round.phase === 'voting' && <Ballot names={round.names} voter={round.cursor} onVote={target => act({ type: 'vote', target })} heading={heading} />}
-      {round.phase === 'result' && round.winner && <>
+      {round.phase === 'result' && round.winner && !revealed && <RevealStage names={round.names} imposter={round.imposter} roleLabel="THE ODD ONE OUT WAS" secretLabel="THEIR QUESTION WAS" secret={round.pair.imposter} winner={round.winner} onDone={() => setRevealed(true)} />}
+      {round.phase === 'result' && round.winner && revealed && <>
         <ResultHeader winner={round.winner} heading={heading} subtitle={round.reason === 'tie' ? 'A split vote. The odd one out gets away with it.' : round.reason === 'escaped' ? `${round.names[round.accused!]} took the blame. The real odd one out slipped away.` : 'You spotted the answer that didn’t belong.'} />
         <div className="result-details question-result"><div><span>EVERYONE ELSE WAS ASKED</span><strong>{round.pair.friends}</strong></div><div><span>{round.names[round.imposter].toUpperCase()} WAS ASKED</span><strong>{round.pair.imposter}</strong></div></div>
         <ResultBrand />
+        <RecapButton data={{ roleLabel: 'THE ODD ONE OUT WAS', imposter: round.names[round.imposter], secretLabel: 'THEIR QUESTION WAS', secret: round.pair.imposter, verdict: round.winner === 'friends' ? `Everyone else was asked: ${round.pair.friends}` : `Nobody spotted it. Everyone else was asked: ${round.pair.friends}`, rows: round.names.map((player, index) => ({ label: player, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
         <VoteResults names={round.names} votes={round.votes} />
         <button className="gold-button" onClick={() => start(true)}><RotateCcw size={17} /> Another round<ArrowRight size={17} /></button><button className="text-button" onClick={() => setRound(null)}>Change players</button>
       </>}

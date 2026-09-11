@@ -165,6 +165,10 @@ start #7. **C (next month)** #5, #6, #8, #9, #11, #12. **D (ignore for now)** #1
   and stalled variant hashtags → stop variants, go all-in on Bet 4.
 
 ### Bet 3 — Make the reveal filmable, then pay ≤€500 to put it in 3–5 videos
+
+> **Status 2026-09-11:** the reveal stage and the recap image are built in every mode, and online
+> rounds now reveal the imposter at result (`docs/DECISIONS.md`). The demo clip and the creator test
+> are still to do.
 - Insight: imposter TikToks film faces, not phones; the reveal is the one on-camera moment. Competitor
   apps already pay creators in this genre (Fakeit, Splash), so the format is proven.
 - Assets: a reveal screen built for a phone held to camera (full-bleed, suspense animation, "THE

@@ -12,6 +12,8 @@ import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '@/lib/limit
 import { describePremiumRequirements, premiumFeatures } from '@/lib/premium';
 import { usePremiumStatus } from '@/lib/premium-client';
 import BrandWordmark, { siteHost, siteName } from '@/components/brand';
+import RevealStage from '@/components/reveal-stage';
+import RecapButton from '@/components/recap-button';
 
 const categoryIcons: Record<Category, LucideIcon> = { mixed: Shuffle, food: Utensils, animals: PawPrint, places: MapPin, objects: Gem, activities: Sparkles, 'date-night': Heart, holidays: Gift };
 const playerColors = ['#b77d5c', '#65847c', '#a09564', '#82758f', '#6886a0', '#aa6c78', '#8a9862', '#b58b56', '#729594', '#997c66', '#827e9e', '#809164'];
@@ -48,6 +50,7 @@ export default function Game() {
   const [running, setRunning] = useState(false);
   const [selectedVote, setSelectedVote] = useState<number | null>(null);
   const [guess, setGuess] = useState('');
+  const [revealed, setRevealed] = useState(false);
   const rulesDialog = useRef<HTMLDialogElement>(null);
   const exitDialog = useRef<HTMLDialogElement>(null);
   const phaseHeading = useRef<HTMLHeadingElement>(null);
@@ -76,7 +79,7 @@ export default function Game() {
       if (reasons.length) { setPaywallReasons(reasons); setError(''); return; }
     }
     const message = validateSettings(settings, { maxPlayers, premium }); if (message) { setError(message); return; }
-    setPaywallReasons(null); setError(''); setGuess(''); setSelectedVote(null); setRunning(false); setSeconds(settings.minutes * 60);
+    setPaywallReasons(null); setError(''); setGuess(''); setSelectedVote(null); setRevealed(false); setRunning(false); setSeconds(settings.minutes * 60);
     setRound(createRound(settings, secureRandom, round?.word.id, { maxPlayers, premium }));
     setRoundNumber(replay ? roundNumber + 1 : 1); requestAnimationFrame(() => document.getElementById('game')?.scrollIntoView({ block: 'start' })); chime();
   }
@@ -201,11 +204,13 @@ export default function Game() {
             <div className="guess-emblem"><Fingerprint size={65} strokeWidth={1} /></div>
             <form className="guess-form" onSubmit={event => { event.preventDefault(); act({ type: 'guess', word: guess }); }}><label htmlFor="final-guess">What was the secret word?</label><input id="final-guess" value={guess} onChange={event => setGuess(event.target.value)} placeholder="Your one and only guess…" maxLength={60} autoComplete="off" /><button className="gold-button" disabled={!normalizeGuess(guess)} type="submit">Make my final guess<ArrowRight size={17} /></button></form><button className="text-button" onClick={() => act({ type: 'skip-guess' })}>I’ve got nothing. Reveal the word.</button>
           </>}
-          {round.phase === 'result' && <>
+          {round.phase === 'result' && !revealed && <RevealStage names={round.names} imposter={round.imposter} secretLabel="THE SECRET WORD" secret={round.word.text} winner={round.winner!} onDone={() => setRevealed(true)} />}
+          {round.phase === 'result' && revealed && <>
             <p className="eyebrow">{round.winner === 'friends' ? 'A VERY GOOD PIECE OF DETECTIVE WORK' : 'A LITTLE TOO GOOD AT LYING'}</p><div className="result-emblem">{round.winner === 'friends' ? <ShieldCheck size={50} strokeWidth={1} /> : <Fingerprint size={50} strokeWidth={1} />}</div>
             <h2 ref={phaseHeading} tabIndex={-1}>{round.winner === 'friends' ? <>The friends <em>win.</em></> : <>The imposter <em>wins.</em></>}</h2><p className="round-subtitle">{round.reason === 'tie' ? 'A split vote. Just enough doubt to get away.' : round.reason === 'escaped' ? `${round.names[round.accused!]} took the blame. The real imposter slipped away.` : round.reason === 'guessed' ? 'Caught in the act, but the secret word saved the day.' : 'You saw through the bluff. The secret stayed safe.'}</p>
             <div className="result-details"><div><span>THE IMPOSTER</span><strong>{round.names[round.imposter]}</strong></div><div><span>THE SECRET WORD</span><strong>{round.word.text}</strong></div></div>
             <p className="result-brand">Played on <b>{siteHost}</b></p>
+            <RecapButton data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THE SECRET WORD', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but guessed the word. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((name, index) => ({ label: name, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
             <div className="vote-results"><span className="votes-label">HOW THE TABLE VOTED</span>{round.names.map((name, index) => <div className="vote-result" key={index}><span>{name}</span><span className="vote-bar"><i style={{ width: `${round.votes.filter(v => v === index).length / round.names.length * 100}%` }} /></span><b>{round.votes.filter(v => v === index).length}</b></div>)}</div>
             <button className="gold-button" onClick={() => start(true)}><RotateCcw size={17} /> Another round<ArrowRight size={17} /></button><button className="text-button" onClick={stopRound}>Change players or category</button>
           </>}

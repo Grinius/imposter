@@ -236,3 +236,31 @@ that matches how people search for the TikTok variants.
 **Not done:** no online rooms for variants, no analytics (still), no themed content for the
 question pack beyond the 60 built-in pairs. Touch drawing on a real phone was confirmed by the
 owner the same day (pointer capture had only been exercised with a mouse in Playwright).
+
+## 2026-09-11 — Filmable reveal stage, recap image, and the online result reveal
+
+Source: `docs/GROWTH.md` bet 3 (the product half; the creator test is the owner's).
+
+**The result is gated behind a tap.** In every mode the round now ends on `components/reveal-stage.tsx`:
+a full-bleed, portrait-composed overlay that shows nothing until the host taps "Reveal the imposter",
+runs a slowing roulette over the names (14 ticks, 70 → 520 ms, always landing on the imposter),
+flashes the name in, then the secret, then a "See the full result" tap. Every step is a tap so a
+phone held up to a camera never advances on its own; `prefers-reduced-motion` skips the roulette.
+The domain sits in the corner throughout. The full result (votes, times, drawing, recap) comes after.
+
+**Online rooms now reveal at result — and only then.** `PublicGame.reveal` (`imposter`, `word`,
+`votes`) is added to the broadcast projection exclusively when `phase === 'result'`; before that
+the imposter's seat and the word still travel only in private role messages. Covered in
+`tests/online.test.ts` and, across three real sockets, in `tests/e2e/online.spec.ts`, which records
+every broadcast and asserts none carries `reveal` before the result. Until now the online result
+screen showed only "Friends win!" and a reason — nobody was told who the imposter was.
+
+**The recap is a 1080×1920 PNG drawn in the browser** (`lib/recap-card.ts`): imposter, secret,
+generic rows (typed clues online; everyone's time in Timer; vote counts otherwise), verdict, and
+the domain top and bottom. Nothing is uploaded. On touch devices it goes to the share sheet (which
+offers "Save Image"); everywhere else it downloads. Desktop `navigator.share` is deliberately not
+used: it is a poor fit for a download and in headless Chrome on macOS its promise never settles,
+which would leave the button stuck.
+
+**Not done:** no sound on the reveal (the word game's optional chime is untouched); the recap does
+not include the drawing itself; no analytics, so how often the recap is saved is unmeasured.

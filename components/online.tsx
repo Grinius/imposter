@@ -5,6 +5,8 @@ import { ArrowLeft, ArrowRight, Check, ChevronDown, Clock3, Copy, Link2, LockKey
 import { inviteUrl, invitePath, roomIdFromSearch, type PrivateRole, type PublicRoom } from '@/lib/online';
 import QrCode from '@/components/qr-code';
 import { siteHost } from '@/components/brand';
+import RevealStage from '@/components/reveal-stage';
+import RecapButton from '@/components/recap-button';
 import type { Settings } from '@/lib/game';
 import { categories, type Category } from '@/lib/words';
 import UpgradeCard from '@/components/premium/upgrade-card';
@@ -29,6 +31,8 @@ export default function OnlineGame() {
   const [name, setName] = useState(() => typeof window !== 'undefined' ? window.localStorage.getItem('imposter-player-name') ?? 'Alex' : 'Alex'), [invitedCode, setInvitedCode] = useState(() => typeof window !== 'undefined' ? roomIdFromSearch(window.location.search) : null), [roomCode, setRoomCode] = useState(() => typeof window !== 'undefined' ? roomIdFromSearch(window.location.search) ?? window.localStorage.getItem('imposter-room-code') ?? '' : ''), [room, setRoom] = useState<PublicRoom | null>(null), [role, setRole] = useState<PrivateRole | null>(null), [error, setError] = useState(''), [copied, setCopied] = useState(false), [clue, setClue] = useState(''), [guess, setGuess] = useState(''), [myPlayerId, setMyPlayerId] = useState('');
   const [category, setCategory] = useState<Category>('mixed'), [minutes, setMinutes] = useState(3), [hints, setHints] = useState(true), [paywallReasons, setPaywallReasons] = useState<string[] | null>(null);
   const [expectedPlayers, setExpectedPlayers] = useState(freePlayerLimit);
+  // Which round's reveal this client has already watched; a new round re-arms the stage.
+  const [revealedRound, setRevealedRound] = useState(-1);
   const [canShare] = useState(() => typeof navigator !== 'undefined' && typeof navigator.share === 'function');
   const { premium } = usePremiumStatus();
   const socket = useRef<WebSocket | null>(null), audio = useRef<AudioContext | null>(null), leaving = useRef(false);
@@ -119,12 +123,23 @@ export default function OnlineGame() {
         ? <form onSubmit={event => { event.preventDefault(); act({ type: 'guess', word: guess }); }}><input value={guess} onChange={event => setGuess(event.target.value)} placeholder="Guess the secret word" /><button className="gold-button" type="submit">Make final guess</button></form>
         : <p>Waiting for the imposter to make a final guess…</p>}
     </div>;
-    if (game.phase === 'result') return <div className="online-game-panel">
-      <h2>{game.winner === 'friends' ? 'Friends win!' : 'The imposter wins.'}</h2>
-      <p>Reason: {game.reason}.</p>
-      <p className="result-brand">Played on <b>{siteHost}</b></p>
-      {room.hostId === myPlayerId && <button className="gold-button" onClick={start}>Play another round</button>}
-    </div>;
+    if (game.phase === 'result' && game.winner) {
+      const reveal = game.reveal, names = room.players.map(player => player.name);
+      const verdict = game.reason === 'tie' ? 'A split vote. The imposter got away.' : game.reason === 'escaped' ? `${names[game.accused!]} took the blame. The imposter wins.` : game.reason === 'guessed' ? 'Caught, but guessed the word. The imposter wins.' : 'Caught. The friends win.';
+      // Every player watches the reveal on their own phone; the reveal data only exists at result.
+      if (reveal && revealedRound !== room.round) return <RevealStage names={names} imposter={reveal.imposter} secretLabel="THE SECRET WORD" secret={reveal.word} winner={game.winner} onDone={() => setRevealedRound(room.round)} />;
+      return <div className="online-game-panel online-result">
+        <h2>{game.winner === 'friends' ? 'The friends win.' : 'The imposter wins.'}</h2>
+        <p>{verdict}</p>
+        {reveal && <>
+          <div className="result-details"><div><span>THE IMPOSTER</span><strong>{names[reveal.imposter]}</strong></div><div><span>THE SECRET WORD</span><strong>{reveal.word}</strong></div></div>
+          <div className="clue-list"><p className="online-note">THE CLUES</p>{game.clues.map((item, index) => { const who = (game.firstClue + index) % names.length; return <p key={`${index}-${item}`}><b>{names[who]}{who === reveal.imposter ? ' ✦' : ''}:</b> {item}</p>; })}</div>
+          <RecapButton data={{ roleLabel: 'THE IMPOSTER WAS', imposter: names[reveal.imposter], secretLabel: 'THE SECRET WORD', secret: reveal.word, verdict, rowsTitle: 'THE CLUES', rows: game.clues.map((item, index) => { const who = (game.firstClue + index) % names.length; return { label: names[who], value: item, highlight: who === reveal.imposter }; }) }} />
+        </>}
+        <p className="result-brand">Played on <b>{siteHost}</b></p>
+        {room.hostId === myPlayerId && <button className="gold-button" onClick={start}>Play another round</button>}
+      </div>;
+    }
     return <div className="online-game-panel"><p>Waiting for {cursorName}…</p></div>;
   }
   return <main className="online-page"><header className="site-header"><Link className="brand" href="/"><span className="emblem emblem-small"><span>◉</span></span><BrandWordmark /></Link><span className="header-note">PRIVATE ROOMS. PUBLIC SUSPICIONS.</span><Link className="nav-link" href="/"><ArrowLeft size={16} /> Pass &amp; play</Link></header><section className="online-card"><div className="eyebrow"><Radio size={14} /> ONLINE EDITION · BETA</div><h1>Same bluff.<br /><em>Different rooms.</em></h1><p className="online-lead">Play Imposter with friends wherever they are. Create a private room, share the code, and keep your secrets to yourself.</p>{!room ? <div className="online-entry">{(() => {
