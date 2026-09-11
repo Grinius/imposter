@@ -4,6 +4,7 @@ import { ArrowRight, BookOpen, Eye, ListChecks, ShieldCheck, Wifi } from 'lucide
 import ImposterGenerator from '@/components/generator/imposter-generator';
 import { categories, getWords } from '@/lib/words';
 import { pageMetadata } from '@/lib/seo';
+import BrandWordmark, { siteHost, siteName } from '@/components/brand';
 
 const title = 'Imposter Game Generator - Free Secret Word Cards';
 const description = 'Use this free imposter game generator to create secret words, private role cards, and one imposter for 3-5 free players. Play on one phone or online.';
@@ -16,7 +17,7 @@ export default function ImposterGameGeneratorPage() {
   return <div className="generator-page">
     <a className="skip-link" href="#generator-tool-title">Skip to generator</a>
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">SECRET WORDS. PRIVATE ROLES.</span>
       <nav aria-label="Main navigation"><Link className="nav-link" href="/imposter-game-rules/"><BookOpen size={17} /><span>Rules</span></Link><span className="nav-divider" /><Link className="nav-link" href="/online/"><Wifi size={17} /><span>Online</span></Link></nav>
     </header>
@@ -52,6 +53,6 @@ export default function ImposterGameGeneratorPage() {
         <div><Link className="gold-button" href="/">Play on one phone <ArrowRight size={17} /></Link><Link className="outline-button" href="/imposter-game-words/">Browse words <ArrowRight size={16} /></Link><Link className="outline-button" href="/online/">Create online room <ArrowRight size={16} /></Link></div>
       </section>
     </main>
-    <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> imposter.</span><span>Free imposter word game generator.</span><span>Private cards. Better bluffs.</span><Link href="/privacy/">Privacy</Link></footer>
+    <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> {siteName}<small>{siteHost}</small></span><span>Free imposter word game generator.</span><span>Private cards. Better bluffs.</span><Link href="/privacy/">Privacy</Link></footer>
   </div>;
 }

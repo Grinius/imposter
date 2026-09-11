@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Eye, Fingerprint, ShieldCheck, Target, Vote, Wifi } from 'lucide-react';
 import { pageMetadata } from '@/lib/seo';
+import BrandWordmark from '@/components/brand';
 
 const title = 'Imposter Game Strategy - Clues, Bluffing, and Voting Tips';
 const description = 'Improve your Imposter game strategy with clue tips for friends, bluffing tips for the imposter, and voting advice for close rounds.';
@@ -23,7 +24,7 @@ const imposterTips = [
 export default function ImposterGameStrategyPage() {
   return <div className="content-page">
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">CLUES. BLUFFS. VOTES.</span>
       <nav aria-label="Main navigation"><Link className="nav-link" href="/imposter-game-rules/"><ShieldCheck size={17} /><span>Rules</span></Link><span className="nav-divider" /><Link className="nav-link" href="/imposter-game-generator/"><Fingerprint size={17} /><span>Generator</span></Link></nav>
     </header>

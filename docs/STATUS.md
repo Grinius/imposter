@@ -1,6 +1,42 @@
 # Current status
 
-Updated: 2026-09-10.
+Updated: 2026-09-11.
+
+## Share-loop basics (2026-09-11, adopted)
+
+From `docs/GROWTH.md` bet 1. Invite links now carry the room code (`/online/?room=CODE`; the address
+bar mirrors it while in a room and resets on leave; a guest landing by link gets the join form first
+with the code filled), the lobby offers native share on phones and copy elsewhere plus an inline-SVG
+QR of the same link, the social preview is a committed PNG rendered from the SVG source
+(`npm run og`, `scripts/render-og.mjs`), and the site name is on screen everywhere: "BY LAUGHTABLE"
+under the wordmark on all twelve headers (`components/brand.tsx`), LaughTable and the domain in the
+footer, "Played on laughtable.com" on both result screens, " | LaughTable" on every title. Reasoning
+in `docs/DECISIONS.md`.
+
+Validation: 74 Vitest (6 new for `inviteUrl`/`roomIdFromSearch`), TypeScript, ESLint (same 2
+pre-existing warnings), static build, and the 7 Playwright specs, with `online.spec.ts` extended so
+one guest joins through a lower-cased invite link with tracking junk, the host URL and QR label are
+asserted, and the result screen must name the domain. Manually, against `wrangler dev` with two
+origins for separate storage: create → URL carries code → guest lands on the join-first form → joins →
+host reconnects by URL after a Worker restart → copied link is the code link → leave resets URL; a full
+pass-and-play round at 375 px ends on "Played on laughtable.com"; the PNG preview was viewed at
+1200×630. Not verifiable here: how chat apps actually unfurl the PNG (needs the deploy; check with
+the Facebook/X/Discord debuggers after `npm run deploy`).
+
+Not changed: the free player cap (owner's pricing call, scored highest in `docs/GROWTH.md`), the two
+"coming soon" lobby cards, analytics (still none). `.claude/launch.json` gained `worker-8787` because a
+stale `next-server` held port 3000 during this session.
+
+Next step: deploy, then check the preview with the platform debuggers; then decide the free cap and
+add cookieless analytics so the loop can be measured (`docs/GROWTH.md` day 1–2).
+
+## Growth research (2026-09-11, proposals only)
+
+A distribution audit is recorded in `docs/GROWTH.md`. It ranks 18 opportunities and proposes four
+bets (share-loop fixes and cap change, fast variant modes such as Timer Imposter, a filmable reveal
+plus a ≤€500 creator test, themed packs on a holiday calendar). The share-loop half of bet 1 is now
+adopted (above); the cap change, analytics, and everything else remain proposals until recorded in
+`docs/DECISIONS.md`.
 
 ## Built
 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, Eye, Fingerprint, Shuffle, Sparkles, Wifi } from 'lucide-react';
 import { pageMetadata } from '@/lib/seo';
 import { categories, getWords } from '@/lib/words';
+import BrandWordmark from '@/components/brand';
 
 const title = 'Imposter Game Words - Free Secret Word Lists by Category';
 const description = 'Browse Imposter game words for food, animals, places, objects, and activities. Use the lists for clue ideas or generate private cards.';
@@ -12,7 +13,7 @@ export const metadata: Metadata = pageMetadata('/imposter-game-words/', title, d
 export default function ImposterGameWordsPage() {
   return <div className="content-page">
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">WORD LISTS. BETTER CLUES.</span>
       <nav aria-label="Main navigation"><Link className="nav-link" href="/imposter-game-rules/"><Sparkles size={17} /><span>Rules</span></Link><span className="nav-divider" /><Link className="nav-link" href="/online/"><Wifi size={17} /><span>Online</span></Link></nav>
     </header>

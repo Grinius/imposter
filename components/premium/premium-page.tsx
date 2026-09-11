@@ -5,13 +5,14 @@ import { ArrowRight, Eye, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-reac
 import { premiumConfigured, premiumFeatures, stripePaymentLink } from '@/lib/premium';
 import { usePremiumStatus } from '@/lib/premium-client';
 import UpgradeCard from '@/components/premium/upgrade-card';
+import BrandWordmark from '@/components/brand';
 
 export default function PremiumPage() {
   const { premium, checked } = usePremiumStatus();
 
   return <div className="content-page premium-page">
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">PREMIUM PACKS. PRIVATE ROOMS.</span>
       <nav aria-label="Main navigation"><Link className="nav-link" href="/imposter-game-generator/"><Sparkles size={17} /><span>Generator</span></Link></nav>
     </header>

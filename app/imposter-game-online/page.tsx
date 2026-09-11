@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Eye, Fingerprint, Link2, RefreshCw, Smartphone, Users, Wifi } from 'lucide-react';
 import { pageMetadata } from '@/lib/seo';
+import BrandWordmark from '@/components/brand';
 
 const title = 'Imposter Game Online - Play Free with Friends';
 const description = 'Play Imposter online with friends in a private room. Create a room code, reveal private roles, give clues, vote, and make the final guess.';
@@ -18,7 +19,7 @@ const features = [
 export default function ImposterGameOnlinePage() {
   return <div className="content-page">
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">PRIVATE ROOMS. REAL-TIME BLUFFS.</span>
       <nav aria-label="Main navigation"><Link className="nav-link" href="/imposter-game-rules/"><Fingerprint size={17} /><span>Rules</span></Link><span className="nav-divider" /><Link className="nav-link" href="/imposter-game-generator/"><Users size={17} /><span>Generator</span></Link></nav>
     </header>

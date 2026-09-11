@@ -6,10 +6,16 @@ test('three browsers complete a private online round', async ({ browser }) => {
   const names = ['Alex', 'Jamie', 'Taylor'];
   await pages[0].goto('/online/'); await pages[0].getByLabel('Your name').fill(names[0]); await pages[0].getByRole('button', { name: /Create a private room/i }).click();
   const code = (await pages[0].locator('.room-code strong').textContent())!;
+  // The address bar is the invite: it carries the code, and the lobby shows a QR of the same link.
+  await expect(pages[0]).toHaveURL(new RegExp(`/online/\\?room=${code}$`));
+  await expect(pages[0].locator('.qr-code')).toHaveAttribute('aria-label', new RegExp(code));
   // Record the room broadcasts the host's socket receives: the player list every player is sent,
   // and the only place another player's id is legitimately visible.
   await pages[0].evaluate(() => { const scope = window as Window & { __imposterSocket?: WebSocket; __rooms?: { players: { id: string; name: string }[] }[] }; scope.__rooms = []; scope.__imposterSocket?.addEventListener('message', event => { const message = JSON.parse((event as MessageEvent<string>).data) as { type: string; room?: { players: { id: string; name: string }[] } }; if (message.type === 'room' && message.room) scope.__rooms!.push(message.room); }); });
-  for (let index = 1; index < pages.length; index += 1) { await pages[index].goto('/online/'); await pages[index].getByLabel('Your name').fill(names[index]); await pages[index].getByLabel('Room code').fill(code); await pages[index].getByRole('button', { name: /Join with code/i }).click(); }
+  // Jamie arrives through the pasted invite link (lower-cased, with tracking junk, as links get): the
+  // code is pre-filled and the join form leads. Taylor types the code the old way.
+  await pages[1].goto(`/online/?room=${code.toLowerCase()}&utm_source=chat`); await expect(pages[1].locator('.invite-note')).toContainText(code); await expect(pages[1].getByLabel('Room code')).toHaveValue(code); await pages[1].getByLabel('Your name').fill(names[1]); await pages[1].getByRole('button', { name: new RegExp(`Join room ${code}`) }).click();
+  await pages[2].goto('/online/'); await pages[2].getByLabel('Your name').fill(names[2]); await pages[2].getByLabel('Room code').fill(code); await pages[2].getByRole('button', { name: /Join with code/i }).click();
   for (const page of pages) await expect(page.locator('.online-player')).toHaveCount(3);
   // A player id is public by design (it is in every room broadcast). Holding one must not be
   // enough to take that seat -- doing so would kick the real player off and hand over their role.
@@ -44,6 +50,7 @@ test('three browsers complete a private online round', async ({ browser }) => {
   await expect(pages[0].getByRole('button', { name: /Start voting/i })).toBeVisible(); await pages[0].getByRole('button', { name: /Start voting/i }).click();
   for (let turn = 0; turn < names.length; turn += 1) { let acted = false; const deadline = Date.now() + 15_000; while (!acted && Date.now() < deadline) { for (const page of pages) { const ballot = page.getByRole('button', { name: /Open my ballot/i }); if (!await ballot.isVisible().catch(() => false)) continue; try { await ballot.click({ timeout: 1_000 }); const target = turn === imposterIndex ? names[(turn + 1) % names.length] : imposterName; await page.getByRole('button', { name: target, exact: true }).click({ timeout: 1_000 }); acted = true; break; } catch { /* another room update replaced this ballot */ } } } expect(acted).toBe(true); }
   const imposterPage = pages[imposterIndex]; await expect(imposterPage.getByPlaceholder('Guess the secret word')).toBeVisible({ timeout: 15_000 }); await imposterPage.getByPlaceholder('Guess the secret word').fill('definitely-wrong-guess'); await imposterPage.getByRole('button', { name: /Make final guess/i }).click(); for (const page of pages) await expect(page.getByRole('heading', { name: 'Friends win!' })).toBeVisible({ timeout: 15_000 });
+  for (const page of pages) await expect(page.locator('.result-brand')).toContainText('laughtable.com'); // the screen that gets turned to the camera names the site
   await pages[0].getByRole('button', { name: /Play another round/i }).click(); await expect(pages[0].locator('.online-role')).toBeVisible({ timeout: 15_000 });
   await pages[0].evaluate(() => { const socket = (window as Window & { __imposterSocket?: WebSocket }).__imposterSocket; socket?.send(JSON.stringify({ type: 'action', round: 1, action: { type: 'start-vote' } })); }); await expect(pages[0].locator('.form-error')).toContainText(/old or inactive|not valid/i);
   const roleBeforeReload = await pages[1].locator('.online-role').textContent();

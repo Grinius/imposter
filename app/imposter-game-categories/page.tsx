@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, Eye, Layers, Shuffle, Sparkles, Wifi } from 'lucide-react';
 import { pageMetadata } from '@/lib/seo';
 import { categories, getWords } from '@/lib/words';
+import BrandWordmark from '@/components/brand';
 
 const title = 'Imposter Game Categories - Best Word Packs to Play';
 const description = 'Choose the best Imposter game categories for your group: food, animals, places, objects, activities, and mixed word packs.';
@@ -20,7 +21,7 @@ const guidance: Record<string, string> = {
 export default function ImposterGameCategoriesPage() {
   return <div className="content-page">
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">CATEGORIES. WORD PACKS.</span>
       <nav aria-label="Main navigation"><Link className="nav-link" href="/imposter-game-words/"><Shuffle size={17} /><span>Words</span></Link><span className="nav-divider" /><Link className="nav-link" href="/online/"><Wifi size={17} /><span>Online</span></Link></nav>
     </header>

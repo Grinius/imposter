@@ -9,14 +9,14 @@ import '@fontsource/cormorant-garamond/600.css';
 import '@fontsource/cormorant-garamond/400-italic.css';
 import './globals.css';
 import { siteOrigin } from '@/lib/site';
-import { defaultOgImage } from '@/lib/seo';
+import { defaultOgImage, ogImageAlt, siteTitleSuffix } from '@/lib/seo';
 export const metadata: Metadata = {
-  title: 'Imposter — The secret-word party game',
+  title: 'Imposter — The secret-word party game' + siteTitleSuffix,
   description: 'Play the free imposter word game with 3–20 friends, on one phone or online. Discover secret roles, give clues, and catch the imposter. No account or download needed.',
   metadataBase: new URL(siteOrigin),
   alternates: { canonical: '/' },
   robots: { index: true, follow: true },
-  openGraph: { title: 'Imposter — The secret-word party game', description: 'Play the free imposter word game with 3–20 friends, on one phone or online. No account or download needed.', url: siteOrigin, type: 'website', images: [{ url: defaultOgImage, width: 1200, height: 630, alt: 'Laugh Table Imposter secret word party game' }] },
+  openGraph: { title: 'Imposter — The secret-word party game', description: 'Play the free imposter word game with 3–20 friends, on one phone or online. No account or download needed.', url: siteOrigin, type: 'website', images: [{ url: defaultOgImage, width: 1200, height: 630, type: 'image/png', alt: ogImageAlt }] },
   twitter: { card: 'summary_large_image', images: [defaultOgImage] },
 };
 export const viewport: Viewport = { themeColor: '#102b26', width: 'device-width', initialScale: 1 };

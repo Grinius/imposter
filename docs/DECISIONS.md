@@ -158,3 +158,44 @@ happens is the experiment, and it needs traffic to mean anything.
 
 The category tags, the player-slot tags, the `/premium/` link in the setup links, and every
 server-side premium rule are untouched.
+
+## 2026-09-11 — Share-loop basics: invite links, QR, PNG preview, site name on screen
+
+Source: `docs/GROWTH.md` bet 1. Four things a party game needs before any distribution channel can
+work, none of which existed on the live site.
+
+**The invite is `/online/?room=CODE`, a query parameter, not `/online/CODE`.** The site is a static
+export served by Workers Static Assets: `/online/` is one HTML file, and a path segment would need a
+Worker rewrite to reach it and would 404 under plain `next dev`. The parameter costs nothing, survives
+being lower-cased or having `utm_` junk appended (`roomIdFromSearch` validates and upper-cases), and
+the page keeps the address bar equal to the invite while in a room via `history.replaceState`, so the
+URL a host copies from the bar and the one the button copies are the same thing. A code in the URL
+beats the remembered room: a pasted invite always goes where it says. A guest arriving by link sees the
+join form first (code filled, name next, one gold button); the create form moves under the rule. Leaving
+resets the URL to `/online/` so a stale link is not left in the bar.
+
+**Native share where it exists.** `navigator.share` on phones, the clipboard elsewhere; a dismissed
+share sheet (`AbortError`) is not an error. Both paths carry the code link, never the bare page.
+
+**The QR is inline SVG from `qrcode`'s module matrix, not an `<img>` data URL.** No innerHTML, no
+change to the `img-src` policy in `public/_headers`. It renders only while the room is in the lobby.
+`qrcode` is the one new runtime dependency; the audit still reports only the pre-existing dev-only
+`sharp` advisory.
+
+**The social preview is a PNG rendered from the SVG source.** WhatsApp, iMessage, Discord, Slack, X
+and Facebook do not unfurl an SVG `og:image`. `scripts/render-og.mjs` (`npm run og`) renders
+`public/og/laughtable-imposter.svg` to `public/og/laughtable-imposter.png` with `sharp`, which moved
+from a transitive to a declared dev dependency; both files are committed. The SVG copy now reads
+"Imposter — the secret-word party game", not "game generator", because the same image serves every
+page.
+
+**The site name is on every screen without redrawing the header.** The wordmark stays "imposter."
+(the game) with "BY LAUGHTABLE" beneath it (`components/brand.tsx`, used by all twelve headers); the
+footer names LaughTable and the domain; both result screens carry "Played on laughtable.com" — the one
+screen that gets turned toward the table or a camera; every `<title>` ends in " | LaughTable". This
+is the reversible half of the positioning question in `docs/GROWTH.md`; renaming the wordmark itself
+is not decided.
+
+**Not done here, deliberately:** the free player cap (5) is unchanged — that is a pricing decision
+for the owner (`docs/GROWTH.md` scores it highest); the two "coming soon" cards in the lobby are
+unchanged; there is still no analytics, so none of this can be measured yet.

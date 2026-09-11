@@ -38,6 +38,19 @@ export function roomIdIsValid(roomId: string) {
   return /^[A-Z0-9]{6}$/.test(roomId);
 }
 
+// The invite is a plain query parameter rather than /online/CODE because the site is a static
+// export: /online/ is one HTML file, and a path segment would need a Worker rewrite to reach it
+// (and would 404 under plain `next dev`). The page reads the parameter on load and pre-fills the
+// join form, so a pasted link lands the guest one tap from the lobby instead of on a blank form.
+export const invitePath = '/online/';
+export function inviteUrl(origin: string, roomId: string) {
+  return `${origin}${invitePath}?room=${roomId}`;
+}
+export function roomIdFromSearch(search: string) {
+  const code = (new URLSearchParams(search).get('room') ?? '').trim().toUpperCase();
+  return roomIdIsValid(code) ? code : null;
+}
+
 export function playerCanStart(room: PublicRoom, playerId: string) {
   return room.hostId === playerId && room.status === 'lobby' && room.players.length >= minPlayerLimit;
 }

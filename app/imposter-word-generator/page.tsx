@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, Eye, Fingerprint, Lightbulb, ListChecks, Wifi } from 'lucide-react';
 import WordGenerator from '@/components/generator/word-generator';
 import { pageMetadata } from '@/lib/seo';
+import BrandWordmark from '@/components/brand';
 
 const title = 'Imposter Word Generator - Random Secret Words';
 const description = 'Generate random Imposter words by category. Use this simple word-only tool for secret-word rounds, clue ideas, and quick party games.';
@@ -12,7 +13,7 @@ export const metadata: Metadata = pageMetadata('/imposter-word-generator/', titl
 export default function ImposterWordGeneratorPage() {
   return <div className="content-page">
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">RANDOM WORDS. QUICK ROUNDS.</span>
       <nav aria-label="Main navigation"><Link className="nav-link" href="/imposter-game-generator/"><Fingerprint size={17} /><span>Role cards</span></Link><span className="nav-divider" /><Link className="nav-link" href="/imposter-game-rules/"><ListChecks size={17} /><span>Rules</span></Link></nav>
     </header>

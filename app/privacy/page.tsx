@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Eye, LockKeyhole, Mail } from 'lucide-react';
 import { pageMetadata } from '@/lib/seo';
+import BrandWordmark from '@/components/brand';
 
 const title = 'Privacy Policy - Imposter';
 const description = 'What Imposter collects when you play or go premium, why, and who to contact about it.';
@@ -13,7 +14,7 @@ const lastUpdated = '2026-09-10';
 export default function PrivacyPage() {
   return <div className="content-page">
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">PLAIN LANGUAGE. NO FINE PRINT GAMES.</span>
       <nav aria-label="Main navigation"><Link className="nav-link" href="/">Home</Link></nav>
     </header>

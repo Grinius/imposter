@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Check, Eye, LoaderCircle, ShieldAlert } from 'lucide-react';
 import { storePremiumToken } from '@/lib/premium-client';
+import BrandWordmark from '@/components/brand';
 
 type VerifyState = 'missing' | 'verifying' | 'success' | 'error';
 
@@ -30,7 +31,7 @@ export default function PremiumSuccess() {
 
   return <div className="content-page premium-page">
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
     </header>
     <main>
       <section className="content-hero">

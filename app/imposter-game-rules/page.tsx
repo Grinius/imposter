@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Eye, Fingerprint, ListChecks, MessageCircle, ShieldCheck, Smartphone, Vote, Wifi } from 'lucide-react';
 import { pageMetadata } from '@/lib/seo';
+import BrandWordmark from '@/components/brand';
 
 const title = 'Imposter Game Rules - How to Play the Secret Word Game';
 const description = 'Learn the Imposter game rules: secret words, one imposter, clue rounds, voting, final guesses, and simple house rules for 3-5 free players.';
@@ -20,7 +21,7 @@ const rules = [
 export default function ImposterGameRulesPage() {
   return <div className="content-page">
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><span>imposter<span className="brand-dot">.</span></span></Link>
+      <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">RULES. CLUES. VOTES.</span>
       <nav aria-label="Main navigation"><Link className="nav-link" href="/imposter-game-generator/"><Fingerprint size={17} /><span>Generator</span></Link><span className="nav-divider" /><Link className="nav-link" href="/online/"><Wifi size={17} /><span>Online</span></Link></nav>
     </header>

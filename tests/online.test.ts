@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { playerCanAct, playerCanStart, publicRoom, roomIdIsValid, type PublicRoom, type RoomState } from '../lib/online';
+import { inviteUrl, playerCanAct, playerCanStart, publicRoom, roomIdFromSearch, roomIdIsValid, type PublicRoom, type RoomState } from '../lib/online';
 import { createRound, transition } from '../lib/game';
 // Stored room state carries each seat's secret; the public projection must never echo it back.
 const room: RoomState = { roomId: 'ABC123', hostId: 'host', status: 'lobby', round: 0, premium: false, players: [{ id: 'host', secret: 'host-seat-secret', name: 'Alex', connected: true, isHost: true }, { id: 'guest', secret: 'guest-seat-secret', name: 'Jamie', connected: true, isHost: false }] };
 describe('online room protocol helpers', () => {
+  it('builds an invite link that carries the room code and reads it back, tolerating case and junk', () => {
+    expect(inviteUrl('https://laughtable.com', 'ABC123')).toBe('https://laughtable.com/online/?room=ABC123');
+    expect(roomIdFromSearch('?room=ABC123')).toBe('ABC123');
+    expect(roomIdFromSearch('?room=abc123&utm_source=tiktok')).toBe('ABC123');
+    expect(roomIdFromSearch('?room=ABC12')).toBeNull();
+    expect(roomIdFromSearch('?room=<script>')).toBeNull();
+    expect(roomIdFromSearch('')).toBeNull();
+  });
   it('accepts only six-character uppercase room identifiers', () => { expect(roomIdIsValid('ABC123')).toBe(true); expect(roomIdIsValid('abc123')).toBe(false); expect(roomIdIsValid('ABC12')).toBe(false); expect(roomIdIsValid('ABC1234')).toBe(false); });
   it('allows only the host to start a lobby with three players', () => { const full: PublicRoom = { ...room, players: [...room.players, { id: 'third', name: 'Taylor', connected: true, isHost: false }] }; expect(playerCanStart(room, 'host')).toBe(false); expect(playerCanStart(full, 'host')).toBe(true); expect(playerCanStart(full, 'guest')).toBe(false); });
   it('requires an active connected membership for actions', () => { expect(playerCanAct(room, 'host')).toBe(true); expect(playerCanAct({ ...room, players: room.players.map(player => player.id === 'guest' ? { ...player, connected: false } : player) }, 'guest')).toBe(false); expect(playerCanAct(room, 'unknown')).toBe(false); });
