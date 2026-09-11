@@ -2,6 +2,30 @@
 
 Updated: 2026-09-11.
 
+## Variant modes (2026-09-11, adopted)
+
+Three pass-and-play variants ship at their own indexable URLs, from `docs/GROWTH.md` bet 2:
+`/timer-imposter/` (hidden stopwatch, guess-the-target steal), `/question-imposter/` (one player
+gets a different question and is not told; no final guess), `/drawing-imposter/` (one stroke per
+turn on a shared canvas, colour-coded by player, word guess to steal). Rules live in
+`lib/timer-imposter.ts`, `lib/question-imposter.ts`, `lib/drawing-imposter.ts` over the shared
+`lib/deduction.ts`; 60 question pairs in `lib/questions.ts`; UI in `components/variants/` (shared
+handoff/ballot/result pieces, a canvas `sketch-pad.tsx`, and a static `variant-page.tsx` frame with
+how-to, rules and FAQ rendered at build time). Home and the rules page link to all three; all three
+are in the sitemap. Exact rule choices are in `docs/DECISIONS.md`.
+
+Validation: 89 Vitest (15 new: shared rules, and for each variant allowed/rejected transitions,
+privacy retreat, ties, escapes, guess tolerance/word guess), TypeScript, ESLint (2 pre-existing
+warnings), static build, and 11 Playwright specs (4 new: each variant played from setup to the
+branded result including the handoff guard, hidden digits while the stopwatch runs, identical
+question cards with exactly one odd, one-stroke-per-turn with a redo, and a crawlability check of
+the rendered HTML, titles and cross-links). Result, stopwatch and canvas screens were inspected
+from Playwright screenshots. Not verified: touch drawing on a real phone (mouse only), and how the
+variant SERPs respond (needs deploy + GSC).
+
+Next step: deploy, request indexing for the three URLs in GSC, and post the short demo clip per
+`docs/GROWTH.md` day 4–5; then the free-cap decision and analytics remain the open day-1 items.
+
 ## Share-loop basics (2026-09-11, adopted)
 
 From `docs/GROWTH.md` bet 1. Invite links now carry the room code (`/online/?room=CODE`; the address

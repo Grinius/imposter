@@ -10,6 +10,9 @@ export const publicRoutes = [
   '/imposter-game-categories/',
   '/imposter-game-online/',
   '/imposter-game-strategy/',
+  '/timer-imposter/',
+  '/question-imposter/',
+  '/drawing-imposter/',
   '/premium/',
   '/privacy/',
 ];

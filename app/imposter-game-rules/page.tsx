@@ -48,6 +48,18 @@ export default function ImposterGameRulesPage() {
           <li><Vote size={17} /><span><strong>Good vote:</strong> based on clues, reactions, and who sounded least connected to the word.</span></li>
         </ul>
       </section>
+      <section className="example-section" aria-labelledby="rules-variants">
+        <div>
+          <span className="eyebrow"><Smartphone size={14} /> VARIANTS</span>
+          <h2 id="rules-variants">Three more ways to play the imposter game</h2>
+          <p>The same secret-and-vote structure works with secrets other than a word. Each variant below is playable free on one phone, with its own rules page.</p>
+        </div>
+        <ul className="variant-list">
+          <li><Link href="/timer-imposter/"><strong>Timer Imposter</strong></Link> — everyone sees a target time except the imposter; each player runs a hidden stopwatch and the table judges who was guessing.</li>
+          <li><Link href="/question-imposter/"><strong>Question Imposter</strong></Link> — everyone answers the same question except one player, who was secretly asked a different one and does not know it.</li>
+          <li><Link href="/drawing-imposter/"><strong>Drawing Imposter</strong></Link> — everyone adds one line to a shared drawing; the imposter does not know the subject.</li>
+        </ul>
+      </section>
       <section className="content-next"><h2>Ready to play?</h2><p>Start with the generator for quick private cards, use pass-and-play for the full local round, or create an online room when everyone has their own device.</p><div><Link className="gold-button" href="/imposter-game-generator/">Use generator <ArrowRight size={17} /></Link><Link className="outline-button" href="/online/"><Smartphone size={16} /> Online room</Link></div></section>
     </main>
   </div>;

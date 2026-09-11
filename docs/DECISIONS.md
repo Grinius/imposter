@@ -199,3 +199,40 @@ is not decided.
 **Not done here, deliberately:** the free player cap (5) is unchanged — that is a pricing decision
 for the owner (`docs/GROWTH.md` scores it highest); the two "coming soon" cards in the lobby are
 unchanged; there is still no analytics, so none of this can be measured yet.
+
+## 2026-09-11 — Variant modes at their own URLs: Timer, Question, Drawing Imposter
+
+Source: `docs/GROWTH.md` bet 2. The generic "imposter game" SERP is a clone field; the variants that
+TikTok creators are minting in 2026 have zero or one tool each. Each variant is a playable page with
+its own rules, tests, and static explainer.
+
+**Rules are separate modules, not flags on the word game.** `lib/timer-imposter.ts`,
+`lib/question-imposter.ts` and `lib/drawing-imposter.ts` each carry an explicit phase machine;
+`lib/deduction.ts` holds only what is genuinely identical (name validation, extracted from
+`validateSettings` without changing its messages; vote validity; tally with tie → nobody). A rule
+change in one variant therefore cannot leak into another, and each module is tested on its own
+(`tests/variants.test.ts`).
+
+**Exact rule choices.** Timer: target drawn uniformly from the chosen range in hundredths of a
+second; the imposter sees only the range; each player runs the stopwatch once, blind (the UI never
+renders digits while running; times are capped at 3600 s); tie or wrong accusation → imposter;
+caught → one guess, stolen if within max(0.30 s, target/10). Question: the odd question goes to one
+player who is *not told* — every card looks identical — so there is no bluff and no final guess;
+caught → friends, otherwise imposter. Drawing: same word packs and premium gate as the word game;
+one continuous stroke per turn (a dot counts), two passes by default, strokes kept in 0–1
+coordinates with the player index so the reveal is colour-coded; one redo before confirming is a
+UI courtesy, not a rule (the rule sees only the kept stroke); caught → one word guess via
+`normalizeGuess`. All three keep the word game's privacy behaviour: a lost focus during a reveal or
+ballot retreats to the handoff screen, and the 650 ms handoff guard is shared.
+
+**Invites carry no state.** Variants are pass-and-play only; there is no online mode for them yet
+and the pages are indexable, unlike `/online/`.
+
+**Pages are real HTML.** `components/variants/variant-page.tsx` renders how-to steps, rules, and FAQ
+at build time around the client game; the three pages cross-link, the home page and rules page link
+to them, and they are in the sitemap (`publicRoutes`). Titles follow the "X Imposter Game - …" shape
+that matches how people search for the TikTok variants.
+
+**Not done:** no online rooms for variants, no analytics (still), no themed content for the
+question pack beyond the 60 built-in pairs, and real-device touch drawing is unverified (pointer
+capture was exercised with a mouse in Playwright only).

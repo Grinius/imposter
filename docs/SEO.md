@@ -25,6 +25,9 @@ When data arrives, retain its source and date. Capture keyword, country, languag
 - `/imposter-game-online/`: crawlable online-play landing page that links into the private room app.
 - `/imposter-game-strategy/`: clue, bluffing, and voting guide for strategy intent.
 - Private room creation/joining app at `/online/`.
+- `/timer-imposter/`, `/question-imposter/`, `/drawing-imposter/`: playable variant modes with static
+  explainers, targeting the 2026 TikTok variant queries ("timer imposter game", "imposter timer app",
+  "question imposter game", "drawing imposter") where the SERP is thin (see `docs/GROWTH.md` §4).
 
 These are candidate page types, not a commitment to separate URLs for every phrase. Each indexable page needs distinct utility; avoid interchangeable location/category pages and mass-generated keyword permutations. Do not expose the current round's secret words in supporting content.
 

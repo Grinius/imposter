@@ -149,6 +149,9 @@ start #7. **C (next month)** #5, #6, #8, #9, #11, #12. **D (ignore for now)** #1
   clicks; paywall-prompt rate at setup. No kill criterion — table stakes.
 
 ### Bet 2 — Be the fastest tool for new imposter variants ("SEO before SEO")
+
+> **Status 2026-09-11:** `/timer-imposter/`, `/question-imposter/` and `/drawing-imposter/` are built and
+> linked (`docs/DECISIONS.md`). Wavelength × Imposter is not. Explainer outreach and demo clips are still to do.
 - Insight: the generic SERP is 18 clones deep; variant SERPs are 0–1 deep and TikTok mints variants
   monthly. The tool that exists the week a variant trends gets the explainer links and the "how to play
   X app" traffic.

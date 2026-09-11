@@ -1,4 +1,5 @@
-import { freePlayerLimit, minPlayerLimit } from './limits';
+import { freePlayerLimit } from './limits';
+import { pick, validateNames } from './deduction';
 import { categories, getWords, type Category, type Word } from './words';
 export type Phase = 'handoff' | 'reveal' | 'discussion' | 'vote-handoff' | 'voting' | 'guess' | 'result';
 export interface Settings { names: string[]; category: Category; minutes: number; hints: boolean; }
@@ -12,10 +13,7 @@ export type Action = { type: 'reveal' | 'hide' | 'privacy' | 'start-vote' | 'ope
 export interface EntitlementOptions { maxPlayers?: number; premium?: boolean; }
 export function validateSettings(settings: Settings, options: EntitlementOptions = {}): string | null {
   const { maxPlayers = freePlayerLimit, premium = false } = options;
-  if (settings.names.length < minPlayerLimit || settings.names.length > maxPlayers) return `Invite ${minPlayerLimit}–${maxPlayers} players to the table.`;
-  const names = settings.names.map(name => name.trim());
-  if (names.some(name => !name || name.length > 20)) return 'Give everyone a name (up to 20 characters).';
-  if (new Set(names.map(name => name.toLocaleLowerCase())).size !== names.length) return 'Use a different name for each player.';
+  const namesError = validateNames(settings.names, maxPlayers); if (namesError) return namesError;
   const category = categories.find(candidate => candidate.id === settings.category);
   if (!category) return 'Choose a category.';
   // Server-side defense in depth: a premium category must never be playable without a verified
@@ -23,11 +21,6 @@ export function validateSettings(settings: Settings, options: EntitlementOptions
   if (category.premium && !premium) return `${category.name} is a premium category. Upgrade to Imposter Premium to play it.`;
   if (![2, 3, 5].includes(settings.minutes)) return 'Choose a 2, 3, or 5 minute discussion.';
   return null;
-}
-function pick(length: number, random: () => number) {
-  const value = random();
-  if (!Number.isFinite(value) || value < 0 || value >= 1) throw new Error('Random value must be in [0, 1).');
-  return Math.floor(value * length);
 }
 export function createRound(settings: Settings, random: () => number, previousWord?: string, options: EntitlementOptions = {}): Round {
   const error = validateSettings(settings, options); if (error) throw new Error(error);
