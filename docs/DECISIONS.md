@@ -234,5 +234,5 @@ to them, and they are in the sitemap (`publicRoutes`). Titles follow the "X Impo
 that matches how people search for the TikTok variants.
 
 **Not done:** no online rooms for variants, no analytics (still), no themed content for the
-question pack beyond the 60 built-in pairs, and real-device touch drawing is unverified (pointer
-capture was exercised with a mouse in Playwright only).
+question pack beyond the 60 built-in pairs. Touch drawing on a real phone was confirmed by the
+owner the same day (pointer capture had only been exercised with a mouse in Playwright).

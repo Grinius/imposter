@@ -20,8 +20,8 @@ warnings), static build, and 11 Playwright specs (4 new: each variant played fro
 branded result including the handoff guard, hidden digits while the stopwatch runs, identical
 question cards with exactly one odd, one-stroke-per-turn with a redo, and a crawlability check of
 the rendered HTML, titles and cross-links). Result, stopwatch and canvas screens were inspected
-from Playwright screenshots. Not verified: touch drawing on a real phone (mouse only), and how the
-variant SERPs respond (needs deploy + GSC).
+from Playwright screenshots. Touch drawing was verified by the owner on a real phone on 2026-09-11 (owner report). Not
+verified: how the variant SERPs respond (needs deploy + GSC).
 
 Next step: deploy, request indexing for the three URLs in GSC, and post the short demo clip per
 `docs/GROWTH.md` day 4–5; then the free-cap decision and analytics remain the open day-1 items.
