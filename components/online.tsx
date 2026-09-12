@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Check, ChevronDown, Clock3, Copy, Link2, LockKey
 import { inviteUrl, invitePath, roomIdFromSearch, type PrivateRole, type PublicRoom } from '@/lib/online';
 import QrCode from '@/components/qr-code';
 import { siteHost } from '@/components/brand';
+import { useClientValue } from '@/lib/use-client-value';
 import RevealStage from '@/components/reveal-stage';
 import RecapButton from '@/components/recap-button';
 import type { Settings } from '@/lib/game';
@@ -13,6 +14,8 @@ import PremiumPaywallNotice from '@/components/premium/paywall-notice';
 import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '@/lib/limits';
 import { getStoredPremiumToken, usePremiumStatus } from '@/lib/premium-client';
 import BrandWordmark from '@/components/brand';
+import { useTrackRoundEnd } from '@/components/use-track-round';
+import { track } from '@/lib/analytics';
 
 const expectedPlayerOptions = [3, 4, 5, 6, 7, 8, 10, 12, 15, 20];
 type SocketMessage = { type: 'room'; room: PublicRoom } | { type: 'seat'; playerId: string; seat: string } | { type: 'role'; role: PrivateRole } | { type: 'error'; message: string };
@@ -26,27 +29,39 @@ function readSeat(code: string): Seat | null {
   try { const stored = window.localStorage.getItem(seatKey(code)); return stored ? JSON.parse(stored) as Seat : null; } catch { return null; }
 }
 export default function OnlineGame() {
-  const [name, setName] = useState(() => typeof window !== 'undefined' ? window.localStorage.getItem('imposter-player-name') ?? 'Alex' : 'Alex'), [invitedCode, setInvitedCode] = useState(() => typeof window !== 'undefined' ? roomIdFromSearch(window.location.search) : null), [roomCode, setRoomCode] = useState(() => typeof window !== 'undefined' ? roomIdFromSearch(window.location.search) ?? window.localStorage.getItem('imposter-room-code') ?? '' : ''), [room, setRoom] = useState<PublicRoom | null>(null), [role, setRole] = useState<PrivateRole | null>(null), [error, setError] = useState(''), [copied, setCopied] = useState(false), [clue, setClue] = useState(''), [guess, setGuess] = useState(''), [myPlayerId, setMyPlayerId] = useState('');
+  // Browser-only inputs (the invite in the URL, what this browser remembered, whether a share sheet
+  // exists) are read through useSyncExternalStore so the first client render matches the HTML; the
+  // typed name and code override the remembered ones once the player edits them.
+  const invitedCode = useClientValue(() => roomIdFromSearch(window.location.search), null);
+  const savedName = useClientValue(() => { try { return window.localStorage.getItem('imposter-player-name'); } catch { return null; } }, null);
+  const savedCode = useClientValue(() => { try { return window.localStorage.getItem('imposter-room-code'); } catch { return null; } }, null);
+  const canShare = useClientValue(() => typeof navigator.share === 'function', false);
+  const [typedName, setName] = useState<string | null>(null), [typedCode, setRoomCode] = useState<string | null>(null);
+  const name = typedName ?? savedName ?? 'Alex', roomCode = typedCode ?? invitedCode ?? savedCode ?? '';
+  const [room, setRoom] = useState<PublicRoom | null>(null), [role, setRole] = useState<PrivateRole | null>(null), [error, setError] = useState(''), [copied, setCopied] = useState(false), [clue, setClue] = useState(''), [guess, setGuess] = useState(''), [myPlayerId, setMyPlayerId] = useState('');
   const [category, setCategory] = useState<Category>('mixed'), [minutes, setMinutes] = useState(3), [hints, setHints] = useState(true), [paywallReasons, setPaywallReasons] = useState<string[] | null>(null);
   const [expectedPlayers, setExpectedPlayers] = useState(freePlayerLimit);
   // Which round's reveal this client has already watched; a new round re-arms the stage.
   const [revealedRound, setRevealedRound] = useState(-1);
-  const [canShare] = useState(() => typeof navigator !== 'undefined' && typeof navigator.share === 'function');
   const { premium } = usePremiumStatus();
   const socket = useRef<WebSocket | null>(null), audio = useRef<AudioContext | null>(null), leaving = useRef(false);
+  // Boot once the client values are in (the first, hydrating run sees the server snapshots and does
+  // nothing). A code in the URL is an invite: it wins over whatever room this browser last sat in. A
+  // guest who already holds a seat there (they refreshed, or tapped the link twice) goes straight
+  // back in; anyone else sees the join form with the code filled so all that's left is a name.
+  const hydrated = useClientValue(() => true, false), booted = useRef(false);
   useEffect(() => {
-    // A code in the URL is an invite: it wins over whatever room this browser last sat in. A guest
-    // who already holds a seat there (they refreshed, or tapped the link twice) goes straight back
-    // in; anyone else sees the join form with the code filled so all that's left is a name.
-    const savedCode = window.localStorage.getItem('imposter-room-code');
+    if (!hydrated || booted.current) return;
+    booted.current = true; // exactly once: a code remembered later (after creating a room) must not open a second socket
     if (invitedCode) { if (readSeat(invitedCode)) connect(invitedCode, readSeat(invitedCode)); }
     else if (savedCode) connect(savedCode, readSeat(savedCode));
-    return () => socket.current?.close();
-  }, []);
+  }, [hydrated, invitedCode, savedCode]); // eslint-disable-line react-hooks/exhaustive-deps -- connect is stable for the life of the component
+  useEffect(() => () => socket.current?.close(), []);
   // Keep the address bar equal to the invite while in a room, so the URL itself is shareable and a
   // refresh reconnects to the same room, and put it back once the player leaves.
   useEffect(() => {
-    const target = room ? inviteUrl(window.location.origin, room.roomId) : window.location.origin + invitePath;
+    if (!room) return; // the bar is reset in leaveRoom, never at boot — a pending invite must survive until it is read
+    const target = inviteUrl(window.location.origin, room.roomId);
     if (window.location.href !== target) window.history.replaceState(null, '', target);
   }, [room]);
   function connect(code: string, credentials: Seat | null = null, create = false) {
@@ -70,25 +85,26 @@ export default function OnlineGame() {
   // The seat deliberately survives leaving: the server keeps an empty seat in the room either way,
   // so holding on to the credential means coming back re-takes that seat instead of adding a second
   // one and eating a slot in a five-player room.
-  function leaveRoom() { leaving.current = true; socket.current?.close(); socket.current = null; window.localStorage.removeItem('imposter-room-code'); setRoom(null); setRole(null); setError(''); setRoomCode(''); setInvitedCode(null); setClue(''); setGuess(''); setMyPlayerId(''); }
-  async function create() { setError(''); const response = await fetch('/api/rooms', { method: 'POST' }); if (!response.ok) { setError('Could not create a room yet.'); return; } const data = await response.json() as { roomId: string }; window.localStorage.setItem('imposter-room-code', data.roomId); window.localStorage.setItem('imposter-player-name', name); setRoomCode(data.roomId); connect(data.roomId, null, true); }
-  function join() { const code = roomCode.trim().toUpperCase(); if (!/^[A-Z0-9]{6}$/.test(code)) { setError('Enter the six-character room code.'); return; } setError(''); window.localStorage.setItem('imposter-room-code', code); window.localStorage.setItem('imposter-player-name', name); connect(code, readSeat(code)); }
+  function leaveRoom() { leaving.current = true; socket.current?.close(); socket.current = null; window.localStorage.removeItem('imposter-room-code'); window.history.replaceState(null, '', window.location.origin + invitePath); setRoom(null); setRole(null); setError(''); setRoomCode(''); setClue(''); setGuess(''); setMyPlayerId(''); }
+  async function create() { setError(''); const response = await fetch('/api/rooms', { method: 'POST' }); if (!response.ok) { setError('Could not create a room yet.'); return; } const data = await response.json() as { roomId: string }; track({ name: 'room_create' }); window.localStorage.setItem('imposter-room-code', data.roomId); window.localStorage.setItem('imposter-player-name', name); setRoomCode(data.roomId); connect(data.roomId, null, true); }
+  function join() { const code = roomCode.trim().toUpperCase(); if (!/^[A-Z0-9]{6}$/.test(code)) { setError('Enter the six-character room code.'); return; } setError(''); track({ name: 'room_join', via: invitedCode ? 'link' : 'code' }); window.localStorage.setItem('imposter-room-code', code); window.localStorage.setItem('imposter-player-name', name); connect(code, readSeat(code)); }
   function invite() { return room ? inviteUrl(window.location.origin, room.roomId) : ''; }
-  async function copyInvite() { try { await navigator.clipboard.writeText(invite()); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { setError('Could not copy. The link is in your address bar.'); } }
+  async function copyInvite() { track({ name: 'share_invite', method: 'copy' }); try { await navigator.clipboard.writeText(invite()); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { setError('Could not copy. The link is in your address bar.'); } }
   // Native share where it exists (phones), the clipboard everywhere else; a dismissed share sheet is
   // not an error.
-  async function shareInvite() { if (!canShare) return copyInvite(); try { await navigator.share({ title: 'Join my Imposter room', text: `Join my Imposter game on ${siteHost} — room ${room?.roomId}`, url: invite() }); } catch (cause) { if (!(cause instanceof DOMException && cause.name === 'AbortError')) await copyInvite(); } }
+  async function shareInvite() { if (!canShare) return copyInvite(); track({ name: 'share_invite', method: 'share' }); try { await navigator.share({ title: 'Join my Imposter room', text: `Join my Imposter game on ${siteHost} — room ${room?.roomId}`, url: invite() }); } catch (cause) { if (!(cause instanceof DOMException && cause.name === 'AbortError')) await copyInvite(); } }
   function start() {
     if (!room) return;
     const chosen = categories.find(item => item.id === category);
     if (chosen?.premium && !room.premium) { setPaywallReasons([`${chosen.name} category`]); setError(''); return; }
     setPaywallReasons(null);
     const settings: Settings = { names: room.players.map(player => player.name), category, minutes, hints };
-    socket.current?.send(JSON.stringify({ type: 'start', settings }));
+    socket.current?.send(JSON.stringify({ type: 'start', settings })); track({ name: 'round_start', mode: 'online', pack: category, players: room.players.length });
   }
   function chime() { try { const context = audio.current ?? new AudioContext(); audio.current = context; const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.connect(gain); gain.connect(context.destination); oscillator.frequency.value = 620; gain.gain.setValueAtTime(.025, context.currentTime); gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + .18); oscillator.start(); oscillator.stop(context.currentTime + .2); } catch { /* audio is optional */ } }
   function act(action: object) { if (room) socket.current?.send(JSON.stringify({ type: 'action', round: room.round, action })); }
   const game = room?.game;
+  useTrackRoundEnd(game ? { phase: game.phase, winner: game.winner, reason: game.reason } : null, 'online', room?.round ?? 0, !!room && room.hostId === myPlayerId);
   const phaseKey = game ? `${game.phase}-${game.cursor}-${game.votesSubmitted}` : '';
   const previousPhase = useRef('');
   useEffect(() => { if (phaseKey && previousPhase.current && phaseKey !== previousPhase.current) chime(); previousPhase.current = phaseKey; }, [phaseKey]);
@@ -125,14 +141,14 @@ export default function OnlineGame() {
       const reveal = game.reveal, names = room.players.map(player => player.name);
       const verdict = game.reason === 'tie' ? 'A split vote. The imposter got away.' : game.reason === 'escaped' ? `${names[game.accused!]} took the blame. The imposter wins.` : game.reason === 'guessed' ? 'Caught, but guessed the word. The imposter wins.' : 'Caught. The friends win.';
       // Every player watches the reveal on their own phone; the reveal data only exists at result.
-      if (reveal && revealedRound !== room.round) return <RevealStage names={names} imposter={reveal.imposter} secretLabel="THE SECRET WORD" secret={reveal.word} winner={game.winner} onDone={() => setRevealedRound(room.round)} />;
+      if (reveal && revealedRound !== room.round) return <RevealStage mode="online" names={names} imposter={reveal.imposter} secretLabel="THE SECRET WORD" secret={reveal.word} winner={game.winner} onDone={() => setRevealedRound(room.round)} />;
       return <div className="online-game-panel online-result">
         <h2>{game.winner === 'friends' ? 'The friends win.' : 'The imposter wins.'}</h2>
         <p>{verdict}</p>
         {reveal && <>
           <div className="result-details"><div><span>THE IMPOSTER</span><strong>{names[reveal.imposter]}</strong></div><div><span>THE SECRET WORD</span><strong>{reveal.word}</strong></div></div>
           <div className="clue-list"><p className="online-note">THE CLUES</p>{game.clues.map((item, index) => { const who = (game.firstClue + index) % names.length; return <p key={`${index}-${item}`}><b>{names[who]}{who === reveal.imposter ? ' ✦' : ''}:</b> {item}</p>; })}</div>
-          <RecapButton data={{ roleLabel: 'THE IMPOSTER WAS', imposter: names[reveal.imposter], secretLabel: 'THE SECRET WORD', secret: reveal.word, verdict, rowsTitle: 'THE CLUES', rows: game.clues.map((item, index) => { const who = (game.firstClue + index) % names.length; return { label: names[who], value: item, highlight: who === reveal.imposter }; }) }} />
+          <RecapButton mode="online" data={{ roleLabel: 'THE IMPOSTER WAS', imposter: names[reveal.imposter], secretLabel: 'THE SECRET WORD', secret: reveal.word, verdict, rowsTitle: 'THE CLUES', rows: game.clues.map((item, index) => { const who = (game.firstClue + index) % names.length; return { label: names[who], value: item, highlight: who === reveal.imposter }; }) }} />
         </>}
         <p className="result-brand">Played on <b>{siteHost}</b></p>
         {room.hostId === myPlayerId && <button className="gold-button" onClick={start}>Play another round</button>}

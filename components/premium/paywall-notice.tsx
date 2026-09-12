@@ -3,11 +3,14 @@
 import { ArrowRight, LockKeyhole, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { premiumConfigured, stripePaymentLink } from '@/lib/premium';
+import { track } from '@/lib/analytics';
+import { useEffect } from 'react';
 
 // Shown when someone tries to start a game with a selection (more players, a premium category)
 // that isn't actually available on the free tier — after they've picked it, not before, so they
 // see exactly what they'd be paying for instead of hitting a wall up front.
 export default function PremiumPaywallNotice({ reasons, onUseFree }: { reasons: string[]; onUseFree: () => void }) {
+  useEffect(() => { track({ name: 'paywall_shown', reason: reasons.join(', ').slice(0, 40) }); }, [reasons]);
   return <div className="paywall-notice" role="alert">
     <span className="upgrade-badge"><LockKeyhole size={13} /> This setup needs Premium</span>
     <p>You&rsquo;ve picked:</p>

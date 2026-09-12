@@ -2,6 +2,28 @@
 
 Updated: 2026-09-12.
 
+## Analytics (2026-09-12, adopted)
+
+Plausible via the per-site script tag in `app/layout.tsx` (cookieless, no banner), CSP opened for
+`plausible.io` only, room codes stripped from reported URLs by `transformRequest`. Eight typed
+events through `lib/analytics.ts` with a prop whitelist that cannot carry names, words, roles,
+clues, questions or room codes; wired into the word game, the three variants, online rooms
+(host-only round events), the reveal stage, the recap button and the paywall notice. Privacy page
+updated. On the way, browser-only reads (invite code, remembered name/room, pack preselect,
+`navigator.share`) moved onto `useSyncExternalStore` (`lib/use-client-value.ts`), removing the React
+#418 hydration errors on `/online/?room=…` and `/?pack=…`; the online URL sync now resets only on
+leave, and boot runs exactly once. Reasoning in `docs/DECISIONS.md`.
+
+Validation: 95 Vitest (2 new: prop whitelist drops secrets, URL scrub), TypeScript, ESLint (1
+pre-existing warning), static build, 13 Playwright (updated timer and online specs stub the tag,
+block the vendor, and assert the exact events and that no event contains a name, the secret or the
+code; 1 new: an invite link beats a remembered room, no second socket after creating a room, and
+zero console errors on the URL-driven pages). The real tag was seen loading in the Worker preview
+with the CSP applied. Not verifiable here: real pageviews (the script skips localhost) — after
+deploy, confirm in Plausible that `/online/` pages never show `?room=`.
+
+Next step: deploy; put UTMs on every link you post; the free-cap decision is the last open day-1 item.
+
 ## Themed packs (2026-09-12, adopted)
 
 Five free themed packs (Halloween, Football, K-pop, Pop superstars, Christmas; 48 words each) are

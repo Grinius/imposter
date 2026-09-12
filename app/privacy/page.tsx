@@ -9,7 +9,7 @@ const description = 'What Imposter collects when you play or go premium, why, an
 
 export const metadata: Metadata = pageMetadata('/privacy/', title, description);
 
-const lastUpdated = '2026-09-10';
+const lastUpdated = '2026-09-12';
 
 export default function PrivacyPage() {
   return <div className="content-page">
@@ -30,7 +30,8 @@ export default function PrivacyPage() {
         <div>
           <article><span>01</span><h3>Local pass-and-play</h3><p>Player names and settings stay in your browser&rsquo;s memory for that session. Nothing is sent to a server, and nothing is saved once you close or refresh the tab.</p></article>
           <article><span>02</span><h3>Online rooms</h3><p>The names you type and your room code are sent to our server to run the room (Cloudflare Durable Objects) and are only kept for as long as that room stays active, plus a short cleanup window after everyone leaves. We don&rsquo;t link them to a real identity.</p></article>
-          <article><span>03</span><h3>Your browser&rsquo;s local storage</h3><p>Your display name, a random per-device player ID, your last room code, a sound preference, and a premium entitlement token (if you&rsquo;ve paid) are saved only on your own device, not in a profile on our servers. Clearing your browser&rsquo;s site data removes all of it.</p></article>
+          <article><span>03</span><h3>Analytics</h3><p>We use Plausible, a cookieless analytics service hosted in the EU, to count page views and a handful of game events (a round started or finished, a room created or joined, an invite shared, a recap saved, and which mode or word pack was used). It sets no cookies, stores no personal identifiers, and needs no consent banner. It never receives player names, secret words, roles, clues, questions or room codes &mdash; the game strips the room code from the page address before it is reported. Plausible&rsquo;s own policy: <a href="https://plausible.io/data-policy">plausible.io/data-policy</a>.</p></article>
+          <article><span>04</span><h3>Your browser&rsquo;s local storage</h3><p>Your display name, a random per-device player ID, your last room code, a sound preference, and a premium entitlement token (if you&rsquo;ve paid) are saved only on your own device, not in a profile on our servers. Clearing your browser&rsquo;s site data removes all of it.</p></article>
         </div>
       </section>
 

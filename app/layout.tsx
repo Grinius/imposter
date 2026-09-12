@@ -10,6 +10,7 @@ import '@fontsource/cormorant-garamond/400-italic.css';
 import './globals.css';
 import { siteOrigin } from '@/lib/site';
 import { defaultOgImage, ogImageAlt, siteTitleSuffix } from '@/lib/seo';
+import { plausibleInitSnippet } from '@/lib/analytics';
 export const metadata: Metadata = {
   title: 'Imposter — The secret-word party game' + siteTitleSuffix,
   description: 'Play the free imposter word game with 3–20 friends, on one phone or online. Discover secret roles, give clues, and catch the imposter. No account or download needed.',
@@ -20,4 +21,10 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', images: [defaultOgImage] },
 };
 export const viewport: Viewport = { themeColor: '#102b26', width: 'device-width', initialScale: 1 };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="en"><body>{children}</body></html>; }
+// Plausible: cookieless, no consent banner, one script. The inline stub queues events fired before
+// the script arrives and installs the transformRequest that strips room codes from pageview URLs
+// (see lib/analytics.ts). Localhost is not captured by the script's own default.
+const plausibleScriptSrc = 'https://plausible.io/js/pa-dWrOAoDbseqK7HIlH0QL6.js';
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <html lang="en"><head><script async src={plausibleScriptSrc} /><script dangerouslySetInnerHTML={{ __html: plausibleInitSnippet }} /></head><body>{children}</body></html>;
+}

@@ -26,6 +26,8 @@ async function voteAll(page: Page, names: string[], target: (voter: number) => s
     await page.getByRole('button', { name: /Lock in my vote/ }).click();
   }
 }
+// Records every analytics call so the spec can assert what left the page — and what never did.
+const recordAnalytics = `window.__events = []; window.plausible = function (name, options) { window.__events.push({ name, props: options && options.props }); };`;
 const names = ['Alex', 'Jamie', 'Taylor', 'Morgan'];
 // The reveal stage: blank until tapped, then the roulette must land on the real imposter, then the
 // secret, then a tap through to the full result.
@@ -42,6 +44,7 @@ async function watchReveal(page: Page, imposter: string, secret: RegExp) {
 }
 
 test('timer imposter: hidden stopwatch runs, vote, final guess, times revealed', async ({ page }) => {
+  await page.route(/plausible\.io/, route => route.abort()); await page.addInitScript(recordAnalytics); // the real tag must neither load nor be contacted from a test
   await page.goto('/timer-imposter/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Timer');
   await page.getByRole('button', { name: /Start the clock/ }).click();
@@ -67,6 +70,16 @@ test('timer imposter: hidden stopwatch runs, vote, final guess, times revealed',
   await expect(page.locator('.result-details')).toContainText(target);
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: /recap image/ }).click();
   const file = await download; expect(file.suggestedFilename()).toBe('imposter-recap.png'); if (shots) await file.saveAs(`${shots}/recap-timer.png`);
+  // Analytics: the four product events fired with low-cardinality props, and nothing that left the
+  // page names a player, the target, or a role.
+  const events = await page.evaluate(() => (window as Window & { __events?: { name: string; props?: Record<string, unknown> }[] }).__events ?? []);
+  expect(events.map(event => event.name)).toEqual(['round_start', 'round_end', 'reveal_tap', 'recap_save']); // the round ends when the result exists; the reveal is watched after
+  expect(events[0].props).toEqual({ mode: 'timer', pack: 'short', players: 4 });
+  expect(events[1].props).toEqual({ mode: 'timer', winner: 'friends', reason: 'caught' });
+  expect(events[3].props).toEqual({ mode: 'timer', outcome: 'downloaded' });
+  const serialised = JSON.stringify(events); for (const name of names) expect(serialised).not.toContain(name); expect(serialised).not.toContain(target);
+  // The tag's transformRequest strips a room code from any URL it is about to report.
+  expect(await page.evaluate(() => (window as Window & { plausible?: { o?: { transformRequest?: (r: { u: string }) => { u: string } } } }).plausible?.o?.transformRequest?.({ u: 'https://laughtable.com/online/?room=ABC123&utm_source=x' }).u)).toBe('https://laughtable.com/online/?utm_source=x');
   await expect(page.locator('.times-list .vote-result')).toHaveCount(4);
   await expect(page.locator('.result-brand')).toContainText('laughtable.com');
   await page.locator('.result-emblem').scrollIntoViewIfNeeded(); await shot(page, 'timer-result');

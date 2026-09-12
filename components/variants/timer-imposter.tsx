@@ -9,6 +9,8 @@ import PremiumPaywallNotice from '@/components/premium/paywall-notice';
 import RevealStage from '@/components/reveal-stage';
 import RecapButton from '@/components/recap-button';
 import { Avatar, Ballot, Handoff, PlayerNames, ResultBrand, ResultHeader, RoundChrome, VariantLinks, VoteResults, useHeadingFocus, usePrivacyGuard } from './shared';
+import { useTrackRoundEnd } from '@/components/use-track-round';
+import { track } from '@/lib/analytics';
 
 const steps = ['Secret time', 'Run the clock', 'Cast your vote', 'The reveal'];
 export default function TimerImposter() {
@@ -25,12 +27,13 @@ export default function TimerImposter() {
   const heading = useHeadingFocus(round ? `${round.phase}-${round.cursor}` : null);
   const act = useCallback((action: TimerAction) => setRound(current => current ? timerTransition(current, action) : null), []);
   usePrivacyGuard(!!round && round.phase !== 'result', useCallback(() => act({ type: 'privacy' }), [act]));
+  useTrackRoundEnd(round, 'timer', roundNumber);
 
   function start(replay = false) {
     if (!premium && settings.names.length > freePlayerLimit) { setPaywall(true); setError(''); return; }
     const message = validateTimerSettings(settings, maxPlayers); if (message) { setError(message); return; }
     setPaywall(false); setError(''); setGuess(''); setRevealed(false);
-    setRound(createTimerRound(settings, secureRandom, maxPlayers)); setRoundNumber(replay ? roundNumber + 1 : 1);
+    setRound(createTimerRound(settings, secureRandom, maxPlayers)); setRoundNumber(replay ? roundNumber + 1 : 1); track({ name: 'round_start', mode: 'timer', pack: settings.range, players: settings.names.length });
     requestAnimationFrame(() => document.getElementById('timer-imposter')?.scrollIntoView({ block: 'start' }));
   }
   function stop() { act({ type: 'stop-timer', elapsed: Math.max(0, Math.round((performance.now() - startedAt.current) / 10)) }); }
@@ -95,12 +98,12 @@ export default function TimerImposter() {
         <div className="guess-emblem"><Timer size={65} strokeWidth={1} /></div>
         <form className="guess-form" onSubmit={event => { event.preventDefault(); submitGuess(); }}><label htmlFor="time-guess">What was the target, in seconds?</label><input id="time-guess" inputMode="decimal" value={guess} onChange={event => setGuess(event.target.value)} placeholder="e.g. 7.4" maxLength={8} autoComplete="off" /><button className="gold-button" disabled={!Number.isFinite(Number(guess.replace(',', '.'))) || !guess.trim()} type="submit">Make my final guess<ArrowRight size={17} /></button></form><button className="text-button" onClick={() => act({ type: 'skip-guess' })}>I’ve got nothing. Reveal the times.</button>
       </>}
-      {round.phase === 'result' && round.winner && !revealed && <RevealStage names={round.names} imposter={round.imposter} secretLabel="THE TARGET TIME" secret={formatTime(round.target)} winner={round.winner} onDone={() => setRevealed(true)} />}
+      {round.phase === 'result' && round.winner && !revealed && <RevealStage mode="timer" names={round.names} imposter={round.imposter} secretLabel="THE TARGET TIME" secret={formatTime(round.target)} winner={round.winner} onDone={() => setRevealed(true)} />}
       {round.phase === 'result' && round.winner && revealed && <>
         <ResultHeader winner={round.winner} heading={heading} subtitle={round.reason === 'tie' ? 'A split vote. Just enough doubt to get away.' : round.reason === 'escaped' ? `${round.names[round.accused!]} took the blame. The real imposter slipped away.` : round.reason === 'guessed' ? 'Caught in the act, but a lucky guess at the target saved the day.' : 'You saw through the bluff. Nice ears.'} />
         <div className="result-details"><div><span>THE IMPOSTER</span><strong>{round.names[round.imposter]}</strong></div><div><span>THE TARGET</span><strong>{formatTime(round.target)}</strong></div></div>
         <ResultBrand />
-        <RecapButton data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THE TARGET TIME', secret: formatTime(round.target), verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but guessed the target. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rowsTitle: 'HOW CLOSE EVERYONE GOT', rows: round.names.map((player, index) => ({ label: player, value: formatTime(round.times[index] ?? 0), highlight: index === round.imposter })) }} />
+        <RecapButton mode="timer" data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THE TARGET TIME', secret: formatTime(round.target), verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but guessed the target. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rowsTitle: 'HOW CLOSE EVERYONE GOT', rows: round.names.map((player, index) => ({ label: player, value: formatTime(round.times[index] ?? 0), highlight: index === round.imposter })) }} />
         <div className="vote-results times-list"><span className="votes-label">HOW CLOSE EVERYONE GOT</span>{round.names.map((player, index) => { const time = round.times[index] ?? 0, delta = time - round.target; return <div className="vote-result" key={index}><span>{player}{index === round.imposter && ' ✦'}</span><b>{formatTime(time)}</b><small>{delta === 0 ? 'exact' : `${delta > 0 ? '+' : '−'}${formatTime(Math.abs(delta))}`}</small></div>; })}</div>
         <VoteResults names={round.names} votes={round.votes} />
         <button className="gold-button" onClick={() => start(true)}><RotateCcw size={17} /> Another round<ArrowRight size={17} /></button><button className="text-button" onClick={() => setRound(null)}>Change players or range</button>

@@ -11,6 +11,7 @@ import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '@/lib/limit
 import { describePremiumRequirements, premiumFeatures } from '@/lib/premium';
 import { usePremiumStatus } from '@/lib/premium-client';
 import { categoryFromSearch } from '@/lib/packs';
+import { useClientValue } from '@/lib/use-client-value';
 
 type GeneratedPlayer = { name: string; isImposter: boolean };
 type GeneratedGame = { word: Word; players: GeneratedPlayer[] };
@@ -29,7 +30,9 @@ function makeGame(names: string[], category: Category): GeneratedGame {
 export default function ImposterGenerator() {
   const { premium } = usePremiumStatus();
   const [names, setNames] = useState(['Alex', 'Jamie', 'Taylor', 'Morgan']);
-  const [category, setCategory] = useState<Category>(() => (typeof window !== 'undefined' && categoryFromSearch(window.location.search)) || 'mixed');
+  const [picked, setCategory] = useState<Category | null>(null);
+  const packParam = useClientValue(() => categoryFromSearch(window.location.search), null);
+  const category: Category = picked ?? packParam ?? 'mixed';
   const [game, setGame] = useState<GeneratedGame | null>(null);
   const [revealed, setRevealed] = useState<number | null>(null);
   const [error, setError] = useState('');

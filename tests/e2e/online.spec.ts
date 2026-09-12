@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('three browsers complete a private online round', async ({ browser }) => {
   const contexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext()]);
+  for (const context of contexts) await context.route(/plausible\.io/, route => route.abort());
+  for (const context of contexts) await context.addInitScript(`window.__events = []; window.plausible = function (name, options) { window.__events.push({ name, props: options && options.props }); };`);
   const pages = await Promise.all(contexts.map(context => context.newPage()));
   const names = ['Alex', 'Jamie', 'Taylor'];
   await pages[0].goto('/online/'); await pages[0].getByLabel('Your name').fill(names[0]); await pages[0].getByRole('button', { name: /Create a private room/i }).click();
@@ -55,6 +57,15 @@ test('three browsers complete a private online round', async ({ browser }) => {
   expect(broadcasts.filter(room => room.game && room.game.phase !== 'result').some(room => room.game!.reveal)).toBe(false);
   for (const page of pages) { await page.getByRole('button', { name: /Reveal the imposter/ }).click(); await expect(page.locator('.reveal-land')).toHaveText(names[imposterIndex], { timeout: 10_000 }); await expect(page.locator('.reveal-secret')).toBeVisible({ timeout: 5_000 }); await page.getByRole('button', { name: /See the full result/ }).click(); }
   for (const page of pages) { await expect(page.getByRole('heading', { name: /The friends win/ })).toBeVisible(); await expect(page.locator('.result-details')).toContainText(names[imposterIndex]); await expect(page.locator('.online-result .clue-list p:not(.online-note)')).toHaveCount(3); await expect(page.locator('.result-brand')).toContainText('laughtable.com'); }
+  // Host counts the round once; guests count their own joins; nothing carries a name, the word, or the code.
+  const hostEvents = await pages[0].evaluate(() => (window as Window & { __events?: { name: string; props?: Record<string, unknown> }[] }).__events ?? []);
+  expect(hostEvents.filter(event => event.name === 'round_start')).toHaveLength(1);
+  expect(hostEvents.filter(event => event.name === 'round_end')).toHaveLength(1);
+  expect(hostEvents.find(event => event.name === 'room_create')).toBeTruthy();
+  const guestEvents = await pages[1].evaluate(() => (window as Window & { __events?: { name: string; props?: Record<string, unknown> }[] }).__events ?? []);
+  expect(guestEvents.find(event => event.name === 'room_join')?.props).toEqual({ via: 'link' });
+  expect(guestEvents.filter(event => event.name === 'round_start' || event.name === 'round_end')).toHaveLength(0);
+  const all = JSON.stringify([...hostEvents, ...guestEvents]); for (const name of names) expect(all).not.toContain(name); expect(all).not.toContain(code);
   const download = pages[1].waitForEvent('download'); await pages[1].getByRole('button', { name: /recap image/ }).click(); const recap = await download; expect(recap.suggestedFilename()).toBe('imposter-recap.png'); if (process.env.SHOT_DIR) await recap.saveAs(`${process.env.SHOT_DIR}/recap-online.png`);
   await pages[0].getByRole('button', { name: /Play another round/i }).click(); await expect(pages[0].locator('.online-role')).toBeVisible({ timeout: 15_000 });
   await pages[0].evaluate(() => { const socket = (window as Window & { __imposterSocket?: WebSocket }).__imposterSocket; socket?.send(JSON.stringify({ type: 'action', round: 1, action: { type: 'start-vote' } })); }); await expect(pages[0].locator('.form-error')).toContainText(/old or inactive|not valid/i);
@@ -63,4 +74,17 @@ test('three browsers complete a private online round', async ({ browser }) => {
   // Reconnecting mid-round must restore the player's private role/word, not just their lobby presence.
   await expect(pages[1].locator('.online-role')).toBeVisible({ timeout: 15_000 }); expect(await pages[1].locator('.online-role').textContent()).toBe(roleBeforeReload);
   await pages[2].close(); await expect(pages[0].locator('.presence.connected')).toHaveCount(2, { timeout: 15_000 }); await Promise.all(contexts.map(context => context.close()));
+});
+
+test('an invite link beats the remembered room, and URL-driven pages hydrate without errors', async ({ browser }) => {
+  const context = await browser.newContext(); await context.route(/plausible\.io/, route => route.abort());
+  await context.addInitScript(() => { try { localStorage.setItem('imposter-room-code', 'ZZZZZZ'); localStorage.setItem('imposter-player-name', 'Sam'); } catch { /* private mode */ } (window as Window & { __sockets?: string[] }).__sockets = []; const Original = WebSocket; (window as Window & { WebSocket: typeof WebSocket }).WebSocket = class extends Original { constructor(url: string | URL, protocols?: string | string[]) { (window as Window & { __sockets?: string[] }).__sockets!.push(String(url)); super(url, protocols); } }; });
+  const page = await context.newPage(); const errors: string[] = [];
+  page.on('console', message => { if (message.type() === 'error' && !/ERR_FAILED/.test(message.text())) errors.push(message.text()); });
+  await page.goto('/online/?room=ABC123'); await page.waitForTimeout(800);
+  expect(await page.evaluate(() => (window as Window & { __sockets?: string[] }).__sockets)).toEqual([]); // no reconnect to ZZZZZZ
+  await expect(page).toHaveURL(/room=ABC123/); await expect(page.locator('.invite-note')).toContainText('ABC123'); await expect(page.getByLabel('Your name')).toHaveValue('Sam');
+  await page.goto('/?pack=halloween'); await expect(page.getByRole('button', { name: /^Halloween/ })).toHaveAttribute('aria-pressed', 'true');
+  expect(errors).toEqual([]); // no React hydration mismatch (#418) from reading the URL or storage
+  await context.close();
 });

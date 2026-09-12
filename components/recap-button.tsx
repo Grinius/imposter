@@ -2,13 +2,14 @@
 import { useState } from 'react';
 import { Check, ImageDown, Share2 } from 'lucide-react';
 import { prefersShareSheet, saveRecap, type RecapData } from '@/lib/recap-card';
+import { track, type Mode } from '@/lib/analytics';
 
-export default function RecapButton({ data }: { data: RecapData }) {
+export default function RecapButton({ data, mode }: { data: RecapData; mode: Mode }) {
   const [state, setState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
   const [canShareFiles] = useState(() => prefersShareSheet());
   async function save() {
     setState('busy');
-    try { const outcome = await saveRecap(data); setState(outcome === 'cancelled' ? 'idle' : 'done'); setTimeout(() => setState('idle'), 2500); }
+    try { const outcome = await saveRecap(data); track({ name: 'recap_save', mode, outcome }); setState(outcome === 'cancelled' ? 'idle' : 'done'); setTimeout(() => setState('idle'), 2500); }
     catch { setState('error'); }
   }
   return <button className="outline-button recap-button" onClick={save} disabled={state === 'busy'}>

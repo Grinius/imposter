@@ -12,12 +12,18 @@ import RevealStage from '@/components/reveal-stage';
 import RecapButton from '@/components/recap-button';
 import SketchPad from './sketch-pad';
 import { Ballot, Handoff, PlayerNames, ResultBrand, ResultHeader, RoundChrome, VariantLinks, VoteResults, playerColors, useHeadingFocus, usePrivacyGuard } from './shared';
+import { useTrackRoundEnd } from '@/components/use-track-round';
+import { track } from '@/lib/analytics';
+import { useClientValue } from '@/lib/use-client-value';
 
 const steps = ['Secret word', 'Draw one line', 'Cast your vote', 'The reveal'];
 export default function DrawingImposter() {
   const { premium } = usePremiumStatus();
   const maxPlayers = premium ? premiumPlayerLimit : freePlayerLimit;
-  const [settings, setSettings] = useState<DrawingSettings>(() => { const preset = typeof window !== 'undefined' ? categoryFromSearch(window.location.search) : null; return { names: ['Alex', 'Jamie', 'Taylor', 'Morgan'], category: preset && categories.find(item => item.id === preset)?.drawable ? preset : 'mixed', passes: 2 }; });
+  const [stored, setSettings] = useState<DrawingSettings>({ names: ['Alex', 'Jamie', 'Taylor', 'Morgan'], category: 'mixed', passes: 2 });
+  const packParam = useClientValue(() => { const preset = categoryFromSearch(window.location.search); return preset && categories.find(item => item.id === preset)?.drawable ? preset : null; }, null);
+  const [categoryPicked, setCategoryPicked] = useState(false);
+  const settings: DrawingSettings = !categoryPicked && packParam ? { ...stored, category: packParam } : stored;
   const [round, setRound] = useState<DrawingRound | null>(null);
   const [roundNumber, setRoundNumber] = useState(1);
   const [error, setError] = useState('');
@@ -28,6 +34,7 @@ export default function DrawingImposter() {
   const heading = useHeadingFocus(round ? `${round.phase}-${round.cursor}-${round.turn}` : null);
   const act = useCallback((action: DrawingAction) => setRound(current => current ? drawingTransition(current, action) : null), []);
   usePrivacyGuard(!!round && round.phase !== 'result', useCallback(() => act({ type: 'privacy' }), [act]));
+  useTrackRoundEnd(round, 'drawing', roundNumber);
 
   function start(replay = false) {
     const chosen = categories.find(item => item.id === settings.category);
@@ -35,7 +42,7 @@ export default function DrawingImposter() {
     if (reasons.length) { setPaywallReasons(reasons); setError(''); return; }
     const message = validateDrawingSettings(settings, { maxPlayers, premium }); if (message) { setError(message); return; }
     setPaywallReasons(null); setError(''); setGuess(''); setPending(null); setRevealed(false);
-    setRound(createDrawingRound(settings, secureRandom, round?.word.id, { maxPlayers, premium })); setRoundNumber(replay ? roundNumber + 1 : 1);
+    setRound(createDrawingRound(settings, secureRandom, round?.word.id, { maxPlayers, premium })); setRoundNumber(replay ? roundNumber + 1 : 1); track({ name: 'round_start', mode: 'drawing', pack: settings.category, players: settings.names.length });
     requestAnimationFrame(() => document.getElementById('drawing-imposter')?.scrollIntoView({ block: 'start' }));
   }
 
@@ -45,11 +52,11 @@ export default function DrawingImposter() {
     <form onSubmit={event => { event.preventDefault(); start(); }}>
       <PlayerNames names={settings.names} premium={premium} onChange={names => { setSettings({ ...settings, names }); setError(''); setPaywallReasons(null); }} />
       <div className="field-heading category-heading"><label id="drawing-category-label"><span className="step-number">02</span> What are you drawing?</label></div>
-      <div className="category-grid" role="group" aria-labelledby="drawing-category-label">{categories.filter(item => item.drawable).map(item => { const locked = item.premium && !premium; return <button type="button" key={item.id} className={`category-button ${settings.category === item.id ? 'selected' : ''} ${locked ? 'premium-slot' : ''}`} aria-pressed={settings.category === item.id} onClick={() => { setSettings({ ...settings, category: item.id as Category }); setPaywallReasons(null); }}><span>{item.short}</span>{locked && <small className="premium-tag"><LockKeyhole size={10} /> Premium</small>}{settings.category === item.id && <Check size={11} className="category-check" />}</button>; })}</div>
+      <div className="category-grid" role="group" aria-labelledby="drawing-category-label">{categories.filter(item => item.drawable).map(item => { const locked = item.premium && !premium; return <button type="button" key={item.id} className={`category-button ${settings.category === item.id ? 'selected' : ''} ${locked ? 'premium-slot' : ''}`} aria-pressed={settings.category === item.id} onClick={() => { setSettings({ ...settings, category: item.id as Category }); setCategoryPicked(true); setPaywallReasons(null); }}><span>{item.short}</span>{locked && <small className="premium-tag"><LockKeyhole size={10} /> Premium</small>}{settings.category === item.id && <Check size={11} className="category-check" />}</button>; })}</div>
       <div className="game-options"><label className="time-option"><PenLine size={16} /><span>Lines each</span><select aria-label="Lines per player" value={settings.passes} onChange={event => setSettings({ ...settings, passes: Number(event.target.value) as 1 | 2 })}><option value={1}>1 line</option><option value={2}>2 lines</option></select></label></div>
       <p className="hint-description">{settings.passes === 2 ? 'Two passes round the table. The second line is where imposters get caught.' : 'One pass: quick, brutal, and very hard for the imposter.'}</p>
       {error && <p role="alert" className="form-error">{error}</p>}
-      {paywallReasons && <PremiumPaywallNotice reasons={paywallReasons} onUseFree={() => { setSettings({ ...settings, names: settings.names.slice(0, freePlayerLimit), category: categories.find(item => item.id === settings.category)?.premium ? 'mixed' : settings.category }); setPaywallReasons(null); }} />}
+      {paywallReasons && <PremiumPaywallNotice reasons={paywallReasons} onUseFree={() => { setSettings({ ...settings, names: settings.names.slice(0, freePlayerLimit), category: categories.find(item => item.id === settings.category)?.premium ? 'mixed' : settings.category }); setCategoryPicked(true); setPaywallReasons(null); }} />}
       <button className="start-button" type="submit"><span><PenLine size={21} /> Start drawing</span><ArrowRight size={20} /></button>
       <VariantLinks current="drawing" />
     </form>
@@ -102,12 +109,12 @@ export default function DrawingImposter() {
         <SketchPad strokes={round.strokes} pending={null} active={false} onStrokeEnd={() => undefined} label="The finished drawing" />
         <form className="guess-form" onSubmit={event => { event.preventDefault(); act({ type: 'guess', word: guess }); }}><label htmlFor="drawing-guess">What were they drawing?</label><input id="drawing-guess" value={guess} onChange={event => setGuess(event.target.value)} placeholder="Your one and only guess…" maxLength={60} autoComplete="off" /><button className="gold-button" disabled={!normalizeGuess(guess)} type="submit">Make my final guess<ArrowRight size={17} /></button></form><button className="text-button" onClick={() => act({ type: 'skip-guess' })}>I’ve got nothing. Reveal the word.</button>
       </>}
-      {round.phase === 'result' && round.winner && !revealed && <RevealStage names={round.names} imposter={round.imposter} secretLabel="THEY WERE DRAWING" secret={round.word.text} winner={round.winner} onDone={() => setRevealed(true)} />}
+      {round.phase === 'result' && round.winner && !revealed && <RevealStage mode="drawing" names={round.names} imposter={round.imposter} secretLabel="THEY WERE DRAWING" secret={round.word.text} winner={round.winner} onDone={() => setRevealed(true)} />}
       {round.phase === 'result' && round.winner && revealed && <>
         <ResultHeader winner={round.winner} heading={heading} subtitle={round.reason === 'tie' ? 'A split vote. Just enough doubt to get away.' : round.reason === 'escaped' ? `${round.names[round.accused!]} took the blame. The real imposter slipped away.` : round.reason === 'guessed' ? 'Caught in the act, but they named the drawing and stole the win.' : 'You saw through the scribble. The secret stayed safe.'} />
         <div className="result-details"><div><span>THE IMPOSTER</span><strong>{round.names[round.imposter]}</strong></div><div><span>THE DRAWING</span><strong>{round.word.text}</strong></div></div>
         <ResultBrand />
-        <RecapButton data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THEY WERE DRAWING', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but named the drawing. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((player, index) => ({ label: player, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
+        <RecapButton mode="drawing" data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THEY WERE DRAWING', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but named the drawing. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((player, index) => ({ label: player, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
         <SketchPad strokes={round.strokes} pending={null} active={false} onStrokeEnd={() => undefined} label={`The finished drawing of ${round.word.text}`} />
         {legend}
         <VoteResults names={round.names} votes={round.votes} />

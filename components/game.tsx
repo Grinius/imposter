@@ -15,6 +15,9 @@ import BrandWordmark, { siteHost, siteName } from '@/components/brand';
 import RevealStage from '@/components/reveal-stage';
 import RecapButton from '@/components/recap-button';
 import { categoryFromSearch } from '@/lib/packs';
+import { useTrackRoundEnd } from '@/components/use-track-round';
+import { track } from '@/lib/analytics';
+import { useClientValue } from '@/lib/use-client-value';
 
 const categoryIcons: Record<Category, LucideIcon> = { mixed: Shuffle, food: Utensils, animals: PawPrint, places: MapPin, objects: Gem, activities: Sparkles, 'date-night': Heart, holidays: Gift, halloween: Ghost, football: Trophy, 'k-pop': MicVocal, 'pop-superstars': Music, christmas: TreePine };
 const playerColors = ['#b77d5c', '#65847c', '#a09564', '#82758f', '#6886a0', '#aa6c78', '#8a9862', '#b58b56', '#729594', '#997c66', '#827e9e', '#809164'];
@@ -39,7 +42,11 @@ function Rules() {
 export default function Game() {
   const { premium } = usePremiumStatus();
   const maxPlayers = premium ? premiumPlayerLimit : freePlayerLimit;
-  const [settings, setSettings] = useState<Settings>(() => ({ names: ['Alex', 'Jamie', 'Taylor', 'Morgan'], category: (typeof window !== 'undefined' && categoryFromSearch(window.location.search)) || 'mixed', minutes: 3, hints: true }));
+  const [stored, setSettings] = useState<Settings>({ names: ['Alex', 'Jamie', 'Taylor', 'Morgan'], category: 'mixed', minutes: 3, hints: true });
+  // A pack in the URL (`/?pack=halloween`, from a pack page) is the category until the player picks one.
+  const packParam = useClientValue(() => categoryFromSearch(window.location.search), null);
+  const [categoryPicked, setCategoryPicked] = useState(false);
+  const settings: Settings = !categoryPicked && packParam ? { ...stored, category: packParam } : stored;
   const [round, setRound] = useState<Round | null>(null);
   const [roundNumber, setRoundNumber] = useState(1);
   const [error, setError] = useState('');
@@ -81,12 +88,12 @@ export default function Game() {
     }
     const message = validateSettings(settings, { maxPlayers, premium }); if (message) { setError(message); return; }
     setPaywallReasons(null); setError(''); setGuess(''); setSelectedVote(null); setRevealed(false); setRunning(false); setSeconds(settings.minutes * 60);
-    setRound(createRound(settings, secureRandom, round?.word.id, { maxPlayers, premium }));
+    setRound(createRound(settings, secureRandom, round?.word.id, { maxPlayers, premium })); track({ name: 'round_start', mode: 'word', pack: settings.category, players: settings.names.length });
     setRoundNumber(replay ? roundNumber + 1 : 1); requestAnimationFrame(() => document.getElementById('game')?.scrollIntoView({ block: 'start' })); chime();
   }
   function stopRound() { setRound(null); setExitOpen(false); setRunning(false); setSelectedVote(null); setGuess(''); }
   function useFreeSetup() {
-    setSettings(current => ({ ...current, names: current.names.slice(0, freePlayerLimit), category: categories.find(item => item.id === current.category)?.premium ? 'mixed' : current.category }));
+    setSettings({ ...settings, names: settings.names.slice(0, freePlayerLimit), category: categories.find(item => item.id === settings.category)?.premium ? 'mixed' : settings.category }); setCategoryPicked(true);
     setPaywallReasons(null);
   }
   function toggleTimer() {
@@ -118,6 +125,7 @@ export default function Game() {
     if (previousPhase.current !== phaseKey) phaseHeading.current?.focus({ preventScroll: true });
     previousPhase.current = phaseKey;
   }, [round]);
+  useTrackRoundEnd(round, 'word', roundNumber);
   useEffect(() => { if (rulesOpen) rulesDialog.current?.showModal(); else rulesDialog.current?.close(); }, [rulesOpen]);
   useEffect(() => { if (exitOpen) exitDialog.current?.showModal(); else exitDialog.current?.close(); }, [exitOpen]);
 
@@ -152,7 +160,7 @@ export default function Game() {
             <button className="add-player" type="button" disabled={settings.names.length >= premiumPlayerLimit} onClick={() => { let number = settings.names.length + 1; while (settings.names.includes(`Player ${number}`)) number++; setSettings({ ...settings, names: [...settings.names, `Player ${number}`] }); setPaywallReasons(null); }}><Plus size={15} /> Add a player{!premium && settings.names.length >= freePlayerLimit && <span className="premium-tag inline"><LockKeyhole size={10} /> Premium</span>}</button>
             <div className="field-heading category-heading"><label id="category-label"><span className="step-number">02</span> Choose your secret category.</label></div>
             {(['core', 'themed'] as const).map(group => <div key={group}>{group === 'themed' && <div className="field-heading themed-heading"><label id="themed-label">Themed packs <Link href="/packs/">All packs <ArrowRight size={12} /></Link></label></div>}
-            <div className="category-grid" role="group" aria-labelledby={group === 'core' ? 'category-label' : 'themed-label'}>{categories.filter(item => item.group === group).map(item => { const Icon = categoryIcons[item.id]; const locked = item.premium && !premium; return <button type="button" className={`category-button ${settings.category === item.id ? 'selected' : ''} ${locked ? 'premium-slot' : ''}`} key={item.id} aria-pressed={settings.category === item.id} onClick={() => { setSettings({ ...settings, category: item.id as Category }); setPaywallReasons(null); }}><Icon size={19} strokeWidth={1.5} /><span>{item.short}</span>{locked && <small className="premium-tag"><LockKeyhole size={10} /> Premium</small>}{settings.category === item.id && <Check size={11} className="category-check" />}</button>; })}</div></div>)}
+            <div className="category-grid" role="group" aria-labelledby={group === 'core' ? 'category-label' : 'themed-label'}>{categories.filter(item => item.group === group).map(item => { const Icon = categoryIcons[item.id]; const locked = item.premium && !premium; return <button type="button" className={`category-button ${settings.category === item.id ? 'selected' : ''} ${locked ? 'premium-slot' : ''}`} key={item.id} aria-pressed={settings.category === item.id} onClick={() => { setSettings({ ...settings, category: item.id as Category }); setCategoryPicked(true); setPaywallReasons(null); }}><Icon size={19} strokeWidth={1.5} /><span>{item.short}</span>{locked && <small className="premium-tag"><LockKeyhole size={10} /> Premium</small>}{settings.category === item.id && <Check size={11} className="category-check" />}</button>; })}</div></div>)}
             <div className="game-options"><label className="time-option"><Clock3 size={16} /><span>Discussion</span><select aria-label="Discussion duration" value={settings.minutes} onChange={event => setSettings({ ...settings, minutes: Number(event.target.value) })}><option value={2}>2 min</option><option value={3}>3 min</option><option value={5}>5 min</option></select><ChevronDown size={12} /></label><label className="hint-option"><span>Imposter hint</span><input type="checkbox" checked={settings.hints} onChange={event => setSettings({ ...settings, hints: event.target.checked })} /><span className="switch" aria-hidden="true" /></label></div>
             <p className="hint-description">{settings.hints ? 'The imposter gets a category hint. A little help with the bluff.' : 'No hint for the imposter. Let your poker face do the work.'}</p>
             {error && <p role="alert" className="form-error">{error}</p>}
@@ -206,13 +214,13 @@ export default function Game() {
             <div className="guess-emblem"><Fingerprint size={65} strokeWidth={1} /></div>
             <form className="guess-form" onSubmit={event => { event.preventDefault(); act({ type: 'guess', word: guess }); }}><label htmlFor="final-guess">What was the secret word?</label><input id="final-guess" value={guess} onChange={event => setGuess(event.target.value)} placeholder="Your one and only guess…" maxLength={60} autoComplete="off" /><button className="gold-button" disabled={!normalizeGuess(guess)} type="submit">Make my final guess<ArrowRight size={17} /></button></form><button className="text-button" onClick={() => act({ type: 'skip-guess' })}>I’ve got nothing. Reveal the word.</button>
           </>}
-          {round.phase === 'result' && !revealed && <RevealStage names={round.names} imposter={round.imposter} secretLabel="THE SECRET WORD" secret={round.word.text} winner={round.winner!} onDone={() => setRevealed(true)} />}
+          {round.phase === 'result' && !revealed && <RevealStage mode="word" names={round.names} imposter={round.imposter} secretLabel="THE SECRET WORD" secret={round.word.text} winner={round.winner!} onDone={() => setRevealed(true)} />}
           {round.phase === 'result' && revealed && <>
             <p className="eyebrow">{round.winner === 'friends' ? 'A VERY GOOD PIECE OF DETECTIVE WORK' : 'A LITTLE TOO GOOD AT LYING'}</p><div className="result-emblem">{round.winner === 'friends' ? <ShieldCheck size={50} strokeWidth={1} /> : <Fingerprint size={50} strokeWidth={1} />}</div>
             <h2 ref={phaseHeading} tabIndex={-1}>{round.winner === 'friends' ? <>The friends <em>win.</em></> : <>The imposter <em>wins.</em></>}</h2><p className="round-subtitle">{round.reason === 'tie' ? 'A split vote. Just enough doubt to get away.' : round.reason === 'escaped' ? `${round.names[round.accused!]} took the blame. The real imposter slipped away.` : round.reason === 'guessed' ? 'Caught in the act, but the secret word saved the day.' : 'You saw through the bluff. The secret stayed safe.'}</p>
             <div className="result-details"><div><span>THE IMPOSTER</span><strong>{round.names[round.imposter]}</strong></div><div><span>THE SECRET WORD</span><strong>{round.word.text}</strong></div></div>
             <p className="result-brand">Played on <b>{siteHost}</b></p>
-            <RecapButton data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THE SECRET WORD', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but guessed the word. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((name, index) => ({ label: name, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
+            <RecapButton mode="word" data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THE SECRET WORD', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but guessed the word. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((name, index) => ({ label: name, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
             <div className="vote-results"><span className="votes-label">HOW THE TABLE VOTED</span>{round.names.map((name, index) => <div className="vote-result" key={index}><span>{name}</span><span className="vote-bar"><i style={{ width: `${round.votes.filter(v => v === index).length / round.names.length * 100}%` }} /></span><b>{round.votes.filter(v => v === index).length}</b></div>)}</div>
             <button className="gold-button" onClick={() => start(true)}><RotateCcw size={17} /> Another round<ArrowRight size={17} /></button><button className="text-button" onClick={stopRound}>Change players or category</button>
           </>}

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Eye, Fingerprint, Video } from 'lucide-react';
 import { siteHost } from '@/components/brand';
+import { track, type Mode } from '@/lib/analytics';
 
 // The one screen that gets turned toward the table — or a camera. It shows nothing until the host
 // taps, then runs a slowing roulette over the names, lands on the imposter, and follows with the
@@ -9,15 +10,16 @@ import { siteHost } from '@/components/brand';
 // tap so a phone held up to a camera never moves on by itself. Reduced motion skips the roulette.
 export interface RevealProps {
   names: string[]; imposter: number; roleLabel?: string; secretLabel: string; secret: string;
-  winner: 'friends' | 'imposter'; onDone: () => void;
+  winner: 'friends' | 'imposter'; onDone: () => void; mode: Mode;
 }
 const ticks = [70, 70, 80, 90, 100, 115, 135, 160, 190, 230, 280, 340, 420, 520];
-export default function RevealStage({ names, imposter, roleLabel = 'THE IMPOSTER WAS', secretLabel, secret, winner, onDone }: RevealProps) {
+export default function RevealStage({ names, imposter, roleLabel = 'THE IMPOSTER WAS', secretLabel, secret, winner, onDone, mode }: RevealProps) {
   const [stage, setStage] = useState<'armed' | 'spinning' | 'landed' | 'secret'>('armed');
   const [shown, setShown] = useState(imposter);
   const timers = useRef<number[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   function reveal() {
+    track({ name: 'reveal_tap', mode });
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced || names.length < 2) { setStage('landed'); timers.current.push(window.setTimeout(() => setStage('secret'), 900)); return; }
     setStage('spinning');

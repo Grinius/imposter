@@ -294,3 +294,37 @@ built. `/premium/` still lists the roadmap.
 **Calendar (promotion, not build):** Halloween from mid-October, peaking 31 Oct; football and K-pop
 and pop are evergreen and spike on tournaments, comebacks and releases; Christmas from late November.
 All five pages exist now so they can be indexed before their season.
+
+## 2026-09-12 — Plausible analytics, and browser-only reads moved onto useSyncExternalStore
+
+**Plausible, plain script tag, no consent banner.** GA4 was rejected: it sets cookies (an EU consent
+banner on the first screen of a "no sign-ups" game), is heavy, lags a day, and needs the CSP opened
+to Google Tag Manager. Plausible is cookieless and EU-hosted; the tag is the per-site script in
+`app/layout.tsx` with an inline stub that queues early events and installs `transformRequest`,
+which strips `room=` from any URL before it is reported (a room code locates a live room). The CSP
+in `public/_headers` allows `https://plausible.io` for `script-src` and `connect-src` and nothing
+else new. npm and tag-manager installs were rejected as respectively pointless for a static export
+and a second third party.
+
+**Events are narrow by construction.** `lib/analytics.ts` exposes `track()` over a typed union of
+eight events (`round_start`, `round_end`, `room_create`, `room_join`, `share_invite`, `reveal_tap`,
+`recap_save`, `paywall_shown`) and forwards only whitelisted, short props (`mode`, `pack`,
+`players`, `winner`, `reason`, `via`, `method`, `outcome`). Names, words, roles, clues, questions and
+room codes can never be props even if a future call site tries. In online rooms only the host fires
+round events so a round counts once. `tests/analytics.test.ts` covers the whitelist and the URL
+scrub; the timer and online E2E specs stub `window.plausible`, block `plausible.io`, and assert the
+exact events and that nothing recorded contains a player name, the secret, or the room code. The
+privacy page describes what is sent.
+
+**Hydration fix, found on the way.** Reading `window.location` or `localStorage` in a `useState`
+initializer (the invite code, the remembered name and room, the pack preselect, `navigator.share`)
+made the first client render disagree with the HTML and logged React #418 on `/online/?room=…` and
+`/?pack=…`. These now go through `lib/use-client-value.ts` (`useSyncExternalStore` with a server
+snapshot). Two consequences had to be handled: the online page's URL sync no longer resets the bar
+to `/online/` at boot (that erased a pending invite before it was read — the reset now happens only
+in `leaveRoom`), and the boot effect runs exactly once after hydration (re-running on a remembered
+code change opened a second, non-creating socket right after creating a room). Both are covered by
+the new "invite beats remembered room" E2E, which also asserts zero console errors.
+
+**Not done:** Plausible goals/dashboards are configured in Plausible, not here; localhost sends
+nothing by the script's own default, so the first real numbers arrive after deploy.
