@@ -4,7 +4,7 @@ import { ArrowRight, Eye, Fingerprint, ShieldCheck, Target, Vote, Wifi } from 'l
 import { pageMetadata } from '@/lib/seo';
 import BrandWordmark from '@/components/brand';
 
-const title = 'Imposter Game Strategy - Clues, Bluffing, and Voting Tips';
+const title = 'Imposter Game Strategy - Clues, Bluffs, Votes';
 const description = 'Improve your Imposter game strategy with clue tips for friends, bluffing tips for the imposter, and voting advice for close rounds.';
 
 export const metadata: Metadata = pageMetadata('/imposter-game-strategy/', title, description);

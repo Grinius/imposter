@@ -3,7 +3,7 @@ import TimerImposter from '@/components/variants/timer-imposter';
 import VariantPage from '@/components/variants/variant-page';
 import { pageMetadata } from '@/lib/seo';
 
-const title = 'Timer Imposter Game - The Stopwatch Imposter Game, Free on One Phone';
+const title = 'Timer Imposter Game - Stopwatch Imposter, Free';
 const description = 'Play the viral Timer Imposter game free in your browser: everyone sees the target time except the imposter, each player runs a hidden stopwatch, then vote. 3–5 free players, one phone, no app.';
 export const metadata: Metadata = pageMetadata('/timer-imposter/', title, description);
 

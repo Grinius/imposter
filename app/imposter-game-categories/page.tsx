@@ -5,7 +5,7 @@ import { pageMetadata } from '@/lib/seo';
 import { categories, getWords } from '@/lib/words';
 import BrandWordmark from '@/components/brand';
 
-const title = 'Imposter Game Categories - Best Word Packs to Play';
+const title = 'Imposter Game Categories - Best Word Packs';
 const description = 'Choose the best Imposter game categories for your group: food, animals, places, objects, activities, and mixed word packs.';
 
 export const metadata: Metadata = pageMetadata('/imposter-game-categories/', title, description);

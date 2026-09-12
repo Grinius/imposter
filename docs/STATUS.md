@@ -2,6 +2,20 @@
 
 Updated: 2026-09-12.
 
+## Search appearance (2026-09-12, adopted)
+
+Google indexed the home page, `/timer-imposter/` and `/packs/christmas/` within a day of deploy and
+shows an AI Overview citing laughtable.com (owner screenshot). Two things it did prompted changes:
+it rewrote the 78-character Timer title and appended "- Imposter" as a guessed site name, so every
+title over ~47 characters before the " | LaughTable" suffix is shortened (all now 46–59 total), and
+the site name is declared explicitly (`og:site_name` on every page via `lib/seo.ts`, `WebSite`
+JSON-LD with `name: LaughTable` in `app/layout.tsx`). Not changed: Google's snippet and AI Overview
+describe the game as "3–5 players" because the pages say "3–5 free players" everywhere; that is the
+free-cap decision surfacing in search and is left to the owner (`docs/TODO.md`).
+
+Validation: build, 95 Vitest, ESLint (1 pre-existing warning), SEO/variant/pack Playwright specs;
+titles, `og:site_name` and the JSON-LD verified in the built HTML. Google's re-crawl not verifiable here.
+
 ## Analytics (2026-09-12, adopted)
 
 Plausible via the per-site script tag in `app/layout.tsx` (cookieless, no banner), CSP opened for

@@ -10,7 +10,7 @@ export const dynamicParams = false;
 export function generateStaticParams() { return packs.map(pack => ({ slug: pack.slug })); }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const pack = packBySlug((await params).slug); if (!pack) return {};
-  return pageMetadata(`/packs/${pack.slug}/`, `${pack.title} - ${packWords(pack).length} Free Words, One Phone`, pack.lead);
+  return pageMetadata(`/packs/${pack.slug}/`, `${pack.title} - ${packWords(pack).length} Free Words`, pack.lead);
 }
 
 // One page per themed pack: the full word list in the HTML (the thing people search for), the

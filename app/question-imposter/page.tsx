@@ -4,7 +4,7 @@ import VariantPage from '@/components/variants/variant-page';
 import { questionPairs } from '@/lib/questions';
 import { pageMetadata } from '@/lib/seo';
 
-const title = 'Question Imposter Game - The Odd-Question Party Game, Free on One Phone';
+const title = 'Question Imposter Game - Odd Question, Free';
 const description = 'Play the Question Imposter game free in your browser: everyone answers the same question except one player who secretly got a different one. Spot the answer that doesn’t fit. 3–5 free players, one phone, no app.';
 export const metadata: Metadata = pageMetadata('/question-imposter/', title, description);
 

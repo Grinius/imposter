@@ -5,7 +5,7 @@ import { pageMetadata } from '@/lib/seo';
 import { categories, getWords } from '@/lib/words';
 import BrandWordmark from '@/components/brand';
 
-const title = 'Imposter Game Words - Free Secret Word Lists by Category';
+const title = 'Imposter Game Words - Free Lists by Category';
 const description = 'Browse Imposter game words for food, animals, places, objects, and activities. Use the lists for clue ideas or generate private cards.';
 
 export const metadata: Metadata = pageMetadata('/imposter-game-words/', title, description);

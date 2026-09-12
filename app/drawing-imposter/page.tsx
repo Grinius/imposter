@@ -3,7 +3,7 @@ import DrawingImposter from '@/components/variants/drawing-imposter';
 import VariantPage from '@/components/variants/variant-page';
 import { pageMetadata } from '@/lib/seo';
 
-const title = 'Drawing Imposter Game - The Fake Artist Party Game, Free on One Phone';
+const title = 'Drawing Imposter Game - Fake Artist, Free';
 const description = 'Play the Drawing Imposter game free in your browser: everyone adds one line to the same drawing, but one player doesn’t know what it is. Vote out the fake artist. 3–5 free players, one phone, no app.';
 export const metadata: Metadata = pageMetadata('/drawing-imposter/', title, description);
 

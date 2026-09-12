@@ -4,7 +4,7 @@ import { ArrowRight, Eye, Fingerprint, ListChecks, MessageCircle, ShieldCheck, S
 import { pageMetadata } from '@/lib/seo';
 import BrandWordmark from '@/components/brand';
 
-const title = 'Imposter Game Rules - How to Play the Secret Word Game';
+const title = 'Imposter Game Rules - How to Play';
 const description = 'Learn the Imposter game rules: secret words, one imposter, clue rounds, voting, final guesses, and simple house rules for 3-5 free players.';
 
 export const metadata: Metadata = pageMetadata('/imposter-game-rules/', title, description);
