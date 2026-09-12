@@ -22,6 +22,12 @@ zero console errors on the URL-driven pages). The real tag was seen loading in t
 with the CSP applied. Not verifiable here: real pageviews (the script skips localhost) — after
 deploy, confirm in Plausible that `/online/` pages never show `?room=`.
 
+Plausible dashboard configured by the owner on 2026-09-12 (owner report): the eight events as custom-event
+goals, a pageview goal for `/timer-imposter/`, the eight property keys (`mode`, `pack`, `players`, `winner`,
+`reason`, `via`, `method`, `outcome`), and two funnels — Visit /timer-imposter/ → round_start → round_end →
+recap_save, and round_start → round_end → reveal_tap → recap_save. Any new event or prop key added in
+`lib/analytics.ts` must also be added there or it will not appear.
+
 Next step: deploy; put UTMs on every link you post; the free-cap decision is the last open day-1 item.
 
 ## Themed packs (2026-09-12, adopted)
