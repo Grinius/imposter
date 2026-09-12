@@ -1,12 +1,21 @@
+// Two groups of categories. Core packs are the everyday game; themed packs ride a season or a
+// fandom and each has its own crawlable page under /packs/. "Mixed bag" draws from free core packs
+// only, so a themed word never turns up in an ordinary round. Themed packs are free on purpose: they
+// are the content creators reach for, and the paywall is the player cap and custom packs.
 export const categories = [
-  { id: 'mixed', name: 'A little of everything', short: 'Mixed bag', hint: 'A surprise from every category', premium: false },
-  { id: 'food', name: 'Food & drink', short: 'Food & drink', hint: 'Something delicious', premium: false },
-  { id: 'animals', name: 'Animal kingdom', short: 'Animals', hint: 'Something in the animal kingdom', premium: false },
-  { id: 'places', name: 'Out & about', short: 'Places', hint: 'Somewhere you can go', premium: true },
-  { id: 'objects', name: 'Everyday things', short: 'Objects', hint: 'An object you might recognize', premium: true },
-  { id: 'activities', name: 'Things we do', short: 'Activities', hint: 'Something people do', premium: true },
-  { id: 'date-night', name: 'Date night', short: 'Date night', hint: 'Something for a romantic evening', premium: true },
-  { id: 'holidays', name: 'Holidays & celebrations', short: 'Holidays', hint: 'Something festive', premium: true },
+  { id: 'mixed', name: 'A little of everything', short: 'Mixed bag', hint: 'A surprise from every category', premium: false, group: 'core', drawable: true },
+  { id: 'food', name: 'Food & drink', short: 'Food & drink', hint: 'Something delicious', premium: false, group: 'core', drawable: true },
+  { id: 'animals', name: 'Animal kingdom', short: 'Animals', hint: 'Something in the animal kingdom', premium: false, group: 'core', drawable: true },
+  { id: 'places', name: 'Out & about', short: 'Places', hint: 'Somewhere you can go', premium: true, group: 'core', drawable: true },
+  { id: 'objects', name: 'Everyday things', short: 'Objects', hint: 'An object you might recognize', premium: true, group: 'core', drawable: true },
+  { id: 'activities', name: 'Things we do', short: 'Activities', hint: 'Something people do', premium: true, group: 'core', drawable: true },
+  { id: 'date-night', name: 'Date night', short: 'Date night', hint: 'Something for a romantic evening', premium: true, group: 'core', drawable: false },
+  { id: 'holidays', name: 'Holidays & celebrations', short: 'Holidays', hint: 'Something festive', premium: true, group: 'core', drawable: true },
+  { id: 'halloween', name: 'Halloween', short: 'Halloween', hint: 'Something spooky', premium: false, group: 'themed', drawable: true },
+  { id: 'football', name: 'Football', short: 'Football', hint: 'Something from the beautiful game', premium: false, group: 'themed', drawable: false },
+  { id: 'k-pop', name: 'K-pop', short: 'K-pop', hint: 'Something from the K-pop world', premium: false, group: 'themed', drawable: false },
+  { id: 'pop-superstars', name: 'Pop superstars', short: 'Pop hits', hint: 'A pop hit, album, era, or star', premium: false, group: 'themed', drawable: false },
+  { id: 'christmas', name: 'Christmas', short: 'Christmas', hint: 'Something Christmassy', premium: false, group: 'themed', drawable: true },
 ] as const;
 export type Category = typeof categories[number]['id'];
 export interface Word { id: string; text: string; category: Exclude<Category, 'mixed'>; }
@@ -17,13 +26,18 @@ const packs: Record<Exclude<Category, 'mixed'>, string[]> = {
   objects: ['Umbrella', 'Telescope', 'Toothbrush', 'Backpack', 'Candle', 'Scissors', 'Guitar', 'Mirror', 'Headphones', 'Compass', 'Camera', 'Ladder', 'Bicycle', 'Pillow', 'Kite', 'Suitcase', 'Key', 'Clock', 'Sunglasses', 'Balloon', 'Book', 'Magnet', 'Paintbrush', 'Teapot'],
   activities: ['Camping', 'Dancing', 'Swimming', 'Gardening', 'Baking', 'Fishing', 'Skiing', 'Painting', 'Bowling', 'Surfing', 'Hiking', 'Singing', 'Knitting', 'Skateboarding', 'Reading', 'Yoga', 'Juggling', 'Sailing', 'Chess', 'Karaoke', 'Picnic', 'Running', 'Photography', 'Football'],
   'date-night': ['Candlelight', 'Bouquet', 'Serenade', 'Sunset walk', 'Slow dance', 'Love letter', 'First kiss', 'Rooftop dinner', 'Wine tasting', 'Stargazing', 'Proposal', 'Anniversary', 'Chocolate fondue', 'Rose', 'Piano bar', 'Movie night', 'Hand-holding', 'Fireplace', 'Karaoke duet', 'Picnic blanket', 'Photo booth', 'Long-distance call', 'Blind date', 'Honeymoon'],
+  halloween: ['Pumpkin', 'Jack-o’-lantern', 'Witch', 'Broomstick', 'Cauldron', 'Black cat', 'Vampire', 'Werewolf', 'Zombie', 'Mummy', 'Ghost', 'Skeleton', 'Haunted house', 'Graveyard', 'Tombstone', 'Coffin', 'Spider web', 'Bat', 'Full moon', 'Scarecrow', 'Trick-or-treat', 'Candy corn', 'Costume', 'Mask', 'Fake blood', 'Fog machine', 'Ouija board', 'Crystal ball', 'Fortune teller', 'Frankenstein', 'Grim reaper', 'Scythe', 'Potion', 'Spell book', 'Cobweb', 'Haunted maze', 'Horror movie', 'Jump scare', 'Creepy clown', 'Chainsaw', 'Trapdoor', 'Creaky door', 'Raven', 'Wolf howl', 'Candy bucket', 'Doorbell', 'Ghost story', 'Hearse'],
+  football: ['Penalty', 'Free kick', 'Corner kick', 'Offside', 'Red card', 'Yellow card', 'Own goal', 'Hat-trick', 'Golden Boot', 'Clean sheet', 'Goalkeeper', 'Striker', 'Winger', 'Captain’s armband', 'Referee', 'VAR', 'Extra time', 'Penalty shootout', 'Stoppage time', 'Derby', 'Champions League', 'World Cup', 'Premier League', 'Transfer window', 'Mascot', 'Stadium', 'Dugout', 'Half-time', 'Nutmeg', 'Bicycle kick', 'Header', 'Volley', 'Sliding tackle', 'Dive', 'Throw-in', 'Defensive wall', 'Crossbar', 'Top corner', 'Season ticket', 'Away end', 'Chant', 'Scarf', 'Home kit', 'Shin pads', 'Manager', 'Substitute', 'Relegation', 'Ballon d’Or'],
+  'k-pop': ['Bias', 'Bias wrecker', 'Comeback', 'Lightstick', 'Fan chant', 'Photocard', 'Maknae', 'Leader', 'Visual', 'Main vocal', 'Rap line', 'Choreography', 'Point dance', 'Title track', 'B-side', 'Music show', 'Encore', 'Fan sign', 'Trainee', 'Debut', 'Aegyo', 'Sub-unit', 'Concept photo', 'Teaser', 'Album unboxing', 'Fandom name', 'Lightstick ocean', 'Kill part', 'Line distribution', 'Idol', 'Survival show', 'Center', 'Ending fairy', 'Selca', 'BTS', 'Blackpink', 'Stray Kids', 'NewJeans', 'Twice', 'Seventeen', 'aespa', 'EXO', 'Red Velvet', 'Le Sserafim', 'ITZY', 'NCT', 'Enhypen', 'IVE'],
+  'pop-superstars': ['Anti-Hero', 'Cruel Summer', 'Folklore', 'Eras Tour', 'Love Story', 'Shake It Off', 'Espresso', 'Flowers', 'Bad Guy', 'Drivers License', 'Renaissance', 'Single Ladies', 'Umbrella', 'Diamonds', 'Blinding Lights', 'Uptown Funk', 'Rolling in the Deep', 'Toxic', 'Poker Face', 'Bad Romance', 'Thriller', 'Billie Jean', 'Like a Prayer', 'Dancing Queen', 'Bohemian Rhapsody', 'Firework', 'Chandelier', 'Levitating', 'Good 4 U', 'Watermelon Sugar', 'As It Was', 'Shape of You', 'Havana', 'Kill Bill', 'Padam Padam', 'Taylor Swift', 'Beyoncé', 'Rihanna', 'Lady Gaga', 'Dua Lipa', 'Harry Styles', 'Billie Eilish', 'Olivia Rodrigo', 'Sabrina Carpenter', 'Chappell Roan', 'Ariana Grande', 'The Weeknd', 'Adele'],
+  christmas: ['Christmas tree', 'Mistletoe', 'Stocking', 'Chimney', 'Sleigh', 'Reindeer', 'Rudolph', 'Elf', 'North Pole', 'Snowman', 'Gingerbread house', 'Candy cane', 'Eggnog', 'Mulled wine', 'Turkey dinner', 'Cranberry sauce', 'Brussels sprouts', 'Christmas pudding', 'Mince pie', 'Advent calendar', 'Wreath', 'Tinsel', 'Bauble', 'Fairy lights', 'Star on top', 'Nativity scene', 'Carol singers', 'Secret Santa', 'Wrapping paper', 'Ugly sweater', 'Christmas market', 'Ice skating', 'Snowball fight', 'Hot chocolate', 'Nutcracker', 'The Grinch', 'Home Alone', 'Santa’s workshop', 'Naughty list', 'Letter to Santa', 'Christmas Eve', 'Boxing Day', 'Christmas cracker', 'Paper crown', 'Yule log', 'Snow globe', 'Sledging', 'Roast chestnuts'],
   holidays: ['Fireworks', 'Christmas tree', 'Menorah', 'Pumpkin', 'Firecracker', 'New Year', 'Easter egg', 'Parade', 'Costume', 'Mistletoe', 'Carnival', 'Lantern festival', 'Turkey dinner', 'Snowman', 'Gift wrap', 'Countdown', 'Candy cane', 'Trick-or-treat', 'Fourth of July', 'Wreath', 'Valentine’s Day', 'Diwali', 'Piñata', 'Harvest festival'],
 };
 export const words: Word[] = Object.entries(packs).flatMap(([category, entries]) => entries.map((text, index) => ({ id: `${category}-${index}`, text, category: category as Word['category'] })));
-const premiumCategoryIds = new Set<Word['category']>(categories.filter(category => category.premium).map(category => category.id) as Word['category'][]);
-// The free "mixed" pool never blends in premium-category words, so selecting Mixed bag never
-// accidentally hands a non-premium player a premium word.
+const mixedCategoryIds = new Set<Word['category']>(categories.filter(category => !category.premium && category.group === 'core' && category.id !== 'mixed').map(category => category.id) as Word['category'][]);
+// The free "mixed" pool blends only free core packs: never a premium word for a non-premium
+// player, and never a Halloween word in June.
 export function getWords(category: Category) {
-  if (category === 'mixed') return words.filter(word => !premiumCategoryIds.has(word.category));
+  if (category === 'mixed') return words.filter(word => mixedCategoryIds.has(word.category));
   return words.filter(word => word.category === category);
 }

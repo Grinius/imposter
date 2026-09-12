@@ -48,6 +48,7 @@ export default function ImposterGameCategoriesPage() {
           <li><span><strong>Harder game:</strong> activities or mixed bag.</span></li>
         </ul>
       </section>
+      <section className="example-section" aria-labelledby="themed-packs-heading"><div><span className="eyebrow">THEMED PACKS</span><h2 id="themed-packs-heading">Halloween, football, K-pop, pop and Christmas</h2><p>Five free themed packs, each with 48 words and its own page: <Link href="/packs/halloween/">Halloween</Link>, <Link href="/packs/football/">football</Link>, <Link href="/packs/k-pop/">K-pop</Link>, <Link href="/packs/pop-superstars/">pop superstars</Link> and <Link href="/packs/christmas/">Christmas</Link>. Browse them all on the <Link href="/packs/">packs page</Link>.</p></div><ul className="variant-list"><li><strong>Seasonal.</strong> Halloween and Christmas words for the parties that actually happen.</li><li><strong>Fandom.</strong> Football, K-pop and pop hits: the friends who know the most get suspected the most.</li></ul></section>
     </main>
   </div>;
 }

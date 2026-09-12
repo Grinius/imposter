@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { ArrowRight, Check, EyeOff, Feather, Fingerprint, LockKeyhole, PenLine, RotateCcw, Undo2 } from 'lucide-react';
 import { normalizeGuess, secureRandom } from '@/lib/game';
 import { categories, type Category } from '@/lib/words';
+import { categoryFromSearch } from '@/lib/packs';
 import { createDrawingRound, drawingTransition, totalTurns, validateDrawingSettings, type DrawingAction, type DrawingRound, type DrawingSettings, type Point } from '@/lib/drawing-imposter';
 import { freePlayerLimit, premiumPlayerLimit } from '@/lib/limits';
 import { usePremiumStatus } from '@/lib/premium-client';
@@ -16,7 +17,7 @@ const steps = ['Secret word', 'Draw one line', 'Cast your vote', 'The reveal'];
 export default function DrawingImposter() {
   const { premium } = usePremiumStatus();
   const maxPlayers = premium ? premiumPlayerLimit : freePlayerLimit;
-  const [settings, setSettings] = useState<DrawingSettings>({ names: ['Alex', 'Jamie', 'Taylor', 'Morgan'], category: 'mixed', passes: 2 });
+  const [settings, setSettings] = useState<DrawingSettings>(() => { const preset = typeof window !== 'undefined' ? categoryFromSearch(window.location.search) : null; return { names: ['Alex', 'Jamie', 'Taylor', 'Morgan'], category: preset && categories.find(item => item.id === preset)?.drawable ? preset : 'mixed', passes: 2 }; });
   const [round, setRound] = useState<DrawingRound | null>(null);
   const [roundNumber, setRoundNumber] = useState(1);
   const [error, setError] = useState('');
@@ -44,7 +45,7 @@ export default function DrawingImposter() {
     <form onSubmit={event => { event.preventDefault(); start(); }}>
       <PlayerNames names={settings.names} premium={premium} onChange={names => { setSettings({ ...settings, names }); setError(''); setPaywallReasons(null); }} />
       <div className="field-heading category-heading"><label id="drawing-category-label"><span className="step-number">02</span> What are you drawing?</label></div>
-      <div className="category-grid" role="group" aria-labelledby="drawing-category-label">{categories.map(item => { const locked = item.premium && !premium; return <button type="button" key={item.id} className={`category-button ${settings.category === item.id ? 'selected' : ''} ${locked ? 'premium-slot' : ''}`} aria-pressed={settings.category === item.id} onClick={() => { setSettings({ ...settings, category: item.id as Category }); setPaywallReasons(null); }}><span>{item.short}</span>{locked && <small className="premium-tag"><LockKeyhole size={10} /> Premium</small>}{settings.category === item.id && <Check size={11} className="category-check" />}</button>; })}</div>
+      <div className="category-grid" role="group" aria-labelledby="drawing-category-label">{categories.filter(item => item.drawable).map(item => { const locked = item.premium && !premium; return <button type="button" key={item.id} className={`category-button ${settings.category === item.id ? 'selected' : ''} ${locked ? 'premium-slot' : ''}`} aria-pressed={settings.category === item.id} onClick={() => { setSettings({ ...settings, category: item.id as Category }); setPaywallReasons(null); }}><span>{item.short}</span>{locked && <small className="premium-tag"><LockKeyhole size={10} /> Premium</small>}{settings.category === item.id && <Check size={11} className="category-check" />}</button>; })}</div>
       <div className="game-options"><label className="time-option"><PenLine size={16} /><span>Lines each</span><select aria-label="Lines per player" value={settings.passes} onChange={event => setSettings({ ...settings, passes: Number(event.target.value) as 1 | 2 })}><option value={1}>1 line</option><option value={2}>2 lines</option></select></label></div>
       <p className="hint-description">{settings.passes === 2 ? 'Two passes round the table. The second line is where imposters get caught.' : 'One pass: quick, brutal, and very hard for the imposter.'}</p>
       {error && <p role="alert" className="form-error">{error}</p>}

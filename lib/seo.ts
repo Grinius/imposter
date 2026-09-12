@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { siteOrigin } from './site';
+import { packs } from './packs';
 
 export const publicRoutes = [
   '/',
@@ -13,6 +14,8 @@ export const publicRoutes = [
   '/timer-imposter/',
   '/question-imposter/',
   '/drawing-imposter/',
+  '/packs/',
+  ...packs.map(pack => `/packs/${pack.slug}/`),
   '/premium/',
   '/privacy/',
 ];

@@ -183,6 +183,9 @@ start #7. **C (next month)** #5, #6, #8, #9, #11, #12. **D (ignore for now)** #1
   reveal screen, move budget to a Halloween push.
 
 ### Bet 4 — Themed packs on a calendar, ending in shareable custom packs
+
+> **Status 2026-09-12:** five free packs and pages are live in the repo (`/packs/`); custom shareable
+> packs are not built. Promotion calendar in `docs/DECISIONS.md`.
 - Insight: themed rounds keep the format fresh on TikTok (Swift, K-pop, football, NFL) and holidays are
   when families play; packs are cheap content with their own landing pages and give creators a reason to
   post; custom packs turn that into UGC links that land on the domain.

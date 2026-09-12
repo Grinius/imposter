@@ -264,3 +264,33 @@ which would leave the button stuck.
 
 **Not done:** no sound on the reveal (the word game's optional chime is untouched); the recap does
 not include the drawing itself; no analytics, so how often the recap is saved is unmeasured.
+
+## 2026-09-12 — Themed word packs with their own pages; lobby cards removed
+
+Source: `docs/GROWTH.md` bet 4. Five themed packs — Halloween, Football, K-pop, Pop superstars,
+Christmas — each 48 words, each a real category in `lib/words.ts` (`group: 'themed'`) with a
+crawlable page at `/packs/<slug>/` and a hub at `/packs/`.
+
+**Themed packs are free.** They are the content creators reach for and the seasonal pages are what
+searches land on; the paid tier stays the player cap and, later, custom packs. **Mixed bag draws
+from free core packs only** (`getWords('mixed')`): a Halloween word never turns up in an ordinary
+round, and the earlier "no premium word in Mixed" guarantee is unchanged.
+
+**Titles avoid trademarks; word lists name things descriptively.** The pop pack is "Pop superstars",
+not an artist's name, with the artist named in the body and the FAQ; the K-pop pack lists fourteen
+groups as words. Football is association football, rules and culture, no clubs or players, so no
+table has a home advantage. `drawable: false` keeps football, K-pop and pop out of Drawing Imposter
+(a song title is not a one-line drawing); Halloween and Christmas are in.
+
+**`?pack=<id>` preselects a category** on the home page, the generator and Drawing Imposter, read as
+initial state the same way the online page reads its invite; junk is ignored. Each pack page links
+into every mode with the pack preselected. The home category grid shows core packs, then a
+"Themed packs" row with a link to the hub, so the everyday grid does not grow to thirteen equal tiles.
+
+**The two "coming soon" upgrade cards are gone from the online lobby** (owner request). They sat
+between the room code and the settings on the screen every guest sees; nothing they advertised is
+built. `/premium/` still lists the roadmap.
+
+**Calendar (promotion, not build):** Halloween from mid-October, peaking 31 Oct; football and K-pop
+and pop are evergreen and spike on tournaments, comebacks and releases; Christmas from late November.
+All five pages exist now so they can be indexed before their season.

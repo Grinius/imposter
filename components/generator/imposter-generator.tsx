@@ -10,6 +10,7 @@ import PremiumPaywallNotice from '@/components/premium/paywall-notice';
 import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '@/lib/limits';
 import { describePremiumRequirements, premiumFeatures } from '@/lib/premium';
 import { usePremiumStatus } from '@/lib/premium-client';
+import { categoryFromSearch } from '@/lib/packs';
 
 type GeneratedPlayer = { name: string; isImposter: boolean };
 type GeneratedGame = { word: Word; players: GeneratedPlayer[] };
@@ -28,7 +29,7 @@ function makeGame(names: string[], category: Category): GeneratedGame {
 export default function ImposterGenerator() {
   const { premium } = usePremiumStatus();
   const [names, setNames] = useState(['Alex', 'Jamie', 'Taylor', 'Morgan']);
-  const [category, setCategory] = useState<Category>('mixed');
+  const [category, setCategory] = useState<Category>(() => (typeof window !== 'undefined' && categoryFromSearch(window.location.search)) || 'mixed');
   const [game, setGame] = useState<GeneratedGame | null>(null);
   const [revealed, setRevealed] = useState<number | null>(null);
   const [error, setError] = useState('');

@@ -1,6 +1,25 @@
 # Current status
 
-Updated: 2026-09-11.
+Updated: 2026-09-12.
+
+## Themed packs (2026-09-12, adopted)
+
+Five free themed packs (Halloween, Football, K-pop, Pop superstars, Christmas; 48 words each) are
+categories in `lib/words.ts` with metadata and page copy in `lib/packs.ts`, pages at `/packs/` and
+`/packs/<slug>/` (full word list in the HTML, pairs that play well, FAQ, one-tap links into each mode
+with `?pack=` preselecting the category), and links from the home grid ("Themed packs" row), the
+categories page, the words page and the sitemap. Mixed bag stays core-free-only. The two "coming
+soon" cards are removed from the online lobby. Reasoning in `docs/DECISIONS.md`.
+
+Validation: 93 Vitest (3 new: every themed category is a free pack with ≥40 unique words, Mixed bag
+is exactly food+animals, slug/`?pack=` resolution ignores junk), TypeScript, ESLint (2 pre-existing
+warnings), static build (five `/packs/[slug]` pages prerendered), 12 Playwright (1 new: pack HTML
+carries the word list, the preselect link and cross-links; `/?pack=halloween` selects Halloween;
+`/?pack=bogus` falls back to Mixed). Home grid, hub, a pack page and the lobby inspected from
+Playwright captures at desktop. Not verified: real search demand for the pack phrases (needs GSC).
+
+Next step: deploy and request indexing for `/packs/` and the five pack pages ahead of Halloween;
+then the free-cap decision and analytics.
 
 ## Filmable reveal and recap (2026-09-11, adopted)
 

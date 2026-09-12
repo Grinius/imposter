@@ -9,6 +9,15 @@ const publicRoutes = [
   '/imposter-game-categories/',
   '/imposter-game-online/',
   '/imposter-game-strategy/',
+  '/timer-imposter/',
+  '/question-imposter/',
+  '/drawing-imposter/',
+  '/packs/',
+  '/packs/halloween/',
+  '/packs/football/',
+  '/packs/k-pop/',
+  '/packs/pop-superstars/',
+  '/packs/christmas/',
   '/premium/',
   '/privacy/',
 ] as const;
@@ -62,4 +71,15 @@ test('sitemap includes every canonical public route', async ({ page }) => {
   for (const route of publicRoutes) {
     expect(xml).toContain(`https://laughtable.com${route}`);
   }
+});
+
+test('pack pages carry the full word list, the preselect link, and the home grid honours ?pack=', async ({ page }) => {
+  const html = await (await page.request.get('/packs/halloween/')).text();
+  expect(html).toContain('| LaughTable</title>'); expect(html).toContain('Jack-o’-lantern'); expect(html).toContain('href="/?pack=halloween"'); expect(html).toContain('href="/packs/christmas/"');
+  expect((await (await page.request.get('/packs/')).text())).toContain('href="/packs/k-pop/"');
+  await page.goto('/?pack=halloween');
+  await expect(page.getByRole('button', { name: /^Halloween/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: /Mixed bag/ })).toHaveAttribute('aria-pressed', 'false');
+  await page.goto('/?pack=bogus');
+  await expect(page.getByRole('button', { name: /Mixed bag/ })).toHaveAttribute('aria-pressed', 'true');
 });
