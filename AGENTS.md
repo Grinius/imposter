@@ -1,6 +1,6 @@
 # Imposter project instructions
 
-Build a polished browser-based secret-word imposter party game with an indexable, fast website. Read `docs/PROJECT.md` and `docs/STATUS.md` at the start of substantive work. Read other documents only as relevant; `docs/GROWTH.md` holds the 2026-09-11 distribution research, scored opportunities, and the proposed 14-day plan for any growth, sharing, positioning, or marketing-adjacent work.
+Build a polished browser-based secret-word imposter party game with an indexable, fast website. Read `docs/PROJECT.md` and `docs/STATUS.md` at the start of substantive work. Read other documents only as relevant; `docs/GROWTH.md` holds the 2026-09-11 distribution research, scored opportunities, and the proposed 14-day plan for any growth, sharing, positioning, or marketing-adjacent work. `docs/TODO.md` lists work the owner has explicitly parked; check it before proposing something that may already be there.
 
 ## Working agreements
 
