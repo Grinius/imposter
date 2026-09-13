@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, Eye, ListChecks, MessageCircleQuestion, Package, 
 import BrandWordmark, { siteHost, siteName } from '@/components/brand';
 import { packBySlug, packCategory, packWords, packs } from '@/lib/packs';
 import { pageMetadata } from '@/lib/seo';
+import PackTheme from '@/components/theme';
 
 export const dynamicParams = false;
 export function generateStaticParams() { return packs.map(pack => ({ slug: pack.slug })); }
@@ -19,6 +20,7 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
   const pack = packBySlug((await params).slug); if (!pack) notFound();
   const words = packWords(pack), category = packCategory(pack), others = packs.filter(other => other.slug !== pack.slug);
   return <div className="generator-page variant-page">
+    <PackTheme category={pack.id} />
     <header className="site-header">
       <Link className="brand" href="/" aria-label="Imposter home"><span className="emblem emblem-small" aria-hidden="true"><Eye strokeWidth={1.25} /></span><BrandWordmark /></Link>
       <span className="header-note">{pack.eyebrow}</span>

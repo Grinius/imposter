@@ -15,6 +15,8 @@ import { Ballot, Handoff, PlayerNames, ResultBrand, ResultHeader, RoundChrome, V
 import { useTrackRoundEnd } from '@/components/use-track-round';
 import { track } from '@/lib/analytics';
 import { useClientValue } from '@/lib/use-client-value';
+import { useTheme } from '@/components/theme';
+import { defaultCard, themeFor } from '@/lib/themes';
 
 const steps = ['Secret word', 'Draw one line', 'Cast your vote', 'The reveal'];
 export default function DrawingImposter() {
@@ -35,6 +37,8 @@ export default function DrawingImposter() {
   const act = useCallback((action: DrawingAction) => setRound(current => current ? drawingTransition(current, action) : null), []);
   usePrivacyGuard(!!round && round.phase !== 'result', useCallback(() => act({ type: 'privacy' }), [act]));
   useTrackRoundEnd(round, 'drawing', roundNumber);
+  const theme = themeFor(round ? round.settings.category : settings.category), card = theme ?? defaultCard;
+  useTheme(round ? round.settings.category : settings.category);
 
   function start(replay = false) {
     const chosen = categories.find(item => item.id === settings.category);
@@ -67,7 +71,7 @@ export default function DrawingImposter() {
   const legend = <div className="stroke-legend">{round.names.map((player, index) => <span key={index}><i style={{ background: playerColors[index % playerColors.length] }} />{player}</span>)}</div>;
   return <div id="drawing-imposter"><RoundChrome roundNumber={roundNumber} playerCount={round.names.length} steps={steps} step={step} onLeave={() => setRound(null)}>
     <div className="round-surface" key={`${round.phase}-${round.cursor}-${round.turn}`}>
-      {round.phase === 'handoff' && <Handoff eyebrow={`SECRET CARD ${round.cursor + 1} OF ${round.names.length}`} name={name} subtitle="A little privacy, please. Your subject is waiting." label="Reveal my card" onOpen={() => act({ type: 'reveal' })} heading={heading} />}
+      {round.phase === 'handoff' && <Handoff card={card} eyebrow={`SECRET CARD ${round.cursor + 1} OF ${round.names.length}`} name={name} subtitle="A little privacy, please. Your subject is waiting." label="Reveal my card" onOpen={() => act({ type: 'reveal' })} heading={heading} />}
       {round.phase === 'reveal' && <>
         <p className="eyebrow">FOR {name.toUpperCase()}’S EYES ONLY</p>
         <h2 ref={heading} tabIndex={-1}>{isImposter ? 'Keep your cool.' : 'You know what this is.'}</h2>
@@ -102,7 +106,7 @@ export default function DrawingImposter() {
         {legend}
         <button className="gold-button" onClick={() => act({ type: 'start-vote' })}><Fingerprint size={18} /> Ready to vote<ArrowRight size={17} /></button>
       </>}
-      {round.phase === 'vote-handoff' && <Handoff eyebrow={`PRIVATE VOTE ${round.cursor + 1} OF ${round.names.length}`} name={name} subtitle="Your vote stays secret until everyone has voted." label="Open my ballot" onOpen={() => act({ type: 'open-ballot' })} heading={heading} />}
+      {round.phase === 'vote-handoff' && <Handoff card={card} eyebrow={`PRIVATE VOTE ${round.cursor + 1} OF ${round.names.length}`} name={name} subtitle="Your vote stays secret until everyone has voted." label="Open my ballot" onOpen={() => act({ type: 'open-ballot' })} heading={heading} />}
       {round.phase === 'voting' && <Ballot names={round.names} voter={round.cursor} onVote={target => act({ type: 'vote', target })} heading={heading} />}
       {round.phase === 'guess' && <>
         <p className="eyebrow">CAUGHT. BUT NOT QUITE FINISHED.</p><h2 ref={heading} tabIndex={-1}>One last chance, <em>{round.names[round.imposter]}.</em></h2><p className="round-subtitle">The table found you. Name the drawing to steal the win.</p>
@@ -114,7 +118,7 @@ export default function DrawingImposter() {
         <ResultHeader winner={round.winner} heading={heading} subtitle={round.reason === 'tie' ? 'A split vote. Just enough doubt to get away.' : round.reason === 'escaped' ? `${round.names[round.accused!]} took the blame. The real imposter slipped away.` : round.reason === 'guessed' ? 'Caught in the act, but they named the drawing and stole the win.' : 'You saw through the scribble. The secret stayed safe.'} />
         <div className="result-details"><div><span>THE IMPOSTER</span><strong>{round.names[round.imposter]}</strong></div><div><span>THE DRAWING</span><strong>{round.word.text}</strong></div></div>
         <ResultBrand />
-        <RecapButton mode="drawing" data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THEY WERE DRAWING', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but named the drawing. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((player, index) => ({ label: player, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
+        <RecapButton mode="drawing" data={{ palette: theme?.palette, roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THEY WERE DRAWING', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but named the drawing. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((player, index) => ({ label: player, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
         <SketchPad strokes={round.strokes} pending={null} active={false} onStrokeEnd={() => undefined} label={`The finished drawing of ${round.word.text}`} />
         {legend}
         <VoteResults names={round.names} votes={round.votes} />

@@ -111,3 +111,23 @@
 .pack-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:22px}
 .word-cloud{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}.word-cloud li{border:1px solid #c4ab6c3d;background:#1b382f66;border-radius:999px;padding:7px 13px;font-family:var(--serif);font-size:18px;color:var(--cream)}
 @media(max-width:900px){.pack-grid{padding:10px 35px 30px}}@media(max-width:650px){.pack-grid{padding:6px 18px 24px;grid-template-columns:1fr}.pack-actions .outline-button,.pack-actions .gold-button{width:100%;justify-content:center}}
+/* Pack themes: applied as data-theme on <html> by components/theme.tsx; palette mirrored in lib/themes.ts. Accent-only themes swap the gold; the two seasonal themes also recolour the felt, the buttons, the card back and the reveal stage. */
+[data-theme=football]{--gold:#7fd36b;--gold-light:#c6f2b8;--line:rgba(127,211,107,.22)}
+[data-theme=k-pop]{--gold:#ff5fa8;--gold-light:#ffb3d6;--line:rgba(255,95,168,.22)}
+[data-theme=pop-superstars]{--gold:#b57bff;--gold-light:#dcc4ff;--line:rgba(181,123,255,.22)}
+[data-theme=halloween]{--gold:#f0953a;--gold-light:#ffc26a;--green:#1c1233;--green-deep:#0c0818;--green-light:#3a2260;--line:rgba(240,149,58,.22)}
+[data-theme=halloween] body{background:radial-gradient(ellipse at 23% 23%,#3a2260 0,transparent 48%),var(--green-deep)}
+[data-theme=halloween] .gold-button{background:linear-gradient(110deg,#ffc26a,#f0953a);border-color:#f0953a;color:#2a1640}
+[data-theme=halloween] .start-button{background:#3a2260;border-color:#6a49a8}
+[data-theme=halloween] .card-back{background:repeating-linear-gradient(45deg,transparent,transparent 9px,#f0953a0a 9px,#f0953a0a 10px),linear-gradient(145deg,#3a2260,#1c1233);border-color:#f0953a}
+[data-theme=halloween] .reveal-stage{background:radial-gradient(ellipse at 50% 30%,#3a2260 0%,#1c1233 45%,#0c0818 100%)}
+[data-theme=halloween] .reveal-land{text-shadow:0 0 60px #f0953a66}
+[data-theme=halloween] .pack-card,[data-theme=halloween] .word-cloud li{background:#3a226066;border-color:#f0953a33}
+[data-theme=christmas]{--gold:#d9553f;--gold-light:#f4c988;--green:#0f2a1e;--green-deep:#07140f;--green-light:#1f4a33;--line:rgba(244,201,136,.22)}
+[data-theme=christmas] body{background:radial-gradient(ellipse at 23% 23%,#1f4a33 0,transparent 48%),radial-gradient(ellipse at 80% 90%,#5a1a1c55 0,transparent 40%),var(--green-deep)}
+[data-theme=christmas] .gold-button{background:linear-gradient(110deg,#e8705a,#c23f2f);border-color:#a83a2c;color:#fff4e0}
+[data-theme=christmas] .start-button{background:#a83a2c;border-color:#7d2a20}
+[data-theme=christmas] .card-back{background:repeating-linear-gradient(45deg,transparent,transparent 9px,#f4c98808 9px,#f4c98808 10px),linear-gradient(145deg,#5a1a1c,#2e0d0f);border-color:#f4c988}
+[data-theme=christmas] .reveal-stage{background:radial-gradient(ellipse at 50% 30%,#1f4a33 0%,#0f2a1e 45%,#07140f 100%)}
+[data-theme=christmas] .reveal-land{text-shadow:0 0 60px #d9553f66}
+[data-theme=christmas] .pack-card,[data-theme=christmas] .word-cloud li{background:#5a1a1c44;border-color:#f4c98833}

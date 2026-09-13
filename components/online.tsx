@@ -16,6 +16,8 @@ import { getStoredPremiumToken, usePremiumStatus } from '@/lib/premium-client';
 import BrandWordmark from '@/components/brand';
 import { useTrackRoundEnd } from '@/components/use-track-round';
 import { track } from '@/lib/analytics';
+import { useTheme } from '@/components/theme';
+import { themeFor } from '@/lib/themes';
 
 const expectedPlayerOptions = [3, 4, 5, 6, 7, 8, 10, 12, 15, 20];
 type SocketMessage = { type: 'room'; room: PublicRoom } | { type: 'seat'; playerId: string; seat: string } | { type: 'role'; role: PrivateRole } | { type: 'error'; message: string };
@@ -104,6 +106,8 @@ export default function OnlineGame() {
   function chime() { try { const context = audio.current ?? new AudioContext(); audio.current = context; const oscillator = context.createOscillator(), gain = context.createGain(); oscillator.connect(gain); gain.connect(context.destination); oscillator.frequency.value = 620; gain.gain.setValueAtTime(.025, context.currentTime); gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + .18); oscillator.start(); oscillator.stop(context.currentTime + .2); } catch { /* audio is optional */ } }
   function act(action: object) { if (room) socket.current?.send(JSON.stringify({ type: 'action', round: room.round, action })); }
   const game = room?.game;
+  // Host previews the pack they picked; once a round starts, everyone follows the round's pack.
+  useTheme(game ? game.category : room && room.hostId === myPlayerId ? category : null);
   useTrackRoundEnd(game ? { phase: game.phase, winner: game.winner, reason: game.reason } : null, 'online', room?.round ?? 0, !!room && room.hostId === myPlayerId);
   const phaseKey = game ? `${game.phase}-${game.cursor}-${game.votesSubmitted}` : '';
   const previousPhase = useRef('');
@@ -148,7 +152,7 @@ export default function OnlineGame() {
         {reveal && <>
           <div className="result-details"><div><span>THE IMPOSTER</span><strong>{names[reveal.imposter]}</strong></div><div><span>THE SECRET WORD</span><strong>{reveal.word}</strong></div></div>
           <div className="clue-list"><p className="online-note">THE CLUES</p>{game.clues.map((item, index) => { const who = (game.firstClue + index) % names.length; return <p key={`${index}-${item}`}><b>{names[who]}{who === reveal.imposter ? ' ✦' : ''}:</b> {item}</p>; })}</div>
-          <RecapButton mode="online" data={{ roleLabel: 'THE IMPOSTER WAS', imposter: names[reveal.imposter], secretLabel: 'THE SECRET WORD', secret: reveal.word, verdict, rowsTitle: 'THE CLUES', rows: game.clues.map((item, index) => { const who = (game.firstClue + index) % names.length; return { label: names[who], value: item, highlight: who === reveal.imposter }; }) }} />
+          <RecapButton mode="online" data={{ palette: themeFor(game.category)?.palette, roleLabel: 'THE IMPOSTER WAS', imposter: names[reveal.imposter], secretLabel: 'THE SECRET WORD', secret: reveal.word, verdict, rowsTitle: 'THE CLUES', rows: game.clues.map((item, index) => { const who = (game.firstClue + index) % names.length; return { label: names[who], value: item, highlight: who === reveal.imposter }; }) }} />
         </>}
         <p className="result-brand">Played on <b>{siteHost}</b></p>
         {room.hostId === myPlayerId && <button className="gold-button" onClick={start}>Play another round</button>}

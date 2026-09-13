@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ArrowRight, Check, Copy, Shuffle } from 'lucide-react';
 import { categories, getWords, type Category, type Word } from '@/lib/words';
 import { secureRandom } from '@/lib/game';
+import { useTheme } from '@/components/theme';
 
 function pickWord(category: Category): Word {
   const pool = getWords(category);
@@ -12,6 +13,7 @@ function pickWord(category: Category): Word {
 
 export default function WordGenerator() {
   const [category, setCategory] = useState<Category>('mixed');
+  useTheme(category);
   const [word, setWord] = useState<Word | null>(null);
   const [copied, setCopied] = useState(false);
 

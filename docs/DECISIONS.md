@@ -328,3 +328,27 @@ the new "invite beats remembered room" E2E, which also asserts zero console erro
 
 **Not done:** Plausible goals/dashboards are configured in Plausible, not here; localhost sends
 nothing by the script's own default, so the first real numbers arrive after deploy.
+
+## 2026-09-13 — Pack themes: the game in costume
+
+A themed pack now changes how the game looks, because on camera a Halloween round that looks like
+every other round is just a word list. One mechanism: `lib/themes.ts` (palette + card-back copy per
+themed pack), `components/theme.tsx` (`data-theme` on `<html>` while a pack is selected or in play),
+CSS overrides in `app/globals.css`. Halloween and Christmas are full costumes (page background,
+buttons, card back, reveal stage, copy); football, K-pop and pop swap only the accent and the card
+copy — a "K-pop palette" is a rabbit hole. Type, layout, spacing and rules never change: it reads as
+LaughTable in costume, not a different app.
+
+**Theme follows the pack, never the calendar.** No date-based auto-theming: a Halloween skin on
+someone who picked Animals in September is a bug.
+
+**Online rooms share the costume.** `PublicGame.category` is now broadcast once a round starts. This
+is not a new leak: pass-and-play prints the category in the round footer for the whole table, and
+the imposter's hint names it. Guests are unthemed in the lobby (the host has not committed to a
+pack yet) and themed from the first broadcast of the round.
+
+**The recap PNG reads the same palette** (`RecapData.palette`), so the shareable card is themed too.
+The palette is duplicated in CSS and TS by necessity; `tests/themes.test.ts` fails if they drift.
+
+**Not themed:** Timer and Question (no pack); the header wordmark and emblem (the brand stays
+constant); the cream panels (paper is paper in every season).

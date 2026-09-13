@@ -12,6 +12,7 @@ import { describePremiumRequirements, premiumFeatures } from '@/lib/premium';
 import { usePremiumStatus } from '@/lib/premium-client';
 import { categoryFromSearch } from '@/lib/packs';
 import { useClientValue } from '@/lib/use-client-value';
+import { useTheme } from '@/components/theme';
 
 type GeneratedPlayer = { name: string; isImposter: boolean };
 type GeneratedGame = { word: Word; players: GeneratedPlayer[] };
@@ -33,6 +34,7 @@ export default function ImposterGenerator() {
   const [picked, setCategory] = useState<Category | null>(null);
   const packParam = useClientValue(() => categoryFromSearch(window.location.search), null);
   const category: Category = picked ?? packParam ?? 'mixed';
+  useTheme(category);
   const [game, setGame] = useState<GeneratedGame | null>(null);
   const [revealed, setRevealed] = useState<number | null>(null);
   const [error, setError] = useState('');

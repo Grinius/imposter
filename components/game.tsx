@@ -18,6 +18,8 @@ import { categoryFromSearch } from '@/lib/packs';
 import { useTrackRoundEnd } from '@/components/use-track-round';
 import { track } from '@/lib/analytics';
 import { useClientValue } from '@/lib/use-client-value';
+import { useTheme } from '@/components/theme';
+import { defaultCard, themeFor } from '@/lib/themes';
 
 const categoryIcons: Record<Category, LucideIcon> = { mixed: Shuffle, food: Utensils, animals: PawPrint, places: MapPin, objects: Gem, activities: Sparkles, 'date-night': Heart, holidays: Gift, halloween: Ghost, football: Trophy, 'k-pop': MicVocal, 'pop-superstars': Music, christmas: TreePine };
 const playerColors = ['#b77d5c', '#65847c', '#a09564', '#82758f', '#6886a0', '#aa6c78', '#8a9862', '#b58b56', '#729594', '#997c66', '#827e9e', '#809164'];
@@ -129,6 +131,8 @@ export default function Game() {
   useEffect(() => { if (rulesOpen) rulesDialog.current?.showModal(); else rulesDialog.current?.close(); }, [rulesOpen]);
   useEffect(() => { if (exitOpen) exitDialog.current?.showModal(); else exitDialog.current?.close(); }, [exitOpen]);
 
+  const theme = themeFor(round ? round.settings.category : settings.category), card = theme ?? defaultCard;
+  useTheme(round ? round.settings.category : settings.category);
   const isSetup = !round;
   const category = categories.find(category => category.id === settings.category)!;
   const phaseNumber = !round ? 0 : ['handoff', 'reveal'].includes(round.phase) ? 1 : round.phase === 'discussion' ? 2 : ['vote-handoff', 'voting'].includes(round.phase) ? 3 : 4;
@@ -183,7 +187,7 @@ export default function Game() {
             <p className="eyebrow">{round.phase === 'handoff' ? `SECRET CARD ${round.cursor + 1} OF ${round.names.length}` : `PRIVATE VOTE ${round.cursor + 1} OF ${round.names.length}`}</p>
             <h2 ref={phaseHeading} tabIndex={-1}>Pass the phone to <em>{round.names[round.cursor]}.</em></h2>
             <p className="round-subtitle">{round.phase === 'handoff' ? 'A little privacy, please. Your secret is waiting.' : 'Your vote stays secret until everyone has voted.'}</p>
-            <div className="secret-card card-back"><div className="card-corner">I<span>✦</span></div><Emblem /><span className="card-back-title">TRUST NO ONE</span><span className="card-back-subtitle">THE IMPOSTER SOCIETY</span><div className="card-corner bottom">I<span>✦</span></div></div>
+            <div className="secret-card card-back"><div className="card-corner">I<span>✦</span></div><Emblem /><span className="card-back-title">{card.cardTitle}</span><span className="card-back-subtitle">{card.cardSubtitle}</span><div className="card-corner bottom">I<span>✦</span></div></div>
             <HandoffButton ballot={round.phase === 'vote-handoff'} onOpen={() => act({ type: round.phase === 'handoff' ? 'reveal' : 'open-ballot' })} />
             <span className="private-note"><LockKeyhole size={13} /> Only {round.names[round.cursor]} should look at this screen.</span>
           </>}
@@ -220,7 +224,7 @@ export default function Game() {
             <h2 ref={phaseHeading} tabIndex={-1}>{round.winner === 'friends' ? <>The friends <em>win.</em></> : <>The imposter <em>wins.</em></>}</h2><p className="round-subtitle">{round.reason === 'tie' ? 'A split vote. Just enough doubt to get away.' : round.reason === 'escaped' ? `${round.names[round.accused!]} took the blame. The real imposter slipped away.` : round.reason === 'guessed' ? 'Caught in the act, but the secret word saved the day.' : 'You saw through the bluff. The secret stayed safe.'}</p>
             <div className="result-details"><div><span>THE IMPOSTER</span><strong>{round.names[round.imposter]}</strong></div><div><span>THE SECRET WORD</span><strong>{round.word.text}</strong></div></div>
             <p className="result-brand">Played on <b>{siteHost}</b></p>
-            <RecapButton mode="word" data={{ roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THE SECRET WORD', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but guessed the word. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((name, index) => ({ label: name, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
+            <RecapButton mode="word" data={{ palette: theme?.palette, roleLabel: 'THE IMPOSTER WAS', imposter: round.names[round.imposter], secretLabel: 'THE SECRET WORD', secret: round.word.text, verdict: round.winner === 'friends' ? 'Caught. The friends win.' : round.reason === 'tie' ? 'A split vote. The imposter got away.' : round.reason === 'guessed' ? 'Caught, but guessed the word. The imposter wins.' : `${round.names[round.accused!]} took the blame. The imposter wins.`, rows: round.names.map((name, index) => ({ label: name, value: `${round.votes.filter(v => v === index).length} vote${round.votes.filter(v => v === index).length === 1 ? '' : 's'}`, highlight: index === round.imposter })) }} />
             <div className="vote-results"><span className="votes-label">HOW THE TABLE VOTED</span>{round.names.map((name, index) => <div className="vote-result" key={index}><span>{name}</span><span className="vote-bar"><i style={{ width: `${round.votes.filter(v => v === index).length / round.names.length * 100}%` }} /></span><b>{round.votes.filter(v => v === index).length}</b></div>)}</div>
             <button className="gold-button" onClick={() => start(true)}><RotateCcw size={17} /> Another round<ArrowRight size={17} /></button><button className="text-button" onClick={stopRound}>Change players or category</button>
           </>}

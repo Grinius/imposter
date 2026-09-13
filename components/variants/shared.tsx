@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { ArrowRight, Check, Eye, Fingerprint, LockKeyhole, Plus, ShieldCheck, Users, X } from 'lucide-react';
 import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '@/lib/limits';
 import { siteHost } from '@/components/brand';
+import { defaultCard } from '@/lib/themes';
 
 // Pieces the pass-and-play variants share with each other. They mirror what `components/game.tsx`
 // does for the word game (same CSS classes, same handoff guard, same privacy behaviour) so the three
@@ -22,15 +23,15 @@ export function HandoffButton({ label, onOpen }: { label: string; onOpen: () => 
   useEffect(() => { const timer = setTimeout(() => setReady(true), 650); return () => clearTimeout(timer); }, []);
   return <button className="gold-button" disabled={!ready} onClick={event => { if (event.detail < 2) onOpen(); }}><Eye size={18} />{label}<ArrowRight size={17} /></button>;
 }
-export function CardBack() {
-  return <div className="secret-card card-back"><div className="card-corner">I<span>✦</span></div><Emblem /><span className="card-back-title">TRUST NO ONE</span><span className="card-back-subtitle">THE IMPOSTER SOCIETY</span><div className="card-corner bottom">I<span>✦</span></div></div>;
+export function CardBack({ card = defaultCard }: { card?: { cardTitle: string; cardSubtitle: string } }) {
+  return <div className="secret-card card-back"><div className="card-corner">I<span>✦</span></div><Emblem /><span className="card-back-title">{card.cardTitle}</span><span className="card-back-subtitle">{card.cardSubtitle}</span><div className="card-corner bottom">I<span>✦</span></div></div>;
 }
-export function Handoff({ eyebrow, name, subtitle, label, onOpen, heading }: { eyebrow: string; name: string; subtitle: string; label: string; onOpen: () => void; heading: React.RefObject<HTMLHeadingElement | null> }) {
+export function Handoff({ eyebrow, name, subtitle, label, onOpen, heading, card }: { eyebrow: string; name: string; subtitle: string; label: string; onOpen: () => void; heading: React.RefObject<HTMLHeadingElement | null>; card?: { cardTitle: string; cardSubtitle: string } }) {
   return <>
     <p className="eyebrow">{eyebrow}</p>
     <h2 ref={heading} tabIndex={-1}>Pass the phone to <em>{name}.</em></h2>
     <p className="round-subtitle">{subtitle}</p>
-    <CardBack />
+    <CardBack card={card} />
     <HandoffButton label={label} onOpen={onOpen} />
     <span className="private-note"><LockKeyhole size={13} /> Only {name} should look at this screen.</span>
   </>;

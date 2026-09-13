@@ -1,6 +1,28 @@
 # Current status
 
-Updated: 2026-09-12.
+Updated: 2026-09-13.
+
+## Pack themes (2026-09-13, adopted)
+
+Themed packs now put the game "in costume": `lib/themes.ts` holds a palette and card-back copy per
+themed pack, `components/theme.tsx` applies it as `data-theme` on `<html>` while a pack is selected
+or in play (word game, Drawing Imposter, both generators, online rooms, and the pack pages), and `app/globals.css` overrides the root
+colour variables plus the page background, gold buttons, card back and reveal stage for the two
+seasonal packs (Halloween: aubergine + pumpkin, "TRUST NO GHOUL / THE HAUNTED SOCIETY"; Christmas:
+pine + holly red, "TRUST NO ELF / THE NAUGHTY LIST"); football, K-pop and pop are accent-only. The
+recap PNG reads the same palette. Theme follows the pack, never the date, and clears on switching back.
+Online: the host previews the pack in the lobby; once a round starts `PublicGame.category` carries it to every phone (the category is already public — pass-and-play prints it for the table and the imposter's hint names it). Typography, layout and rules unchanged.
+
+Validation: 97 Vitest (2 new: a theme exists for every themed pack and nothing else; CSS palette
+matches the TS palette the recap uses), TypeScript, ESLint (1 pre-existing warning), build, 13
+Playwright; Playwright captures inspected for Halloween (setup, handoff, card, reveal, recap, pack
+page), Christmas and K-pop at desktop; `data-theme` asserted on and cleared; generator confirmed
+themed; a three-origin online round confirmed both guests themed only after the host started a
+Halloween round. Not yet checked: phone sizes in the browser, contrast of the Christmas red button
+text, the owner's own look.
+
+Owner tested locally and approved on 2026-09-13. Next step: deploy; the Halloween costume is the
+natural subject for the first pack video.
 
 ## Search appearance (2026-09-12, adopted)
 
