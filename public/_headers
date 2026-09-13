@@ -12,8 +12,12 @@
 # shape an XSS would most likely take, and it is what keeps a premium token in localStorage from
 # being posted to somebody else's host. plausible.io is the analytics script and its event
 # endpoint (lib/analytics.ts); nothing else external is allowed to load or be contacted.
+#
+# frame-ancestors names buildhop.io (and its subdomains) because the BuildHop launch page renders the
+# site in an iframe and refused it under 'none'. No other origin may frame the game; the policy
+# also deliberately omits 'self', since the site never frames itself.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://plausible.io; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' wss://laughtable.com https://plausible.io; frame-src 'none'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://plausible.io; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' wss://laughtable.com https://plausible.io; frame-src 'none'; object-src 'none'; frame-ancestors https://buildhop.io https://*.buildhop.io; base-uri 'self'; form-action 'self'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), interest-cohort=()
