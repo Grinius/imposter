@@ -2,6 +2,24 @@
 
 Updated: 2026-09-13.
 
+## Reloading the success page no longer spends device mints (2026-09-13)
+
+The owner refreshed `/premium/success/?session_id=…` five times in one browser and hit "already
+unlocked premium on 5 devices": every load minted a fresh token and charged the session's ledger, so
+one browser looked like five devices. `POST /api/premium/verify` now accepts the token the browser
+already holds; if it verifies and names the same session, the Worker re-issues a token without a
+Stripe lookup and without touching the `RedemptionLedger`. Only a browser with no token (or a token
+for a different session) counts as a new device. `verifyCheckoutSession` sends the stored token
+automatically, so the success page and the restore form both benefit.
+
+Validation: 107 Vitest (2 new: same-session token skips Stripe and the ledger; other-session, forged,
+or garbage tokens fall through to the normal path), TypeScript, ESLint, build; the built bundle sends
+`{sessionId, token}`. Not verified end to end against production (local Stripe key invalid).
+
+Consequence: the owner's own session (`cs_live_a1W0…`) has its 5 mints spent on production. The
+browser that did the refreshing still holds a valid token, so it stays premium; other devices would
+need the ledger reset, and there is no admin path for that yet.
+
 ## Restore purchase on /premium/ (2026-09-13)
 
 Stripe's receipt email carries neither the Checkout session id nor a link back to

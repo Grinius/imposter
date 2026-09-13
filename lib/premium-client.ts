@@ -13,10 +13,12 @@ export function storePremiumToken(token: string) {
 
 // Ask the Worker to confirm a Checkout session was paid and, if so, mint this browser's entitlement.
 // Shared by the post-checkout success page and the "Restore purchase" form; the error text comes
-// from the Worker so both surfaces explain a failure the same way.
+// from the Worker so both surfaces explain a failure the same way. Any token this browser already
+// holds goes along so that a reload of the same link renews it instead of counting as a new device.
 export async function verifyCheckoutSession(sessionId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const response = await fetch('/api/premium/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) });
+    const token = getStoredPremiumToken() ?? undefined;
+    const response = await fetch('/api/premium/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId, token }) });
     const data = await response.json() as { token?: string; error?: string };
     if (!response.ok || !data.token) return { ok: false, error: data.error ?? 'That payment could not be verified.' };
     storePremiumToken(data.token);

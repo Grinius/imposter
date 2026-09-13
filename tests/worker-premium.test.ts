@@ -54,6 +54,29 @@ describe('POST /api/premium/verify', () => {
     expect(payload?.paid).toBe(true);
     expect(payload?.sessionId).toBe('cs_test_abc123');
   });
+  it('re-issues a token to a browser that already holds one for the same session, without Stripe or the ledger', async () => {
+    const { token } = await signEntitlement(baseEnv.ENTITLEMENT_SECRET, 'cs_test_abc123');
+    const stripe = mockStripe({ ok: false });
+    const claim = vi.fn();
+    const env: Env = { ...baseEnv, REDEMPTIONS: { idFromName: () => 'id', get: () => ({ fetch: claim }) } as unknown as Env['REDEMPTIONS'] };
+    const response = await verifyPremiumCheckout(new Request('https://x/', { method: 'POST', body: JSON.stringify({ sessionId: 'cs_test_abc123', token }) }), env);
+    expect(response.status).toBe(200);
+    const reissued = await response.json() as { token: string };
+    expect((await verifyEntitlement(baseEnv.ENTITLEMENT_SECRET, reissued.token))?.sessionId).toBe('cs_test_abc123');
+    expect(stripe).not.toHaveBeenCalled();
+    expect(claim).not.toHaveBeenCalled();
+  });
+  it('ignores a presented token for a different session, or a forged one, and goes through Stripe as normal', async () => {
+    const { token: other } = await signEntitlement(baseEnv.ENTITLEMENT_SECRET, 'cs_test_other');
+    const { token: forged } = await signEntitlement('b'.repeat(64), 'cs_test_abc123');
+    for (const token of [other, forged, 'garbage']) {
+      const stripe = mockStripe({ ok: false });
+      const response = await verifyPremiumCheckout(new Request('https://x/', { method: 'POST', body: JSON.stringify({ sessionId: 'cs_test_abc123', token }) }), baseEnv);
+      expect(response.status).toBe(502);
+      expect(stripe).toHaveBeenCalledTimes(1);
+      vi.restoreAllMocks();
+    }
+  });
 });
 
 // The token travels in the body rather than the URL so it stays out of request logs.

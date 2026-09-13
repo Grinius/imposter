@@ -342,6 +342,16 @@ export async function verifyPremiumCheckout(request: Request, env: Env): Promise
   try { body = await request.json(); } catch { return Response.json({ error: 'That request was not valid JSON.' }, { status: 400 }); }
   const sessionId = body && typeof body === 'object' && 'sessionId' in body ? (body as { sessionId: unknown }).sessionId : undefined;
   if (typeof sessionId !== 'string' || !/^cs_(test|live)_[A-Za-z0-9]+$/.test(sessionId)) return Response.json({ error: 'That does not look like a Stripe Checkout session id.' }, { status: 400 });
+  // A browser that already holds a valid token for this very session is not a new device: reloading
+  // the success page, or pasting the same link into "Restore purchase" again, re-issues its token
+  // without a Stripe lookup and without spending one of the session's device mints. The token was
+  // only ever minted after Stripe confirmed payment, so it is proof enough on its own.
+  const presented = body && typeof body === 'object' && 'token' in body ? (body as { token: unknown }).token : undefined;
+  const held = typeof presented === 'string' ? await verifiedEntitlement(env, presented) : null;
+  if (held && held.sessionId === sessionId) {
+    const { token, expiresAt } = await signEntitlement(env.ENTITLEMENT_SECRET, sessionId);
+    return Response.json({ token, expiresAt }, { headers: { 'Cache-Control': 'no-store' } });
+  }
   const stripeResponse = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, { headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` } });
   if (!stripeResponse.ok) return Response.json({ error: 'Could not look up that checkout session with Stripe.' }, { status: 502 });
   const session = await stripeResponse.json() as { payment_status?: string; status?: string };
