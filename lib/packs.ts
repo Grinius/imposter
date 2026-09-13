@@ -28,7 +28,7 @@ export const packs: Pack[] = [
   },
   {
     id: 'football', slug: 'football', title: 'Football Imposter Game', eyebrow: 'THE MATCHDAY EDITION',
-    lead: 'Forty-eight football words for the imposter game — positions, moments, competitions and terrace culture. Built for the pub, the away coach, and the group chat that never stops arguing.',
+    lead: 'Eighty football words for the imposter game — positions, moments, competitions and terrace culture. Built for the pub, the away coach, and the group chat that never stops arguing.',
     when: 'Evergreen; spikes around derby weekends, cup finals and the summer tournament.',
     pitch: 'Football is full of near-synonyms, which is exactly what the imposter needs. A “free kick” and a “penalty” share “referee”, “whistle” and “wall”. The friends win by knowing the one word that only fits one of them.',
     pairs: [
@@ -46,7 +46,7 @@ export const packs: Pack[] = [
   },
   {
     id: 'k-pop', slug: 'k-pop', title: 'K-pop Imposter Game', eyebrow: 'THE COMEBACK EDITION',
-    lead: 'Forty-eight K-pop words for the imposter game: fandom vocabulary, group roles, stage moments and the groups themselves. Made for the friends who know every fan chant.',
+    lead: 'Eighty K-pop words for the imposter game: fandom vocabulary, group roles, stage moments and the groups themselves. Made for the friends who know every fan chant.',
     when: 'Evergreen; post on comeback weeks and around year-end award shows.',
     pitch: 'K-pop has its own dictionary, and that is the whole game here. A “bias” and a “bias wrecker” share nearly every clue. “Lightstick” and “lightstick ocean” are one word apart. Non-fans at the table become instant suspects, which is half the fun.',
     pairs: [
@@ -64,7 +64,7 @@ export const packs: Pack[] = [
   },
   {
     id: 'pop-superstars', slug: 'pop-superstars', title: 'Pop Superstars Imposter Game', eyebrow: 'THE ERAS EDITION',
-    lead: 'Forty-eight pop words for the imposter game: the hits, albums, eras and stars everyone at the table has argued about. Swiftie-approved, but the whole pop canon is in here.',
+    lead: 'Eighty pop words for the imposter game: the hits, albums, eras and stars everyone at the table has argued about. Swiftie-approved, but the whole pop canon is in here.',
     when: 'Evergreen; post on album-release weeks, tour dates and award nights.',
     pitch: 'Song titles are the trickiest imposter words there are, because the obvious clue is the artist and the artist fits ten other words in the pack. “Cruel Summer” and “Anti-Hero” share “Taylor”; the friends need “August” or “problem” instead.',
     pairs: [

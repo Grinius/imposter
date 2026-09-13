@@ -30,3 +30,13 @@ export function tally(votes: number[], playerCount: number): number | null {
   const leaders = counts.flatMap((count, i) => count === top ? [i] : []);
   return leaders.length === 1 ? leaders[0] : null;
 }
+
+// Draw from a pool while avoiding everything in `exclude`; when that leaves nothing, the pack has
+// been played through, so avoid only the most recent entry (the last id in the list) instead.
+export function freshPool<T extends { id: string }>(pool: T[], exclude: string[] | string | undefined): T[] {
+  const ids = typeof exclude === 'string' ? [exclude] : exclude ?? [];
+  const seen = new Set(ids), fresh = pool.filter(item => !seen.has(item.id));
+  if (fresh.length) return fresh;
+  const last = ids[ids.length - 1]; const rest = pool.filter(item => item.id !== last);
+  return rest.length ? rest : pool;
+}

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import worker, { ImposterRoom, RateLimiter, RedemptionLedger, verifyPremiumCheckout, type Env } from '../src/worker';
 import { actionIsAuthorized, createRound, type Action } from '../lib/game';
 import type { PublicRoom, RoomState } from '../lib/online';
+import { getWords } from '../lib/words';
+import { wordHistoryCap } from '../lib/history';
 
 // Regression tests for the hardening pass in docs/DECISIONS.md (2026-09-10). Each block below
 // describes an attack that actually worked against the previous implementation, demonstrated with
@@ -292,5 +294,22 @@ describe('a premium claim cannot break the room it arrives on', () => {
       expect(room.room?.premium).toBe(false);
       expect(lastError(client.received)).toBeUndefined();
     }
+  });
+});
+
+describe('room word memory', () => {
+  it('remembers what the room dealt and never repeats a word while the pack has fresh ones', async () => {
+    const { room, seats } = await playingRoom();
+    const dealt = [room.roundState!.word.id];
+    expect(room.room!.recentWords).toEqual(dealt);
+    // Play as many rounds as the memory holds: finish each round by tie vote (fast), start the next.
+    const poolSize = getWords('mixed').length, window = Math.min(poolSize, wordHistoryCap);
+    for (let i = 1; i < window; i++) {
+      room.roundState = { ...room.roundState!, phase: 'result', winner: 'imposter', reason: 'tie' }; room.room!.status = 'finished';
+      await room.start(seats[0].socket, seats[0].credentials.playerId, { names: [], category: 'mixed', minutes: 3, hints: true });
+      dealt.push(room.roundState!.word.id);
+    }
+    expect(new Set(dealt).size).toBe(window); // no repeat inside the remembered window
+    expect(room.room!.recentWords).toHaveLength(window);
   });
 });

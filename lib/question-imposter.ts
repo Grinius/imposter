@@ -1,5 +1,5 @@
 import { freePlayerLimit } from './limits';
-import { pick, tally, validateNames, voteIsValid } from './deduction';
+import { freshPool, pick, tally, validateNames, voteIsValid } from './deduction';
 import { questionPairs, type QuestionPair } from './questions';
 
 // Question Imposter: everyone is dealt the same question except one player, who gets a different
@@ -20,10 +20,10 @@ export type QuestionAction = { type: 'reveal' | 'hide' | 'privacy' | 'start-vote
 export function validateQuestionSettings(settings: QuestionSettings, maxPlayers = freePlayerLimit): string | null {
   return validateNames(settings.names, maxPlayers);
 }
-export function createQuestionRound(settings: QuestionSettings, random: () => number, previousPair?: string, maxPlayers = freePlayerLimit): QuestionRound {
+export function createQuestionRound(settings: QuestionSettings, random: () => number, exclude?: string | string[], maxPlayers = freePlayerLimit): QuestionRound {
   const error = validateQuestionSettings(settings, maxPlayers); if (error) throw new Error(error);
   const names = settings.names.map(name => name.trim());
-  const pool = questionPairs.filter(pair => pair.id !== previousPair);
+  const pool = freshPool(questionPairs, exclude);
   return { names, settings: { names }, pair: pool[pick(pool.length, random)], imposter: pick(names.length, random), firstAnswer: pick(names.length, random), phase: 'handoff', cursor: 0, votes: [], accused: null, winner: null, reason: null };
 }
 // What the player at `index` is shown on their card. Both cards look the same on purpose.

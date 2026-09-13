@@ -17,6 +17,7 @@ import { track } from '@/lib/analytics';
 import { useClientValue } from '@/lib/use-client-value';
 import { useTheme } from '@/components/theme';
 import { defaultCard, themeFor } from '@/lib/themes';
+import { recentWords, rememberWord } from '@/lib/history';
 
 const steps = ['Secret word', 'Draw one line', 'Cast your vote', 'The reveal'];
 export default function DrawingImposter() {
@@ -46,7 +47,8 @@ export default function DrawingImposter() {
     if (reasons.length) { setPaywallReasons(reasons); setError(''); return; }
     const message = validateDrawingSettings(settings, { maxPlayers, premium }); if (message) { setError(message); return; }
     setPaywallReasons(null); setError(''); setGuess(''); setPending(null); setRevealed(false);
-    setRound(createDrawingRound(settings, secureRandom, round?.word.id, { maxPlayers, premium })); setRoundNumber(replay ? roundNumber + 1 : 1); track({ name: 'round_start', mode: 'drawing', pack: settings.category, players: settings.names.length });
+    const next = createDrawingRound(settings, secureRandom, recentWords(), { maxPlayers, premium }); rememberWord(next.word.id);
+    setRound(next); setRoundNumber(replay ? roundNumber + 1 : 1); track({ name: 'round_start', mode: 'drawing', pack: settings.category, players: settings.names.length });
     requestAnimationFrame(() => document.getElementById('drawing-imposter')?.scrollIntoView({ block: 'start' }));
   }
 

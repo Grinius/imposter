@@ -2,6 +2,20 @@
 
 Updated: 2026-09-13.
 
+## Pack sizes and no-repeat memory (2026-09-13, adopted)
+
+Packs grew to 80 (core), 104 (new free Everyday), 57 (date night, holidays), 80 (football, K-pop,
+pop) and 48 (Halloween, Christmas): 954 words, Mixed bag 264. Every draw now avoids what the device
+(or, online, the room) has already dealt — last 150 word ids / 40 question ids — falling back to
+the full pack minus the last word once exhausted. Reasoning in `docs/DECISIONS.md`. The new words
+are a first draft for the owner to read through before wide exposure.
+
+Validation: 102 Vitest (7 new), TypeScript, ESLint (1 pre-existing warning), build, 13 Playwright;
+in the Worker preview, three consecutive home-page rounds dealt three different words and the
+memory key held all three. Not verified: the owner's read of the new lists.
+
+Next step: owner skims `lib/words.ts` for anything off-brand; deploy.
+
 ## Pack themes (2026-09-13, adopted)
 
 Themed packs now put the game "in costume": `lib/themes.ts` holds a palette and card-back copy per
@@ -172,7 +186,7 @@ adopted (above); the cap change, analytics, and everything else remain proposals
 
 Initial pass-the-phone game is playable locally. Next.js 16.3.4 + React + TypeScript static export; custom responsive CSS; original optimized detective-club artwork; self-hosted fonts. Cloudflare Workers Static Assets configuration is included.
 
-Features: 3–5 free editable players, 120 starter words in five packs plus mixed, category hints, secure browser randomness, private role handoffs, a 650 ms rapid-tap guard, secret hiding on blur/visibility loss, optional sound, pause/resume discussion timer, private non-self voting, tie/plurality resolution, final imposter guess, results, and replay. Rules dialog and guarded exit are implemented. Settings stay across rounds but not refreshes.
+Features: 3–5 free editable players, 954 words across thirteen packs plus mixed, category hints, secure browser randomness, private role handoffs, a 650 ms rapid-tap guard, secret hiding on blur/visibility loss, optional sound, pause/resume discussion timer, private non-self voting, tie/plurality resolution, final imposter guess, results, and replay. Rules dialog and guarded exit are implemented. Settings stay across rounds but not refreshes.
 
 ## Rate limiting (adopted)
 

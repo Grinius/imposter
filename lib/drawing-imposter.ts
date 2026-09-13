@@ -1,5 +1,5 @@
 import { freePlayerLimit } from './limits';
-import { pick, tally, validateNames, voteIsValid } from './deduction';
+import { freshPool, pick, tally, validateNames, voteIsValid } from './deduction';
 import { normalizeGuess } from './game';
 import { categories, getWords, type Category, type Word } from './words';
 
@@ -36,10 +36,10 @@ export function validateDrawingSettings(settings: DrawingSettings, options: { ma
   return null;
 }
 export function totalTurns(round: DrawingRound) { return round.names.length * round.settings.passes; }
-export function createDrawingRound(settings: DrawingSettings, random: () => number, previousWord?: string, options: { maxPlayers?: number; premium?: boolean } = {}): DrawingRound {
+export function createDrawingRound(settings: DrawingSettings, random: () => number, exclude?: string | string[], options: { maxPlayers?: number; premium?: boolean } = {}): DrawingRound {
   const error = validateDrawingSettings(settings, options); if (error) throw new Error(error);
   const names = settings.names.map(name => name.trim());
-  const pool = getWords(settings.category).filter(word => word.id !== previousWord);
+  const pool = freshPool(getWords(settings.category), exclude);
   return { names, settings: { ...settings, names }, word: pool[pick(pool.length, random)], imposter: pick(names.length, random), firstTurn: pick(names.length, random), phase: 'handoff', cursor: 0, turn: 0, strokes: [], votes: [], accused: null, winner: null, reason: null };
 }
 function strokeIsValid(points: unknown): points is Point[] {

@@ -13,6 +13,8 @@ import { usePremiumStatus } from '@/lib/premium-client';
 import { categoryFromSearch } from '@/lib/packs';
 import { useClientValue } from '@/lib/use-client-value';
 import { useTheme } from '@/components/theme';
+import { recentWords, rememberWord } from '@/lib/history';
+import { freshPool } from '@/lib/deduction';
 
 type GeneratedPlayer = { name: string; isImposter: boolean };
 type GeneratedGame = { word: Word; players: GeneratedPlayer[] };
@@ -22,8 +24,8 @@ function randomIndex(length: number) {
 }
 
 function makeGame(names: string[], category: Category): GeneratedGame {
-  const pool = getWords(category);
-  const word = pool[randomIndex(pool.length)];
+  const pool = freshPool(getWords(category), recentWords());
+  const word = pool[randomIndex(pool.length)]; rememberWord(word.id);
   const imposter = randomIndex(names.length);
   return { word, players: names.map((name, index) => ({ name: name.trim(), isImposter: index === imposter })) };
 }

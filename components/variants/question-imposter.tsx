@@ -11,6 +11,7 @@ import RecapButton from '@/components/recap-button';
 import { Avatar, Ballot, Handoff, PlayerNames, ResultBrand, ResultHeader, RoundChrome, VariantLinks, VoteResults, useHeadingFocus, usePrivacyGuard } from './shared';
 import { useTrackRoundEnd } from '@/components/use-track-round';
 import { track } from '@/lib/analytics';
+import { recentQuestions, rememberQuestion } from '@/lib/history';
 
 const steps = ['Secret question', 'Answer out loud', 'Cast your vote', 'The reveal'];
 export default function QuestionImposter() {
@@ -31,7 +32,8 @@ export default function QuestionImposter() {
     if (!premium && settings.names.length > freePlayerLimit) { setPaywall(true); setError(''); return; }
     const message = validateQuestionSettings(settings, maxPlayers); if (message) { setError(message); return; }
     setPaywall(false); setError(''); setRevealed(false);
-    setRound(createQuestionRound(settings, secureRandom, round?.pair.id, maxPlayers)); setRoundNumber(replay ? roundNumber + 1 : 1); track({ name: 'round_start', mode: 'question', players: settings.names.length });
+    const next = createQuestionRound(settings, secureRandom, recentQuestions(), maxPlayers); rememberQuestion(next.pair.id);
+    setRound(next); setRoundNumber(replay ? roundNumber + 1 : 1); track({ name: 'round_start', mode: 'question', players: settings.names.length });
     requestAnimationFrame(() => document.getElementById('question-imposter')?.scrollIntoView({ block: 'start' }));
   }
 

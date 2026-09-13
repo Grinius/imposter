@@ -1,5 +1,5 @@
 import { freePlayerLimit } from './limits';
-import { pick, validateNames } from './deduction';
+import { freshPool, pick, validateNames } from './deduction';
 import { categories, getWords, type Category, type Word } from './words';
 export type Phase = 'handoff' | 'reveal' | 'discussion' | 'vote-handoff' | 'voting' | 'guess' | 'result';
 export interface Settings { names: string[]; category: Category; minutes: number; hints: boolean; }
@@ -22,9 +22,9 @@ export function validateSettings(settings: Settings, options: EntitlementOptions
   if (![2, 3, 5].includes(settings.minutes)) return 'Choose a 2, 3, or 5 minute discussion.';
   return null;
 }
-export function createRound(settings: Settings, random: () => number, previousWord?: string, options: EntitlementOptions = {}): Round {
+export function createRound(settings: Settings, random: () => number, exclude?: string | string[], options: EntitlementOptions = {}): Round {
   const error = validateSettings(settings, options); if (error) throw new Error(error);
-  const pool = getWords(settings.category).filter(word => word.id !== previousWord);
+  const pool = freshPool(getWords(settings.category), exclude);
   const normalized = { ...settings, names: settings.names.map(name => name.trim()) };
   return { names: normalized.names, settings: normalized, word: pool[pick(pool.length, random)], imposter: pick(settings.names.length, random), firstClue: pick(settings.names.length, random), phase: 'handoff', cursor: 0, votes: [], clues: [], accused: null, winner: null, reason: null };
 }

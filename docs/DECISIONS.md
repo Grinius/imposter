@@ -352,3 +352,30 @@ The palette is duplicated in CSS and TS by necessity; `tests/themes.test.ts` fai
 
 **Not themed:** Timer and Question (no pack); the header wordmark and emblem (the brand stays
 constant); the cream panels (paper is paper in every season).
+
+## 2026-09-13 — Bigger packs, and no repeats while a pack has fresh words
+
+24 words per pack was not enough: the draw only excluded the previous word, so a six-round night on
+a 24-word pack had roughly a one-in-three chance of a repeat, and Mixed bag — the default — was only
+food + animals, 48 words. Two changes.
+
+**Every draw avoids what has already been dealt.** `freshPool` (`lib/deduction.ts`) takes a list of
+ids to avoid and falls back to the full pool minus the most recent id once the pack is exhausted,
+so a long night on a small pack still gets a word. Pass-and-play, both generators, Question and
+Drawing read the device's memory (`lib/history.ts`: the last 150 word ids / 40 question ids in
+localStorage — ids only, never words) and write the new draw to it. Online rooms keep the same
+memory per room in Durable Object state (`RoomState.recentWords`), since the server deals there.
+`createRound`/`createDrawingRound`/`createQuestionRound` accept a single id or a list, so the old
+"previous word" callers still type-check.
+
+**Packs grew and a free Everyday pack was added.** Core packs are 80 each (food, animals, places,
+objects, activities), Everyday is 104 and free, date night and holidays are 57, the evergreen fandom
+packs (football, K-pop, pop) are 80, the seasonal ones stay at 48. Mixed bag is now food + animals +
+everyday = 264 words; the rule that it never contains a premium or themed word is unchanged. New
+words were appended, so existing ids (and any device memory) stay valid. Words are written in
+pairs where possible (lasagne/pizza, hawk/eagle) so the imposter has cover; the lists are a first
+draft for the owner to sanity-check, same caveat as the original packs.
+
+**Tests:** every pack meets a minimum size, no duplicate text within a pack or within Mixed bag;
+the fresh-pool rule; the memory store (order, de-duplication, cap, junk in storage, private mode);
+and a Worker room playing 150 rounds of Mixed bag with no repeat inside the remembered window.

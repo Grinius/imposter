@@ -16,7 +16,16 @@ describe('themed packs', () => {
   });
   it('keeps Mixed bag to free core packs: no premium words and no themed words', () => {
     const mixed = new Set(getWords('mixed').map(word => word.category));
-    expect([...mixed].sort()).toEqual(['animals', 'food']);
+    expect([...mixed].sort()).toEqual(['animals', 'everyday', 'food']);
+    expect(getWords('mixed').length).toBeGreaterThanOrEqual(250);
+  });
+  it('gives every pack enough words for a long night, unique within the pack and within Mixed bag', () => {
+    const minimum: Record<string, number> = { food: 80, animals: 80, everyday: 100, places: 80, objects: 80, activities: 80, 'date-night': 48, holidays: 48, halloween: 48, football: 64, 'k-pop': 64, 'pop-superstars': 64, christmas: 48 };
+    for (const category of categories.filter(c => c.id !== 'mixed')) {
+      const list = getWords(category.id); expect(list.length, category.id).toBeGreaterThanOrEqual(minimum[category.id]);
+      expect(new Set(list.map(w => w.text.toLowerCase())).size, `${category.id} duplicates`).toBe(list.length);
+    }
+    const mixed = getWords('mixed').map(w => w.text.toLowerCase()); expect(new Set(mixed).size, 'Mixed bag duplicates').toBe(mixed.length);
   });
   it('resolves pack slugs and the ?pack= preselect, ignoring junk', () => {
     expect(packBySlug('halloween')?.id).toBe('halloween'); expect(packBySlug('nope')).toBeNull();

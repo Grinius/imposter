@@ -5,10 +5,12 @@ import { ArrowRight, Check, Copy, Shuffle } from 'lucide-react';
 import { categories, getWords, type Category, type Word } from '@/lib/words';
 import { secureRandom } from '@/lib/game';
 import { useTheme } from '@/components/theme';
+import { recentWords, rememberWord } from '@/lib/history';
+import { freshPool } from '@/lib/deduction';
 
 function pickWord(category: Category): Word {
-  const pool = getWords(category);
-  return pool[Math.floor(secureRandom() * pool.length)];
+  const pool = freshPool(getWords(category), recentWords());
+  const word = pool[Math.floor(secureRandom() * pool.length)]; rememberWord(word.id); return word;
 }
 
 export default function WordGenerator() {

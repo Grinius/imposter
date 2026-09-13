@@ -7,7 +7,7 @@ export type OnlinePlayer = { id: string; name: string; connected: boolean; isHos
 // player in the room, so if it doubled as the credential (as it used to) anyone who saw the room
 // list could re-join as someone else, kick them off, and be handed their private role and word.
 export type RoomPlayer = OnlinePlayer & { secret: string };
-export type RoomState = Omit<PublicRoom, 'players'> & { players: RoomPlayer[] };
+export type RoomState = Omit<PublicRoom, 'players'> & { players: RoomPlayer[]; recentWords?: string[] };
 
 export type PublicRoom = {
   roomId: string;

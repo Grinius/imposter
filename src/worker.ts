@@ -2,6 +2,7 @@ import { actionIsAuthorized, createRound, transition, type Action, type Settings
 import { signEntitlement, verifyEntitlement, type EntitlementPayload } from '../lib/entitlement';
 import { freePlayerLimit, minPlayerLimit, premiumPlayerLimit } from '../lib/limits';
 import { publicRoom, roomIdIsValid, type PrivateRole, type PublicRoom, type RoomPlayer, type RoomState } from '../lib/online';
+import { wordHistoryCap } from '../lib/history';
 
 export interface Env {
   ASSETS: Fetcher;
@@ -249,9 +250,9 @@ export class ImposterRoom {
   private async start(socket: WebSocket, playerId: string, settings: Settings) {
     if (!this.room || this.room.hostId !== playerId || this.room.players.length < minPlayerLimit) { this.send(socket, { type: 'error', message: `The host needs at least ${minPlayerLimit} players to start.` }); return; }
     if (!['lobby', 'finished'].includes(this.room.status)) { this.send(socket, { type: 'error', message: 'This room is already in progress.' }); return; }
-    try { const freshRound = createRound({ ...settings, names: this.room.players.map(player => player.name) }, random, undefined, { maxPlayers: this.room.premium ? premiumPlayerLimit : freePlayerLimit, premium: this.room.premium }); this.roundState = { ...freshRound, phase: 'discussion', cursor: freshRound.firstClue }; }
+    try { const freshRound = createRound({ ...settings, names: this.room.players.map(player => player.name) }, random, this.room.recentWords ?? [], { maxPlayers: this.room.premium ? premiumPlayerLimit : freePlayerLimit, premium: this.room.premium }); this.roundState = { ...freshRound, phase: 'discussion', cursor: freshRound.firstClue }; }
     catch (error) { this.send(socket, { type: 'error', message: error instanceof Error ? error.message : 'Those settings were invalid.' }); return; }
-    this.room.status = 'playing'; this.room.round += 1;
+    this.room.status = 'playing'; this.room.round += 1; this.room.recentWords = [...(this.room.recentWords ?? []).filter(id => id !== this.roundState!.word.id), this.roundState!.word.id].slice(-wordHistoryCap);
     this.roles = new Map(this.room.players.map((player, index) => [player.id, index === this.roundState!.imposter ? { round: this.room!.round, role: 'imposter', hint: this.roundState!.settings.hints ? this.roundState!.word.category : undefined } : { round: this.room!.round, role: 'friend', word: this.roundState!.word.text }]));
     await this.persist(); this.broadcast({ type: 'room', room: publicRoom(this.room, this.roundState) });
     for (const client of this.state.getWebSockets()) { const id = attachedPlayerId(client); const role = id ? this.roles.get(id) : undefined; if (role) this.send(client, { type: 'role', role }); }

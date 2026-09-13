@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleHelp, Clock3, Eye, EyeOff, Feather, Fingerprint, Gem, Ghost, Gift, Heart, LockKeyhole, MapPin, MessageCircleQuestion, MicVocal, Music, Pause, PawPrint, PenLine, Play, Plus, RotateCcw, ShieldCheck, Shuffle, Smartphone, Sparkles, Timer, TreePine, Trophy, Utensils, Users, Volume2, VolumeX, Vote, Wifi, X, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleHelp, Clock3, Coffee, Eye, EyeOff, Feather, Fingerprint, Gem, Ghost, Gift, Heart, LockKeyhole, MapPin, MessageCircleQuestion, MicVocal, Music, Pause, PawPrint, PenLine, Play, Plus, RotateCcw, ShieldCheck, Shuffle, Smartphone, Sparkles, Timer, TreePine, Trophy, Utensils, Users, Volume2, VolumeX, Vote, Wifi, X, type LucideIcon } from 'lucide-react';
 import { categories, type Category } from '@/lib/words';
 import { createRound, normalizeGuess, secureRandom, transition, validateSettings, type Action, type Round, type Settings } from '@/lib/game';
 import UpgradeCard from '@/components/premium/upgrade-card';
@@ -20,8 +20,9 @@ import { track } from '@/lib/analytics';
 import { useClientValue } from '@/lib/use-client-value';
 import { useTheme } from '@/components/theme';
 import { defaultCard, themeFor } from '@/lib/themes';
+import { recentWords, rememberWord } from '@/lib/history';
 
-const categoryIcons: Record<Category, LucideIcon> = { mixed: Shuffle, food: Utensils, animals: PawPrint, places: MapPin, objects: Gem, activities: Sparkles, 'date-night': Heart, holidays: Gift, halloween: Ghost, football: Trophy, 'k-pop': MicVocal, 'pop-superstars': Music, christmas: TreePine };
+const categoryIcons: Record<Category, LucideIcon> = { mixed: Shuffle, food: Utensils, animals: PawPrint, everyday: Coffee, places: MapPin, objects: Gem, activities: Sparkles, 'date-night': Heart, holidays: Gift, halloween: Ghost, football: Trophy, 'k-pop': MicVocal, 'pop-superstars': Music, christmas: TreePine };
 const playerColors = ['#b77d5c', '#65847c', '#a09564', '#82758f', '#6886a0', '#aa6c78', '#8a9862', '#b58b56', '#729594', '#997c66', '#827e9e', '#809164'];
 function Avatar({ index, name, large = false }: { index: number; name: string; large?: boolean }) {
   return <span className={`avatar ${large ? 'avatar-large' : ''}`} style={{ '--avatar-color': playerColors[index % playerColors.length] } as CSSProperties} aria-hidden="true">{name.trim().slice(0, 1).toUpperCase() || '?'}</span>;
@@ -90,7 +91,8 @@ export default function Game() {
     }
     const message = validateSettings(settings, { maxPlayers, premium }); if (message) { setError(message); return; }
     setPaywallReasons(null); setError(''); setGuess(''); setSelectedVote(null); setRevealed(false); setRunning(false); setSeconds(settings.minutes * 60);
-    setRound(createRound(settings, secureRandom, round?.word.id, { maxPlayers, premium })); track({ name: 'round_start', mode: 'word', pack: settings.category, players: settings.names.length });
+    const next = createRound(settings, secureRandom, recentWords(), { maxPlayers, premium }); rememberWord(next.word.id);
+    setRound(next); track({ name: 'round_start', mode: 'word', pack: settings.category, players: settings.names.length });
     setRoundNumber(replay ? roundNumber + 1 : 1); requestAnimationFrame(() => document.getElementById('game')?.scrollIntoView({ block: 'start' })); chime();
   }
   function stopRound() { setRound(null); setExitOpen(false); setRunning(false); setSelectedVote(null); setGuess(''); }
