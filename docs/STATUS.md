@@ -2,16 +2,13 @@
 
 Updated: 2026-09-13.
 
-## BuildHop can frame the site (2026-09-13)
+## BuildHop framing allowed, then reverted (2026-09-13)
 
-BuildHop's launch page embeds the site in an iframe, and production answered every request with
-`frame-ancestors 'none'`, so BuildHop reported "The website's Content-Security-Policy
-frame-ancestors directive does not allow BuildHop." `public/_headers` now allows
-`https://buildhop.io https://*.buildhop.io` and nothing else; `frame-src 'none'` and the rest of
-the CSP are unchanged, and the site still cannot be framed by any other origin.
-
-Validation: `headers` Playwright 3/3 against a real `wrangler dev` response carrying the new
-directive. Next step: after the push deploys, re-run BuildHop's URL check.
+BuildHop's launch page embeds the site in an iframe and its URL check failed on
+`frame-ancestors 'none'`. Commit `2c486a2` allowed `https://buildhop.io https://*.buildhop.io`,
+was deployed, and was confirmed live; the owner then chose the strict setting over the embedded
+preview, so it is reverted and production answers `frame-ancestors 'none'` again. The BuildHop
+preview will keep failing its check; that is the accepted outcome.
 
 ## Premium cards stop claiming unbuilt features are unlocked (2026-09-13)
 
