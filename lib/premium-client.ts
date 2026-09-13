@@ -11,6 +11,21 @@ export function storePremiumToken(token: string) {
   if (typeof window !== 'undefined') window.localStorage.setItem(TOKEN_KEY, token);
 }
 
+// Ask the Worker to confirm a Checkout session was paid and, if so, mint this browser's entitlement.
+// Shared by the post-checkout success page and the "Restore purchase" form; the error text comes
+// from the Worker so both surfaces explain a failure the same way.
+export async function verifyCheckoutSession(sessionId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const response = await fetch('/api/premium/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) });
+    const data = await response.json() as { token?: string; error?: string };
+    if (!response.ok || !data.token) return { ok: false, error: data.error ?? 'That payment could not be verified.' };
+    storePremiumToken(data.token);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Could not reach the server to verify this payment.' };
+  }
+}
+
 // Verifies the stored token is still a legitimately signed, unexpired entitlement by asking the
 // Worker (which holds the signing secret) rather than trusting anything read from localStorage on
 // its own — a viewer could otherwise hand-edit their own "premium" flag in devtools.
@@ -32,5 +47,7 @@ export function usePremiumStatus() {
       .catch(() => { if (!cancelled) setChecked(true); });
     return () => { cancelled = true; };
   }, []);
-  return { premium, checked };
+  // `markPremium` lets a page that has just verified a session (e.g. "Restore purchase") flip to the
+  // unlocked state without a reload or a second round trip.
+  return { premium, checked, markPremium: () => setPremium(true) };
 }

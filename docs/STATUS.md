@@ -2,6 +2,46 @@
 
 Updated: 2026-09-13.
 
+## Restore purchase on /premium/ (2026-09-13)
+
+Stripe's receipt email carries neither the Checkout session id nor a link back to
+`/premium/success/`, so until now a buyer who closed the post-checkout tab (or wanted a second
+device) had no self-serve way back. `/premium/` now shows a "Restore your purchase" form to any
+non-premium visitor: paste the redirect URL or the bare `cs_…` id, `extractCheckoutSessionId`
+(`lib/premium.ts`) pulls the id out, and `verifyCheckoutSession` (`lib/premium-client.ts`, now shared
+with the success page) calls the existing `POST /api/premium/verify`. On success the page flips to
+the unlocked state in place via `usePremiumStatus().markPremium`. No Worker change; the 5-device
+mint cap still applies. The three "use the link from your Stripe receipt" strings were replaced with
+accurate guidance (reopen the redirect page, or email the owner).
+
+Validation: 105 Vitest (3 new for the id parser), TypeScript, ESLint (1 pre-existing warning), build,
+`seo-pages` Playwright 3/3. In the browser against `wrangler dev` at desktop and 375 px: garbage input
+gives the inline "paste the whole address" error with `aria-invalid`/`aria-describedby` wired; a
+well-formed fake id returns the Worker's "Could not look up that checkout session" error; the success
+path (form disappears, hero/badge/grid flip to unlocked, token stored) was verified with the endpoint
+stubbed in-page because the local `.dev.vars` Stripe key is no longer valid (Stripe returns 401 for it).
+Not verified: a real paid session through the form against production — the owner can do that once
+deployed, using their own session id (uses 1 of its remaining 4 mints).
+
+Next step: deploy; owner restores their own purchase via the form on the live site.
+
+## Live Stripe checkout verified (2026-09-13)
+
+The owner's first real purchase failed with "Payments are not configured yet." Two causes: `wrangler.jsonc`
+named the Worker `imposter-game` while the deployed Worker is `laughtable`, so `wrangler secret put` /
+`npm run deploy` from the repo hit "Worker not found"; and the two secrets had been added under the
+dashboard's *Build* → "Variables and secrets" (build-time only, correct for `NEXT_PUBLIC_STRIPE_PAYMENT_LINK`
+and `SITE_URL`) rather than the runtime *Settings → Variables and Secrets* the Worker reads from `env`.
+Fixed: `wrangler.jsonc` now names `laughtable`; the owner set `STRIPE_SECRET_KEY` and `ENTITLEMENT_SECRET`
+with `npx wrangler secret put`.
+
+Validation: `POST https://laughtable.com/api/premium/verify` with the owner's `cs_live_…` session went
+from 503 to 200 with a signed token (expires 2029-09). One of that session's 5 device mints was used by
+the probe. Not verified: the token landing in a browser and raising the player cap — the owner still needs
+to open the success link in their own browser.
+
+Next step: owner opens the success link, confirms 20 players unlock; confirm the Payment Link is one-time.
+
 ## Pack sizes and no-repeat memory (2026-09-13, adopted)
 
 Packs grew to 80 (core), 104 (new free Everyday), 57 (date night, holidays), 80 (football, K-pop,

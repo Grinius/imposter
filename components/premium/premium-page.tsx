@@ -5,10 +5,11 @@ import { ArrowRight, Eye, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-reac
 import { premiumConfigured, premiumFeatures, stripePaymentLink } from '@/lib/premium';
 import { usePremiumStatus } from '@/lib/premium-client';
 import UpgradeCard from '@/components/premium/upgrade-card';
+import RestorePurchase from '@/components/premium/restore-purchase';
 import BrandWordmark from '@/components/brand';
 
 export default function PremiumPage() {
-  const { premium, checked } = usePremiumStatus();
+  const { premium, checked, markPremium } = usePremiumStatus();
 
   return <div className="content-page premium-page">
     <header className="site-header">
@@ -28,8 +29,11 @@ export default function PremiumPage() {
               : <span className="outline-button disabled-link" aria-disabled="true"><ShieldCheck size={16} /> Stripe link pending</span>}
           <Link className="outline-button" href="/">Keep playing free <ArrowRight size={16} /></Link>
         </div>
-        {!premium && checked && <p className="upgrade-note">Already paid on this device? Entitlement is checked automatically — if it&rsquo;s not showing, try the confirmation link from your Stripe receipt again.</p>}
         <p className="upgrade-note">Payment is handled entirely by Stripe — we never see your card details. See our <Link href="/privacy/">privacy policy</Link> for what we do collect.</p>
+        {!premium && checked && <>
+          <RestorePurchase onRestored={markPremium} />
+          <p className="upgrade-note">Lost the link? Email <a href="mailto:justinas@appcognita.com">justinas@appcognita.com</a> from the address you paid with and we&rsquo;ll send it again.</p>
+        </>}
       </section>
       <section className="premium-grid" aria-labelledby="premium-features-title">
         <h2 id="premium-features-title">Premium features {premium ? 'unlocked on this device' : 'waiting behind payment'}</h2>

@@ -11,8 +11,9 @@ Plausible analytics, title/site-name fixes. Google has indexed the home page, /t
 - [ ] Search Console → Request indexing: `/`, `/timer-imposter/`, `/question-imposter/`, `/drawing-imposter/`, `/packs/`, `/packs/halloween/` (≈10/day limit)
 - [ ] Plausible → confirm first pageviews arrive; Pages must never show `/online/?room=`
 - [ ] Decide the free player cap: 5 → 8 or 10 (Google now summarises the game as "3–5 players"). Tell Claude the number; cap + copy change together
-- [ ] Stripe dashboard → confirm the Payment Link is a ONE-TIME price, not recurring
-- [ ] Set `STRIPE_SECRET_KEY` + `ENTITLEMENT_SECRET` on the Worker and make ONE real purchase yourself; confirm the 20-player unlock
+- [x] Stripe dashboard → confirm the Payment Link is a ONE-TIME price, not recurring (confirmed 13 Sep)
+- [x] Set `STRIPE_SECRET_KEY` + `ENTITLEMENT_SECRET` on the Worker and make ONE real purchase yourself (done 13 Sep; `/api/premium/verify` returned a token for the live session)
+- [ ] Open the success link in your own browser and confirm the 20-player unlock in the generator / an online room
 
 ## Week of 15 Sep — film + seed
 - [ ] Day 2 of indexing requests: `/packs/football/`, `/packs/k-pop/`, `/packs/pop-superstars/`, `/packs/christmas/`, `/imposter-game-rules/`, `/imposter-game-words/`

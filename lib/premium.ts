@@ -31,3 +31,12 @@ export function describePremiumRequirements(settings: Settings): string[] {
   if (category?.premium) reasons.push(`${category.name} category`);
   return reasons;
 }
+
+// Pull a Checkout session id out of whatever a buyer pastes into "Restore purchase": the bare id,
+// the full post-checkout URL (`/premium/success/?session_id=cs_live_…`), or that URL with stray
+// whitespace or a trailing punctuation mark from an email client. Returns null when nothing in the
+// input looks like a session id — the Worker re-validates the shape anyway.
+export function extractCheckoutSessionId(input: string): string | null {
+  const match = input.match(/cs_(?:test|live)_[A-Za-z0-9]+/);
+  return match ? match[0] : null;
+}
