@@ -14,7 +14,9 @@ automatically, so the success page and the restore form both benefit.
 
 Validation: 107 Vitest (2 new: same-session token skips Stripe and the ledger; other-session, forged,
 or garbage tokens fall through to the normal path), TypeScript, ESLint, build; the built bundle sends
-`{sessionId, token}`. Not verified end to end against production (local Stripe key invalid).
+`{sessionId, token}`. Deployed automatically on push (Workers Builds, 2026-09-13 12:20Z); production bundles confirmed to
+carry both the restore form and the token-sending client. Not verified end to end with a fresh
+paid session (local Stripe key invalid).
 
 Consequence: the owner's own session (`cs_live_a1W0…`) has its 5 mints spent on production. The
 browser that did the refreshing still holds a valid token, so it stays premium; other devices would
@@ -41,7 +43,7 @@ stubbed in-page because the local `.dev.vars` Stripe key is no longer valid (Str
 Not verified: a real paid session through the form against production — the owner can do that once
 deployed, using their own session id (uses 1 of its remaining 4 mints).
 
-Next step: deploy; owner restores their own purchase via the form on the live site.
+Next step: decide on an owner-only ledger reset so the "get in touch to move it" promise can be kept.
 
 ## Live Stripe checkout verified (2026-09-13)
 
