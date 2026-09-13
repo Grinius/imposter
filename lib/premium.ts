@@ -10,7 +10,7 @@ export interface PremiumFeature {
 }
 
 export const premiumFeatures: PremiumFeature[] = [
-  { id: 'premium-packs', title: 'Premium word packs', summary: 'Date night and Holidays & celebrations are ready now. Harder party packs, kid-friendly packs, classroom topics, and advanced bluffing sets are still on the way.' },
+  { id: 'premium-packs', title: 'Premium word packs', summary: 'Date night, Holidays & celebrations, Out & about, Everyday things, and Things we do are ready now. Harder party packs, kid-friendly packs, and classroom topics are still on the way.' },
   { id: 'custom-packs', title: 'Custom word packs', summary: 'Create your own private word lists for inside jokes, lessons, teams, trips, or recurring family game nights.' },
   { id: 'classroom-family', title: 'Classroom and family mode', summary: 'Cleaner word sets, simpler clues, calmer pacing, and options for kids, students, mixed ages, and group hosts.' },
   { id: 'branded-rooms', title: 'Branded private rooms', summary: 'Add a room name, host label, theme, and shareable branded invite for parties, classrooms, and events.' },
@@ -18,6 +18,10 @@ export const premiumFeatures: PremiumFeature[] = [
   { id: 'more-players', title: 'More players', summary: `Free games support up to ${freePlayerLimit} suspects. Premium will unlock bigger games with up to ${premiumPlayerLimit} suspects when everyone has their own device.` },
   { id: 'printable-packs', title: 'Printable cards and PDF packs', summary: 'Generate print-ready role cards, word lists, and party sheets for offline play.' },
 ];
+
+// Which of the listed features actually exist today. Everything else is included in the price and
+// arrives as it ships; the cards say so rather than pretending it is already there.
+export const availablePremiumFeatures: ReadonlySet<PremiumFeatureId> = new Set<PremiumFeatureId>(['more-players', 'premium-packs']);
 
 export const stripePaymentLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? '';
 export const premiumConfigured = /^https:\/\/(buy\.stripe\.com|checkout\.stripe\.com)\//.test(stripePaymentLink);

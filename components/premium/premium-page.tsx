@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Eye, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react';
-import { premiumConfigured, premiumFeatures, stripePaymentLink } from '@/lib/premium';
+import { availablePremiumFeatures, premiumConfigured, premiumFeatures, stripePaymentLink } from '@/lib/premium';
 import { usePremiumStatus } from '@/lib/premium-client';
 import UpgradeCard from '@/components/premium/upgrade-card';
 import RestorePurchase from '@/components/premium/restore-purchase';
@@ -36,8 +36,8 @@ export default function PremiumPage() {
         </>}
       </section>
       <section className="premium-grid" aria-labelledby="premium-features-title">
-        <h2 id="premium-features-title">Premium features {premium ? 'unlocked on this device' : 'waiting behind payment'}</h2>
-        <div>{premiumFeatures.map(feature => <UpgradeCard key={feature.id} feature={feature} unlocked={premium} available={feature.id === 'more-players'} />)}</div>
+        <h2 id="premium-features-title">{premium ? 'What your premium includes' : 'Premium features waiting behind payment'}</h2>
+        <div>{premiumFeatures.map(feature => <UpgradeCard key={feature.id} feature={feature} unlocked={premium} available={availablePremiumFeatures.has(feature.id)} />)}</div>
       </section>
       <section className="content-next"><h2>Payment enforcement plan</h2><p>The free game remains playable without payment. Once a Stripe Checkout session is verified server-side, this browser unlocks the bigger player cap immediately; the remaining features (custom packs, classroom mode, branded rooms, room history, printable cards) are still being built and will unlock the same way as they ship.</p><div><Link className="gold-button" href="/imposter-game-generator/">Use free generator <ArrowRight size={17} /></Link></div></section>
     </main>

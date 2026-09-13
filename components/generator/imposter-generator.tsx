@@ -109,7 +109,7 @@ export default function ImposterGenerator() {
             and this is the page that has to earn the "imposter game generator" ranking, so it was
             pushing the real explanatory content below two ad blocks. A paid viewer still sees both,
             since "what have I got, and what's still coming" is genuinely useful to them. */}
-        {premium && <><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'more-players')} compact unlocked available /><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'premium-packs')} compact unlocked /></>}
+        {premium && <><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'more-players')} compact unlocked available /><UpgradeCard feature={premiumFeatures.find(feature => feature.id === 'premium-packs')} compact unlocked available /></>}
       </div>
     </div>
     <div className="generator-output" aria-live="polite">

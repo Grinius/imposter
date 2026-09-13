@@ -2,6 +2,21 @@
 
 Updated: 2026-09-13.
 
+## Premium cards stop claiming unbuilt features are unlocked (2026-09-13)
+
+After paying, `/premium/` badged all seven feature cards "Unlocked" under a heading "Premium features
+unlocked on this device", with only a footnote admitting five of them do not exist yet. Now the badge
+reflects what the viewer can use today: "Unlocked" on live features, "Included · Coming soon" on the
+rest, "Premium" pre-purchase; the heading reads "What your premium includes". Live features are
+listed in one place, `availablePremiumFeatures` (`lib/premium.ts`): `more-players` and
+`premium-packs` — the packs were already unlocked by the token (Date night, Holidays, Out & about,
+Everyday things, Things we do) but the page still called them "on the way"; the card summary now
+names all five. The generator's compact packs card is marked available too.
+
+Validation: 107 Vitest, TypeScript, ESLint (1 pre-existing warning), build, `seo-pages` +
+`generator` Playwright 4/4. Browser at desktop: pre-purchase cards show "Premium" with the right
+Available now / Coming soon chip; after a stubbed restore, only the two live cards read "Unlocked".
+
 ## Reloading the success page no longer spends device mints (2026-09-13)
 
 The owner refreshed `/premium/success/?session_id=…` five times in one browser and hit "already
