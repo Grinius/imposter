@@ -19,6 +19,13 @@ const publicRoutes = [
   '/packs/pop-superstars/',
   '/packs/christmas/',
   '/packs/brainrot/',
+  '/packs/night-out/',
+  '/packs/office/',
+  '/packs/american-football/',
+  '/packs/bachelorette/',
+  '/packs/anime/',
+  '/packs/brands/',
+  '/packs/movies/',
   '/premium/',
   '/privacy/',
 ] as const;
@@ -33,7 +40,7 @@ test('seo support pages expose crawlable content and links', async ({ page }) =>
   await page.goto('/imposter-game-words/');
   await expect(page.getByRole('heading', { name: 'Imposter game words' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Food & drink' })).toBeVisible();
-  await expect(page.getByText('Pizza')).toBeVisible();
+  await expect(page.getByText('Pizza', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Generate private cards/i })).toHaveAttribute('href', '/imposter-game-generator/');
   await expect(page.getByRole('link', { name: /Use word generator/i })).toHaveAttribute('href', '/imposter-word-generator/');
 
@@ -45,7 +52,7 @@ test('seo support pages expose crawlable content and links', async ({ page }) =>
   await page.goto('/imposter-game-categories/');
   await expect(page.getByRole('heading', { name: 'Imposter game categories' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Food & drink' })).toBeVisible();
-  await expect(page.getByText('Pizza')).toBeVisible();
+  await expect(page.getByText('Pizza', { exact: true })).toBeVisible();
 
   await page.goto('/imposter-game-online/');
   await expect(page.getByRole('heading', { name: 'Imposter game online' })).toBeVisible();

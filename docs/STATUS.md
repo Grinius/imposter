@@ -2,6 +2,28 @@
 
 Updated: 2026-09-14.
 
+## Seven more themed packs (2026-09-14)
+
+The owner asked for every pack on the "funny themes" shortlist, so the themed row went from six
+to thirteen, all free (deliberate: packs are the acquisition asset; the paywall stays the player
+cap, and any category can be gated later with its `premium` flag once GSC shows what pulls):
+`night-out` (80, "drinking imposter game"), `office` (80, "imposter game for work" — the buyer for
+the 20-player tier), `american-football` (80, "nfl imposter game"; the US is the top country in
+GSC and the existing football pack is soccer), `bachelorette` (80, hen do & bachelorette),
+`anime` (84), `brands` (84, fast food & brands) and `movies` (84). Each has a category, an
+accent-only theme with card-back copy, a lucide icon, and a `/packs/<slug>/` page with pairs and
+FAQs; titles avoid trademarks and league/series/brand names are used descriptively in lists.
+Night Out and Hen Do are cheeky-not-crude. Themed-pack copy elsewhere now says thirteen packs.
+The home grid shows 13 tiles with one orphan in the last row; a 14th pack would square it.
+
+Validation: 107 Vitest (pack count 13, 64-word minimum per new pack, no duplicates, theme/CSS
+palettes in step), TypeScript, ESLint (1 pre-existing warning), build; every new page's rendered
+HTML carries its title, canonical, full list and `?pack=` preselect, and the sitemap lists 13
+packs; `seo-pages` Playwright 3/3 (the "Pizza" locator is now exact, since three packs contain a
+pizza word). Browser: `/packs/` index, home grid with Office preselected and its theme applied at
+mobile, `/packs/bachelorette/` at mobile. GROWTH's kill criterion still stands: if no pack page
+has >50 GSC clicks by 15 Nov, stop making packs.
+
 ## Brainrot pack, "the 6-7 edition" (2026-09-14)
 
 Sixth free themed pack, aimed at the teenagers the TikTok audience actually is: `/packs/brainrot/`,

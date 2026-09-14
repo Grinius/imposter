@@ -18,6 +18,13 @@ export const themes: Partial<Record<Category, Theme>> = {
   'k-pop': { id: 'k-pop', full: false, palette: { ...base, accent: '#ff5fa8', accentLight: '#ffb3d6' }, cardTitle: 'TRUST NO BIAS', cardSubtitle: 'THE FANDOM' },
   'pop-superstars': { id: 'pop-superstars', full: false, palette: { ...base, accent: '#b57bff', accentLight: '#dcc4ff' }, cardTitle: 'TRUST NO ENCORE', cardSubtitle: 'THE ERAS CLUB' },
   brainrot: { id: 'brainrot', full: false, palette: { ...base, accent: '#4fd6ff', accentLight: '#b3ecff' }, cardTitle: 'TRUST NO NPC', cardSubtitle: 'THE GROUP CHAT' },
+  'night-out': { id: 'night-out', full: false, palette: { ...base, accent: '#c8ff4a', accentLight: '#e6ffa8' }, cardTitle: 'TRUST NO ROUND', cardSubtitle: 'THE SMOKING AREA' },
+  office: { id: 'office', full: false, palette: { ...base, accent: '#9fb7c9', accentLight: '#d3e2ec' }, cardTitle: 'TRUST NO MANAGER', cardSubtitle: 'THE ALL-HANDS' },
+  'american-football': { id: 'american-football', full: false, palette: { ...base, accent: '#5fc9b3', accentLight: '#b3ebdd' }, cardTitle: 'TRUST NO REF', cardSubtitle: 'THE TAILGATE' },
+  bachelorette: { id: 'bachelorette', full: false, palette: { ...base, accent: '#f2a7b5', accentLight: '#ffd6de' }, cardTitle: 'TRUST NO BRIDESMAID', cardSubtitle: 'THE BRIDE TRIBE' },
+  anime: { id: 'anime', full: false, palette: { ...base, accent: '#7f8cff', accentLight: '#c3c9ff' }, cardTitle: 'TRUST NO RIVAL', cardSubtitle: 'THE TOURNAMENT ARC' },
+  brands: { id: 'brands', full: false, palette: { ...base, accent: '#ffd24a', accentLight: '#ffe9a3' }, cardTitle: 'TRUST NO LOGO', cardSubtitle: 'THE DRIVE-THROUGH' },
+  movies: { id: 'movies', full: false, palette: { ...base, accent: '#d9d9e3', accentLight: '#f1f1f6' }, cardTitle: 'TRUST NO SEQUEL', cardSubtitle: 'THE POST-CREDITS SCENE' },
 };
 export const defaultCard = { cardTitle: 'TRUST NO ONE', cardSubtitle: 'THE IMPOSTER SOCIETY' };
 export function themeFor(category: Category | null | undefined): Theme | null { return (category && themes[category]) || null; }

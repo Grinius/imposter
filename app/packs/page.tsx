@@ -7,7 +7,7 @@ import { pageMetadata } from '@/lib/seo';
 import { categories, getWords } from '@/lib/words';
 
 const title = 'Imposter Game Word Packs - Free Themed Packs';
-const description = 'Free themed word packs for the imposter game: Halloween, football, K-pop, pop superstars, Christmas and brainrot slang, with 48–80 words each and a page apiece. Play on one phone or online, no app.';
+const description = 'Thirteen free themed word packs for the imposter game: Halloween, Christmas, football, K-pop, pop, brainrot, night out, office, anime, movies, brands and more, 48–84 words each with a page apiece. Play on one phone or online, no app.';
 export const metadata: Metadata = pageMetadata('/packs/', title, description);
 
 export default function PacksPage() {

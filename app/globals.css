@@ -116,6 +116,13 @@
 [data-theme=k-pop]{--gold:#ff5fa8;--gold-light:#ffb3d6;--line:rgba(255,95,168,.22)}
 [data-theme=pop-superstars]{--gold:#b57bff;--gold-light:#dcc4ff;--line:rgba(181,123,255,.22)}
 [data-theme=brainrot]{--gold:#4fd6ff;--gold-light:#b3ecff;--line:rgba(79,214,255,.22)}
+[data-theme=night-out]{--gold:#c8ff4a;--gold-light:#e6ffa8;--line:rgba(200,255,74,.22)}
+[data-theme=office]{--gold:#9fb7c9;--gold-light:#d3e2ec;--line:rgba(159,183,201,.22)}
+[data-theme=american-football]{--gold:#5fc9b3;--gold-light:#b3ebdd;--line:rgba(95,201,179,.22)}
+[data-theme=bachelorette]{--gold:#f2a7b5;--gold-light:#ffd6de;--line:rgba(242,167,181,.22)}
+[data-theme=anime]{--gold:#7f8cff;--gold-light:#c3c9ff;--line:rgba(127,140,255,.22)}
+[data-theme=brands]{--gold:#ffd24a;--gold-light:#ffe9a3;--line:rgba(255,210,74,.22)}
+[data-theme=movies]{--gold:#d9d9e3;--gold-light:#f1f1f6;--line:rgba(217,217,227,.22)}
 [data-theme=halloween]{--gold:#f0953a;--gold-light:#ffc26a;--green:#1c1233;--green-deep:#0c0818;--green-light:#3a2260;--line:rgba(240,149,58,.22)}
 [data-theme=halloween] body{background:radial-gradient(ellipse at 23% 23%,#3a2260 0,transparent 48%),var(--green-deep)}
 [data-theme=halloween] .gold-button{background:linear-gradient(110deg,#ffc26a,#f0953a);border-color:#f0953a;color:#2a1640}

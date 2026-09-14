@@ -5,7 +5,7 @@ import { categoryFromSearch, packBySlug, packWords, packs } from '../lib/packs';
 describe('themed packs', () => {
   it('ships every themed category as a free pack with a page, at least 40 unique words each', () => {
     const themed = categories.filter(category => category.group === 'themed');
-    expect(themed.length).toBe(6);
+    expect(themed.length).toBe(13);
     for (const category of themed) {
       const pack = packs.find(pack => pack.id === category.id); expect(pack, category.id).toBeTruthy();
       expect(category.premium).toBe(false);
@@ -20,7 +20,7 @@ describe('themed packs', () => {
     expect(getWords('mixed').length).toBeGreaterThanOrEqual(250);
   });
   it('gives every pack enough words for a long night, unique within the pack and within Mixed bag', () => {
-    const minimum: Record<string, number> = { food: 80, animals: 80, everyday: 100, places: 80, objects: 80, activities: 80, 'date-night': 48, holidays: 48, halloween: 48, football: 64, 'k-pop': 64, 'pop-superstars': 64, christmas: 48, brainrot: 64 };
+    const minimum: Record<string, number> = { food: 80, animals: 80, everyday: 100, places: 80, objects: 80, activities: 80, 'date-night': 48, holidays: 48, halloween: 48, football: 64, 'k-pop': 64, 'pop-superstars': 64, christmas: 48, brainrot: 64, 'night-out': 64, office: 64, 'american-football': 64, bachelorette: 64, anime: 64, brands: 64, movies: 64 };
     for (const category of categories.filter(c => c.id !== 'mixed')) {
       const list = getWords(category.id); expect(list.length, category.id).toBeGreaterThanOrEqual(minimum[category.id]);
       expect(new Set(list.map(w => w.text.toLowerCase())).size, `${category.id} duplicates`).toBe(list.length);
