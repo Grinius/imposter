@@ -2,6 +2,24 @@
 
 Updated: 2026-09-14.
 
+## Brainrot pack, "the 6-7 edition" (2026-09-14)
+
+Sixth free themed pack, aimed at the teenagers the TikTok audience actually is: `/packs/brainrot/`,
+80 clean slang words (6-7, rizz, aura, skibidi, Italian brainrot, cooked/chopped, the flags, the
+launches…), category `brainrot` with an accent-only cyan theme (`TRUST NO NPC / THE GROUP CHAT`),
+a `Brain` icon, and the pack page's pairs and FAQs ("What does 6-7 mean?", "Is it clean?", "Will
+it go out of date?"). The owner chose "Brainrot" over naming the pack "6/7": the meme is the
+eyebrow and the headline word, the searchable phrase is the title. Themed-pack copy on the packs
+index, `/imposter-game-words/` and `/imposter-game-categories/` now says six packs. The `when`
+note admits the list dates in months and should be refreshed each school term.
+
+Validation: 107 Vitest (pack count, 64-word minimum, theme/CSS palette in step), TypeScript,
+ESLint (1 pre-existing warning), build; rendered `/packs/brainrot/` carries title, canonical, full
+word list and the `?pack=brainrot` preselect, and the sitemap lists it; `seo-pages` Playwright
+3/3. Browser: pack page at desktop and mobile, home grid (now an even 3×2) with Brainrot
+preselected and the cyan theme applied, and a dealt card showing the themed back at mobile.
+Next step: watch Search Console for "brainrot imposter game" and refresh the list in January.
+
 ## /timer-imposter/ also targets "clock imposter" (2026-09-14)
 
 First Search Console data (2026-09-09 → 09-13, 33 impressions, 1 click) shows every query landing

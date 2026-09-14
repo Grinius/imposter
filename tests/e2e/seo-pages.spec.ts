@@ -18,6 +18,7 @@ const publicRoutes = [
   '/packs/k-pop/',
   '/packs/pop-superstars/',
   '/packs/christmas/',
+  '/packs/brainrot/',
   '/premium/',
   '/privacy/',
 ] as const;

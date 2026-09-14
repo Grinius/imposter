@@ -17,6 +17,7 @@ export const themes: Partial<Record<Category, Theme>> = {
   football: { id: 'football', full: false, palette: { ...base, accent: '#7fd36b', accentLight: '#c6f2b8' }, cardTitle: 'TRUST NO REF', cardSubtitle: 'THE AWAY END' },
   'k-pop': { id: 'k-pop', full: false, palette: { ...base, accent: '#ff5fa8', accentLight: '#ffb3d6' }, cardTitle: 'TRUST NO BIAS', cardSubtitle: 'THE FANDOM' },
   'pop-superstars': { id: 'pop-superstars', full: false, palette: { ...base, accent: '#b57bff', accentLight: '#dcc4ff' }, cardTitle: 'TRUST NO ENCORE', cardSubtitle: 'THE ERAS CLUB' },
+  brainrot: { id: 'brainrot', full: false, palette: { ...base, accent: '#4fd6ff', accentLight: '#b3ecff' }, cardTitle: 'TRUST NO NPC', cardSubtitle: 'THE GROUP CHAT' },
 };
 export const defaultCard = { cardTitle: 'TRUST NO ONE', cardSubtitle: 'THE IMPOSTER SOCIETY' };
 export function themeFor(category: Category | null | undefined): Theme | null { return (category && themes[category]) || null; }

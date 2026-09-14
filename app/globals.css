@@ -115,6 +115,7 @@
 [data-theme=football]{--gold:#7fd36b;--gold-light:#c6f2b8;--line:rgba(127,211,107,.22)}
 [data-theme=k-pop]{--gold:#ff5fa8;--gold-light:#ffb3d6;--line:rgba(255,95,168,.22)}
 [data-theme=pop-superstars]{--gold:#b57bff;--gold-light:#dcc4ff;--line:rgba(181,123,255,.22)}
+[data-theme=brainrot]{--gold:#4fd6ff;--gold-light:#b3ecff;--line:rgba(79,214,255,.22)}
 [data-theme=halloween]{--gold:#f0953a;--gold-light:#ffc26a;--green:#1c1233;--green-deep:#0c0818;--green-light:#3a2260;--line:rgba(240,149,58,.22)}
 [data-theme=halloween] body{background:radial-gradient(ellipse at 23% 23%,#3a2260 0,transparent 48%),var(--green-deep)}
 [data-theme=halloween] .gold-button{background:linear-gradient(110deg,#ffc26a,#f0953a);border-color:#f0953a;color:#2a1640}

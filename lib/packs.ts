@@ -98,6 +98,25 @@ export const packs: Pack[] = [
     ],
     keywords: 'christmas imposter game words',
   },
+  {
+    id: 'brainrot', slug: 'brainrot', title: 'Brainrot Imposter Game', eyebrow: 'THE 6-7 EDITION',
+    lead: 'Eighty brainrot words for the imposter game — 6-7, rizz, aura, skibidi, Italian brainrot and the rest of the slang the group chat runs on. Made for teenagers; adults at the table are the suspects.',
+    when: 'Evergreen, but the slang moves fast: refresh the list every school term and retire anything a parent has started saying.',
+    pitch: 'Brainrot is the perfect imposter pack because every clue is another slang word. “Rizz” and “aura” are both “cool”; “cooked” and “chopped” are both “finished”; “sigma” and “NPC” are both “a type of guy”. The friends have to be precise, the imposter hides behind “bro” — and the one adult who does not know what 6-7 means gets voted out every round.',
+    pairs: [
+      { a: 'Rizz', b: 'Aura', why: '“Charisma”, “cool” and “points” fit both. “Flirting” or “farming” separates them.' },
+      { a: 'Cooked', b: 'Chopped', why: 'Both mean it is over. “Exam” fits cooked; “haircut” fits chopped.' },
+      { a: 'Sigma', b: 'NPC', why: 'Both are a kind of person; “lone wolf” vs “background” tells them apart.' },
+      { a: 'Skibidi', b: 'Ohio', why: 'The imposter’s dream: nobody can define either, so every clue is “random”.' },
+    ],
+    faqs: [
+      { q: 'What does 6-7 mean?', a: 'Nothing, and that is the point: it started as a lyric, became a schoolyard call-and-response, and now means whatever the person shouting it wants. That makes it a brutal imposter word — every clue is a shrug.' },
+      { q: 'Is it clean?', a: 'Yes. The list is the slang a teacher could say out loud without a meeting afterwards; the cruder corners of the internet are left out on purpose.' },
+      { q: 'Will it go out of date?', a: 'Quickly. Slang moves in months, so the pack is refreshed regularly and words a parent has started using get retired. If a word feels ancient at your table, that is part of the game — accuse whoever still says it.' },
+      { q: 'Is the pack free?', a: 'Yes, every themed pack is. The paid tier is bigger tables and custom packs.' },
+    ],
+    keywords: 'brainrot imposter game',
+  },
 ];
 export function packBySlug(slug: string) { return packs.find(pack => pack.slug === slug) ?? null; }
 export function packWords(pack: Pack) { return getWords(pack.id); }
