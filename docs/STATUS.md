@@ -2,6 +2,19 @@
 
 Updated: 2026-09-14.
 
+## Home grid shows six themed packs, the rest behind "See all" (2026-09-14)
+
+Thirteen themed tiles made the home setup panel a wall. The row now shows the first six (Halloween,
+Football, K-pop, Pop hits, Christmas, Brainrot — two rows of three) with a dashed "See all 13
+packs" toggle (`.themed-toggle`, `aria-expanded`) that expands in place and flips to "Show fewer
+packs". A pack outside the six that is already selected — arriving via `?pack=office` from its
+`/packs/` page — starts the row expanded so the selection is never hidden. The "All packs →" link
+to `/packs/` stays in the heading, so crawlable pack links are unchanged.
+
+Validation: TypeScript, ESLint, build; full Playwright 13/13; browser at mobile: default shows six
+tiles + toggle, clicking shows all thirteen, `?pack=office` loads expanded with Office selected
+and themed.
+
 ## Seven more themed packs (2026-09-14)
 
 The owner asked for every pack on the "funny themes" shortlist, so the themed row went from six
