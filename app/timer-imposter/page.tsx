@@ -3,19 +3,19 @@ import TimerImposter from '@/components/variants/timer-imposter';
 import VariantPage from '@/components/variants/variant-page';
 import { pageMetadata } from '@/lib/seo';
 
-const title = 'Timer Imposter Game - Stopwatch Imposter, Free';
-const description = 'Play the viral Timer Imposter game free in your browser: everyone sees the target time except the imposter, each player runs a hidden stopwatch, then vote. 3–5 free players, one phone, no app.';
+const title = 'Timer Imposter Game (Clock Imposter) - Play Free';
+const description = 'Play the viral Timer Imposter game (also called Clock Imposter) free in your browser: everyone sees the target time except the imposter, each player runs a hidden stopwatch, then vote. 3–5 free players, one phone, no app.';
 export const metadata: Metadata = pageMetadata('/timer-imposter/', title, description);
 
 export default function TimerImposterPage() {
   return <VariantPage
-    eyebrow="THE STOPWATCH IMPOSTER GAME"
+    eyebrow="THE STOPWATCH / CLOCK IMPOSTER GAME"
     title={<>Timer <em>Imposter.</em></>}
     lead="Everyone is shown the same target time — except one player. Each of you runs a stopwatch you can’t see and stops it when it feels right. Then the table decides who was faking."
     headerNote="ONE TARGET. ONE FAKER. NO NUMBERS."
     game={<TimerImposter />}
     howTitle="How to play the Timer Imposter game"
-    howIntro="This is the stopwatch version of the imposter game that took off on TikTok: the same secret-and-bluff structure as the word game, but the secret is a time and the clue is how long you let the clock run. It plays in about four minutes on one phone."
+    howIntro="This is the stopwatch version of the imposter game that took off on TikTok — some call it Clock Imposter, others Timer Imposter: the same secret-and-bluff structure as the word game, but the secret is a time and the clue is how long you let the clock run. It plays in about four minutes on one phone."
     steps={[
       { title: 'Add 3–5 free players and pick a range.', text: 'Short (3–15 s) is the classic. Quick is savage; Long is a test of nerve.' },
       { title: 'Reveal your card in private.', text: 'Friends see the target, for example 7.40 seconds. The imposter sees only the range and has to guess how long everyone else is aiming for.' },
@@ -33,12 +33,13 @@ export default function TimerImposterPage() {
     ]}
     faqs={[
       { q: 'Is this the TikTok timer imposter game?', a: 'Yes. Creators play it with a stopwatch app and a lot of trust; this version hides the clock properly so nobody can peek, records every run, and reveals the times at the end so the argument is settled.' },
+      { q: 'Is Clock Imposter the same game?', a: 'Yes. Clock Imposter, Timer Imposter, and Stopwatch Imposter are all names for the same TikTok game: a hidden clock, a target time only the friends know, and one player faking it. This page plays it exactly the same way whichever name you know it by.' },
       { q: 'Do I need an app or an account?', a: 'No. It runs in the browser on one phone. Nothing is downloaded, nothing is saved, no one signs up.' },
       { q: 'How many players?', a: 'Three to five play free. Bigger tables unlock with Imposter Premium. It is at its best with five or six, when there are enough runs to compare.' },
       { q: 'Can we play it as a drinking game?', a: 'The usual house rules translate directly: a caught imposter drinks, a wrongly accused friend drinks, and the person furthest from the target after the reveal drinks.' },
     ]}
     nextTitle="Same table, other secrets"
     nextText="The word game is the original: one secret word, one-word clues, one liar. Question Imposter and Drawing Imposter change what the secret is without changing the bluff."
-    footerNote="The stopwatch imposter game, free."
+    footerNote="The stopwatch imposter game — Timer Imposter or Clock Imposter — free."
   />;
 }

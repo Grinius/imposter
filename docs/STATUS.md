@@ -1,6 +1,20 @@
 # Current status
 
-Updated: 2026-09-13.
+Updated: 2026-09-14.
+
+## /timer-imposter/ also targets "clock imposter" (2026-09-14)
+
+First Search Console data (2026-09-09 → 09-13, 33 impressions, 1 click) shows every query landing
+on `/timer-imposter/` is a phrasing of the same intent: "timer imposter game" (pos. 4), "timer
+imposter" (the site's first click), "imposter timer", and "clock imposter game" (3 impressions,
+pos. 10 — more impressions than "timer", and the page never said "clock" outside body copy). The
+page now carries the synonym on the same URL: title `Timer Imposter Game (Clock Imposter) - Play
+Free`, description, eyebrow, how-to intro, a new FAQ "Is Clock Imposter the same game?", and the
+footer note. `/packs/football/` surfaced for "football imposter game" (3 impressions) — no action.
+
+Validation: TypeScript, ESLint, build; rendered `out/timer-imposter/index.html` carries the new
+title (61 chars with suffix), description, canonical, eyebrow, and FAQ; `seo-pages` Playwright 3/3.
+Next step: re-check the query list in two weeks and see whether "clock imposter game" moves.
 
 ## BuildHop framing allowed, then reverted (2026-09-13)
 
