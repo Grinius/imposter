@@ -2,6 +2,26 @@
 
 Updated: 2026-09-15.
 
+## Backlink intelligence for "imposter game generator" (2026-09-14)
+
+`docs/BACKLINKS.md` is the competitor/backlink research the owner asked for: Google-sourced
+SERP (via Startpage) for the target phrase and `imposter game online`, Bing-index SERPs for three
+more phrases, Seobility backlink data for gameonfamily.com (DR 44, 665 ref. domains),
+imposter.app (DR 49; ~all links are PsyCat Games' own sibling-domain footers) and
+impostergame.net (DR 33; PBN-heavy), and every referring page fetched with curl to read the real
+`rel` attribute. Findings: the SERP below position 2 is exact-match clones with no editorial
+links found; the replicable channels are trend explainers (The Tab links the tool every time),
+remote-team/Zoom game listicles (spyfall/codenames get followed links), "free Jackbox
+alternatives" on cbr.com (followed links to indie browser games), the Family Resource Group
+parenting-magazine syndicate, and student press. Twenty-two scored prospects, six broken-link
+targets, a 30-day plan and the asset list (`/press/`, Zoom section on `/online/`) are in the doc.
+Not done: Ahrefs/Majestic/Moz all sit behind human checks, so authority is measured for only the
+three Seobility domains; the long-tail clones should be run through Ahrefs' free checker by the
+owner. No code changed.
+
+Next step: ship `/press/` and the "Play over Zoom / Discord" section on `/online/`, then send the
+week-1 emails in `docs/BACKLINKS.md` §8.
+
 ## Home grid shows six themed packs, the rest behind "See all" (2026-09-14)
 
 Thirteen themed tiles made the home setup panel a wall. The row now shows the first six (Halloween,
