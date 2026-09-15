@@ -27,6 +27,7 @@ const publicRoutes = [
   '/packs/brands/',
   '/packs/movies/',
   '/premium/',
+  '/press/',
   '/privacy/',
 ] as const;
 

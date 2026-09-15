@@ -2,6 +2,39 @@
 
 Updated: 2026-09-15.
 
+## Link-outreach assets: /press/, remote-play section, comparison block (2026-09-15)
+
+The three week-1 assets from `docs/BACKLINKS.md` §8 so writers have something to link:
+
+- **`/press/`** (indexable, in `publicRoutes`/sitemap): one-paragraph and one-line descriptions, a
+  facts list driven by `lib/limits.ts` and `packs.length`, how-to-play in three cards, four phone
+  screenshots (`public/press/0N-*.png` 780×1688 for download, `.webp` for display), emblem SVG +
+  512px PNG, the OG card, where-to-link guidance, a founder line and `justinas@appcognita.com`.
+  Screenshots are real captures of one round produced by `scripts/press-shots.mjs` against a
+  running site (`BASE_URL=http://localhost:3000 node scripts/press-shots.mjs`); rerun after visual
+  changes. No location or response-time claims: only facts the code or the owner has stated.
+- **Remote-play section on `/imposter-game-online/`** ("Play Imposter over Zoom, Discord or Google
+  Meet"): the room-code flow in three steps, `5 free / up to 20 with Premium` from `lib/limits.ts`,
+  "about ten minutes a round", and the Office pack for teams. Placed on the indexable landing page,
+  not `/online/`, which is the noindex room app; the meta description now names Zoom/Discord/Meet.
+- **"How it compares" block on `/imposter-game-rules/`**: one phone, free, no app, no console; four
+  short vs. lines (Jackbox, Spyfall, Among Us, Codenames) describing what those need rather than
+  making claims about their quality.
+
+Validation: 109 Vitest, TypeScript, ESLint (1 pre-existing warning), build; `seo-pages` Playwright
+3/3 with `/press/` in its route list; rendered HTML checked for the press asset links, the Zoom
+copy and the comparison block; sitemap lists `/press/`. Browser at mobile (375) and desktop for all
+three pages: no horizontal overflow, screenshot grid 2-up on phones, 4-up on desktop.
+
+GSC snapshot (7 days to 2026-09-13, the first with clicks): 77 impressions, 4 clicks, avg position
+7.1; `/timer-imposter/` holds 4 of 4 clicks and ~45% of impressions, home and
+`/question-imposter/` show without clicks, five pack pages have a trickle. `http://laughtable.com/`
+appears as its own row; verified it 301s to https with the right canonical, so nothing to do.
+
+Next step: send the four easy emails from `docs/BACKLINKS.md` §8 (genz.ai, tuni.fi PlayLab,
+larryxu.com, geekculture.co) and submit producthubx.com/mrrscout.com; then the team-building
+cluster with the `/imposter-game-online/` link.
+
 ## Backlink intelligence for "imposter game generator" (2026-09-14)
 
 `docs/BACKLINKS.md` is the competitor/backlink research the owner asked for: Google-sourced

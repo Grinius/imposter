@@ -17,6 +17,7 @@ export const publicRoutes = [
   '/packs/',
   ...packs.map(pack => `/packs/${pack.slug}/`),
   '/premium/',
+  '/press/',
   '/privacy/',
 ];
 

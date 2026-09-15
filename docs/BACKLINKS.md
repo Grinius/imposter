@@ -143,7 +143,7 @@ gamebuddies.io — none link to third-party games.
 
 ### B. "Remote team-building / games to play on Zoom" listicles that link free browser games
 - **Why they link:** these posts are lists of free tools; each entry is a link. Spyfall, Codenames, Gartic Phone, Skribbl, Wavelength get followed links from rachelandreago.com, questworks.io, brightful.me, thesmartlocal.com, geekculture.co.
-- **Asset needed:** a page that answers "how do we play this over Zoom/Meet/Discord" — `/online/` already exists; it needs a "Play over Zoom / Discord" section (room code flow, 3–20 players, ~10 min a round) and a short remote-team paragraph. Optional: a `/team-building/` page with 30 work-safe words (the Office pack already exists).
+- **Asset needed:** a page that answers "how do we play this over Zoom/Meet/Discord" — shipped 2026-09-15 as the "Play Imposter over Zoom, Discord or Google Meet" section on `/imposter-game-online/` (the indexable landing page; `/online/` itself is the noindex room app). Originally specified as a "Play over Zoom / Discord" section (room code flow, 3–20 players, ~10 min a round) and a short remote-team paragraph. Optional: a `/team-building/` page with 30 work-safe words (the Office pack already exists).
 - **Prospect queries:** `"remote team building games" spyfall codenames`, `"games to play on zoom" spyfall OR codenames OR "gartic phone"`, `"virtual game night" "spyfall.app" OR "codenames.game" OR "horsepaste"`, `"games to play on discord" skribbl "gartic phone" -site:reddit.com`, `intitle:"free online games" "with friends" spyfall`.
 - **Angle:** "You list Spyfall; Imposter is the version everyone is playing this year — same social deduction, no location sheet, works on one phone or over Zoom." Offer the exact blurb, in their format.
 
@@ -262,7 +262,7 @@ Pages that discuss the game (or the exact category) and currently link no tool, 
 ### B. 30-day plan (solo founder, ~4–6 h/week)
 
 **Week 1 — make the site linkable, then the easy asks**
-- Ship `/press/` (one paragraph, logo, 4 screenshots incl. the reveal, founder line, contact) and a "Play over Zoom / Discord" section on `/online/`.
+- ~~Ship `/press/` (one paragraph, logo, 4 screenshots incl. the reveal, founder line, contact) and a "Play over Zoom / Discord" section on `/online/`.~~ Done 2026-09-15: `/press/`, the Zoom/Discord/Meet section on `/imposter-game-online/`, and the "How it compares" block on `/imposter-game-rules/`.
 - Add a 3-sentence "Imposter vs Jackbox / Spyfall / Among Us" block to `/imposter-game/`.
 - Send the four Easy emails: genz.ai, tuni.fi PlayLab, hcdevilsadvocate.com (story-idea form), larryxu.com. Submit producthubx.com and mrrscout.com listings. Post the itch.io web-build page (nofollow, discovery only).
 - Run the ~12 small clone domains through Ahrefs' free backlink checker yourself (needs the human check) to confirm they have nothing; if one does, add its sources to this list.
@@ -287,8 +287,8 @@ Pages that discuss the game (or the exact category) and currently link no tool, 
 
 | Asset | Supported by | What it needs |
 |---|---|---|
-| `/press/` page | Distractify linked wavelength.zone/**presskit**; The Tab links whatever page the writer lands on | Description, screenshots, founder line, "how to play in 3 lines", contact |
-| "Play over Zoom / Discord / Meet" section on `/online/` | Every team-building and Zoom-games list links tools with a remote mode (spyfall.app, codenames.game, garticphone) | Room-code flow, player range, round length, one screenshot |
+| `/press/` page (done 2026-09-15) | Distractify linked wavelength.zone/**presskit**; The Tab links whatever page the writer lands on | Description, screenshots, founder line, "how to play in 3 lines", contact |
+| "Play over Zoom / Discord / Meet" section on `/imposter-game-online/` (done 2026-09-15) | Every team-building and Zoom-games list links tools with a remote mode (spyfall.app, codenames.game, garticphone) | Room-code flow, player range, round length, one screenshot |
 | Variant pages that exist before the trend (`/timer-imposter/` done; Question, Drawing next) | The Tab/Distractify explainer pattern; GROWTH bet 3 | Same scaffold; the page must be live the week the variant trends |
 | `/family-game-night/` (or a family section on `/packs/`) | Family Resource Group syndicate links the "no board needed" game | Kids mode, hint toggle, seasonal packs, 5-minute setup |
 | `/team-building/` or Office-pack landing copy aimed at remote teams | rachelandreago, questworks, brightful link team-oriented tools | 80 work-safe words exist; add "for remote teams" framing |

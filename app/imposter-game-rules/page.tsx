@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Eye, Fingerprint, ListChecks, MessageCircle, ShieldCheck, Smartphone, Vote, Wifi } from 'lucide-react';
+import { ArrowRight, Eye, Fingerprint, ListChecks, MessageCircle, Scale, ShieldCheck, Smartphone, Vote, Wifi } from 'lucide-react';
 import { pageMetadata } from '@/lib/seo';
 import BrandWordmark from '@/components/brand';
 
@@ -58,6 +58,19 @@ export default function ImposterGameRulesPage() {
           <li><Link href="/timer-imposter/"><strong>Timer Imposter</strong></Link> — everyone sees a target time except the imposter; each player runs a hidden stopwatch and the table judges who was guessing.</li>
           <li><Link href="/question-imposter/"><strong>Question Imposter</strong></Link> — everyone answers the same question except one player, who was secretly asked a different one and does not know it.</li>
           <li><Link href="/drawing-imposter/"><strong>Drawing Imposter</strong></Link> — everyone adds one line to a shared drawing; the imposter does not know the subject.</li>
+        </ul>
+      </section>
+      <section className="example-section" aria-labelledby="rules-compare">
+        <div>
+          <span className="eyebrow"><Scale size={14} /> HOW IT COMPARES</span>
+          <h2 id="rules-compare">One phone, free, no app, no console</h2>
+          <p>Imposter belongs to the same family as Spyfall, Jackbox and Among Us: one player is hiding something and the group has to work out who. The difference is how little it needs. Everything runs in the browser, the free version has no ads or sign-up, and a round is short enough to play while the pizza is on its way.</p>
+        </div>
+        <ul className="compare-list">
+          <li><span><strong>vs. Jackbox:</strong> no paid party pack, no console or TV, no screen everyone has to face. One phone passed around does the whole round.</span></li>
+          <li><span><strong>vs. Spyfall:</strong> no location list to study before you play. A single secret word means new players get it on the first round.</span></li>
+          <li><span><strong>vs. Among Us:</strong> no app download, and nobody stares at a screen. The bluffing happens out loud, across a table or on a video call.</span></li>
+          <li><span><strong>vs. Codenames:</strong> no teams, no grid, no spymaster. Everyone plays every turn and every vote counts.</span></li>
         </ul>
       </section>
       <section className="content-next"><h2>Ready to play?</h2><p>Start with the generator for quick private cards, use pass-and-play for the full local round, or create an online room when everyone has their own device.</p><div><Link className="gold-button" href="/imposter-game-generator/">Use generator <ArrowRight size={17} /></Link><Link className="outline-button" href="/online/"><Smartphone size={16} /> Online room</Link></div></section>
