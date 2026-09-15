@@ -47,6 +47,6 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
         <div>{others.map(other => <Link key={other.slug} className="outline-button" href={`/packs/${other.slug}/`}>{other.title.replace(' Imposter Game', '')} <ArrowRight size={16} /></Link>)}<Link className="gold-button" href="/packs/">All packs <ArrowRight size={17} /></Link></div>
       </section>
     </main>
-    <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> {siteName}<small>{siteHost}</small></span><span>{pack.title}, free.</span><span>One phone. No app. No sign-up.</span><Link href="/privacy/">Privacy</Link></footer>
+    <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> {siteName}<small>{siteHost}</small></span><span>{pack.title}, free.</span><span>One phone. No app. No sign-up.</span><span className="footer-links"><Link href="/press/">Press</Link><Link href="/privacy/">Privacy</Link></span></footer>
   </div>;
 }

@@ -43,6 +43,6 @@ export default function VariantPage({ eyebrow, title, lead, headerNote, game, ho
         <div><Link className="gold-button" href="/">Play the word game <ArrowRight size={17} /></Link><Link className="outline-button" href="/timer-imposter/">Timer Imposter <ArrowRight size={16} /></Link><Link className="outline-button" href="/question-imposter/">Question Imposter <ArrowRight size={16} /></Link><Link className="outline-button" href="/drawing-imposter/">Drawing Imposter <ArrowRight size={16} /></Link></div>
       </section>
     </main>
-    <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> {siteName}<small>{siteHost}</small></span><span>{footerNote}</span><span>One phone. No app. No sign-up.</span><Link href="/privacy/">Privacy</Link></footer>
+    <footer className="site-footer"><span className="footer-brand"><Eye size={18} strokeWidth={1.3} /> {siteName}<small>{siteHost}</small></span><span>{footerNote}</span><span>One phone. No app. No sign-up.</span><span className="footer-links"><Link href="/press/">Press</Link><Link href="/privacy/">Privacy</Link></span></footer>
   </div>;
 }
