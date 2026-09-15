@@ -1,6 +1,6 @@
 # Current status
 
-Updated: 2026-09-14.
+Updated: 2026-09-15.
 
 ## Home grid shows six themed packs, the rest behind "See all" (2026-09-14)
 
@@ -54,6 +54,36 @@ word list and the `?pack=brainrot` preselect, and the sitemap lists it; `seo-pag
 3/3. Browser: pack page at desktop and mobile, home grid (now an even 3×2) with Brainrot
 preselected and the cyan theme applied, and a dealt card showing the themed back at mobile.
 Next step: watch Search Console for "brainrot imposter game" and refresh the list in January.
+
+## Flash range and the "0.96" FAQ on /timer-imposter/ (2026-09-15)
+
+Search Console showed queries like "imposter timer 96 original". Checked on TikTok: it is
+navigational intent for one clip — Big Potato Club's 16 Aug 2026 video (~3.2M views, plus a
+1.3M-view "aura" edit, hashtags #096imposter #096timer): three friends in a car, an iPad stopwatch,
+target 0.96 s, and the imposter stopping on exactly 0.96. Our tightest range started at 1 s, so
+that target could never occur. Added a `flash` range (0.50–1.50 s) to `lib/timer-imposter.ts`
+(the range grid is now 2×2), reworded step 1, and added two FAQs — "What is the 0.96 timer
+imposter video?" and "How do you play the 0.96 challenge?" — on the same URL. The guess
+tolerance is unchanged (a tenth of the target, floor 0.30 s; verified the owner's 3.20 vs 3.40 s
+round was correct).
+
+Same day, the page was made worth landing on for that traffic: a **PERFECT** beat when any run
+lands within 0.05 s of the target (`perfectRuns`; presentation only, see `docs/DECISIONS.md`) —
+shown on the reveal stage after the secret, as a banner on the result, as a gold row in the times
+list, and as a pill badge on the recap PNG (`RecapData.badge`) — and the 0.96 FAQ now ends in
+"Play the 0.96 version" → `/timer-imposter/?range=flash#timer-imposter`, which preselects Flash
+(`rangeFromSearch`, `Faq.cta` in `VariantPage`). `RevealStage` gained an optional `flourish`.
+
+Validation: vitest 109/109 (Flash target, tolerance, `perfectRuns` ordering, `rangeFromSearch`
+incl. prototype keys), TypeScript, ESLint (1 pre-existing warning), static build; rendered
+`out/timer-imposter/index.html` carries both FAQs, the range label, the CTA href and the unchanged
+canonical; Playwright `variants` + `seo-pages` 8/8, including a new spec that freezes
+`performance.now`, lands three runs inside the margin and checks the reveal flourish, banner, rows,
+recap download and `round_start pack=flash`; dev-server checks at 375 px and desktop of the 2×2
+range grid, a 0.73 s target card, the FAQ link and the preselect after clicking it.
+Next step: watch Search Console for the "0.96" / "96 original" phrasings and Plausible for
+`round_start pack=flash` and timer `recap_save`; if Flash rounds fire PERFECT every time, tighten
+the margin.
 
 ## /timer-imposter/ also targets "clock imposter" (2026-09-14)
 

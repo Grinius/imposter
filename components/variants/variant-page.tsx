@@ -6,7 +6,7 @@ import BrandWordmark, { siteHost, siteName } from '@/components/brand';
 // The static frame around each pass-and-play variant: header, hero, the game, and an explainer
 // that is real HTML at build time (the tool alone would be an empty page to a crawler). The copy is
 // per page; the shape is shared so the three variants read as one family.
-export interface Faq { q: string; a: string; }
+export interface Faq { q: string; a: string; cta?: { href: string; label: string }; }
 export interface VariantPageProps {
   eyebrow: string; title: ReactNode; lead: string; headerNote: string;
   game: ReactNode;
@@ -36,7 +36,7 @@ export default function VariantPage({ eyebrow, title, lead, headerNote, game, ho
       </section>
       <section className="generator-copy" aria-labelledby="variant-faq">
         <div><span className="eyebrow"><MessageCircleQuestion size={14} /> QUESTIONS</span><h2 id="variant-faq">Frequently asked</h2></div>
-        <dl>{faqs.map(faq => <div key={faq.q}><dt>{faq.q}</dt><dd>{faq.a}</dd></div>)}</dl>
+        <dl>{faqs.map(faq => <div key={faq.q}><dt>{faq.q}</dt><dd>{faq.a}{faq.cta && <> <a className="faq-link" href={faq.cta.href}>{faq.cta.label} <ArrowRight size={13} /></a></>}</dd></div>)}</dl>
       </section>
       <section className="generator-next">
         <h2>{nextTitle}</h2><p>{nextText}</p>

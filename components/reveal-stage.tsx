@@ -8,12 +8,14 @@ import { track, type Mode } from '@/lib/analytics';
 // taps, then runs a slowing roulette over the names, lands on the imposter, and follows with the
 // secret. Full-bleed, portrait-composed, the domain in the corner throughout, and every step is a
 // tap so a phone held up to a camera never moves on by itself. Reduced motion skips the roulette.
+// `flourish` is an optional extra beat after the secret — Timer uses it for a perfect run.
+export interface RevealFlourish { label: string; text: string; }
 export interface RevealProps {
   names: string[]; imposter: number; roleLabel?: string; secretLabel: string; secret: string;
-  winner: 'friends' | 'imposter'; onDone: () => void; mode: Mode;
+  winner: 'friends' | 'imposter'; onDone: () => void; mode: Mode; flourish?: RevealFlourish | null;
 }
 const ticks = [70, 70, 80, 90, 100, 115, 135, 160, 190, 230, 280, 340, 420, 520];
-export default function RevealStage({ names, imposter, roleLabel = 'THE IMPOSTER WAS', secretLabel, secret, winner, onDone, mode }: RevealProps) {
+export default function RevealStage({ names, imposter, roleLabel = 'THE IMPOSTER WAS', secretLabel, secret, winner, onDone, mode, flourish }: RevealProps) {
   const [stage, setStage] = useState<'armed' | 'spinning' | 'landed' | 'secret'>('armed');
   const [shown, setShown] = useState(imposter);
   const timers = useRef<number[]>([]);
@@ -45,6 +47,7 @@ export default function RevealStage({ names, imposter, roleLabel = 'THE IMPOSTER
       <p className="eyebrow">{roleLabel}</p>
       <div className={`reveal-name ${stage === 'spinning' ? 'reveal-spin' : 'reveal-land'}`} aria-live={stage === 'spinning' ? 'off' : 'polite'} key={stage === 'spinning' ? shown : 'landed'}>{names[shown]}</div>
       {stage === 'secret' && <div className="reveal-secret"><span className="eyebrow">{secretLabel}</span><strong>{secret}</strong></div>}
+      {stage === 'secret' && flourish && <div className="reveal-flourish"><span>✦ {flourish.label}</span><strong>{flourish.text}</strong></div>}
       {stage === 'secret' && <>
         <p className="reveal-verdict">{winner === 'friends' ? 'Caught. The friends win.' : 'Got away with it. The imposter wins.'}</p>
         <button className="gold-button reveal-button" onClick={onDone}>See the full result<ArrowRight size={17} /></button>

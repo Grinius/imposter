@@ -6,8 +6,9 @@ import { pick, tally, validateNames, voteIsValid } from './deduction';
 // target, and the table judges by feel who was guessing. Times are in hundredths of a second so the
 // rules never touch floating point.
 
-export type TimerRange = 'quick' | 'short' | 'long';
+export type TimerRange = 'flash' | 'quick' | 'short' | 'long';
 export const timerRanges: Record<TimerRange, { label: string; min: number; max: number; blurb: string }> = {
+  flash: { label: '0.5–1.5 s', min: 50, max: 150, blurb: 'The 0.96 range. Reflex, nerve, and luck.' },
   quick: { label: '1–5 s', min: 100, max: 500, blurb: 'Snappy. Every tenth of a second shows.' },
   short: { label: '3–15 s', min: 300, max: 1500, blurb: 'The classic. Long enough to lose count.' },
   long: { label: '10–45 s', min: 1000, max: 4500, blurb: 'A real wait. Nerves of steel required.' },
@@ -31,6 +32,18 @@ export function validateTimerSettings(settings: TimerSettings, maxPlayers = free
 export function formatTime(hundredths: number) { return `${Math.floor(hundredths / 100)}.${String(hundredths % 100).padStart(2, '0')} s`; }
 // Close enough to steal the win: a tenth of the target, never tighter than 0.30 s.
 export function guessTolerance(target: number) { return Math.max(30, Math.round(target / 10)); }
+// A run within 0.05 s of the target is "perfect" — the moment the viral clips are built around. It
+// is presentation only: the reveal, result and recap celebrate it, but it never decides a winner.
+export const perfectMargin = 5;
+export function perfectRuns(round: TimerRound): number[] {
+  return round.times.map((time, index) => ({ time, index })).filter((run): run is { time: number; index: number } => run.time !== null && Math.abs(run.time - round.target) <= perfectMargin)
+    .sort((a, b) => Math.abs(a.time - round.target) - Math.abs(b.time - round.target)).map(run => run.index);
+}
+// A range in the URL (`/timer-imposter/?range=flash`, from the page's own FAQ) preselects it.
+export function rangeFromSearch(search: string): TimerRange | null {
+  const value = new URLSearchParams(search).get('range');
+  return value && Object.hasOwn(timerRanges, value) ? value as TimerRange : null;
+}
 
 export function createTimerRound(settings: TimerSettings, random: () => number, maxPlayers = freePlayerLimit): TimerRound {
   const error = validateTimerSettings(settings, maxPlayers); if (error) throw new Error(error);

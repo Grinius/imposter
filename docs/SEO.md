@@ -34,6 +34,7 @@ When data arrives, retain its source and date. Capture keyword, country, languag
   game words").
 - `/timer-imposter/`, `/question-imposter/`, `/drawing-imposter/`: playable variant modes with static
   explainers, targeting the 2026 TikTok variant queries ("timer imposter game", "imposter timer app",
+  "imposter timer 96 original" — the 0.96 s viral clip, answered by a Flash range and FAQ,
   "question imposter game", "drawing imposter") where the SERP is thin (see `docs/GROWTH.md` §4).
 
 These are candidate page types, not a commitment to separate URLs for every phrase. Each indexable page needs distinct utility; avoid interchangeable location/category pages and mass-generated keyword permutations. Do not expose the current round's secret words in supporting content.

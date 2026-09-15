@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { tally, validateNames, voteIsValid } from '../lib/deduction';
-import { createTimerRound, formatTime, guessTolerance, timerRanges, timerTransition, type TimerRound } from '../lib/timer-imposter';
+import { createTimerRound, formatTime, guessTolerance, perfectRuns, rangeFromSearch, timerRanges, timerTransition, type TimerRound } from '../lib/timer-imposter';
 import { createQuestionRound, questionFor, questionTransition, type QuestionRound } from '../lib/question-imposter';
 import { questionPairs } from '../lib/questions';
 import { createDrawingRound, drawingTransition, maxStrokePoints, totalTurns, type DrawingRound } from '../lib/drawing-imposter';
@@ -35,6 +35,9 @@ describe('timer imposter', () => {
     const round = make();
     expect(round.target).toBe(timerRanges.short.min); expect(round.imposter).toBe(0); expect(round.firstTurn).toBe(2);
     expect(round.phase).toBe('handoff'); expect(round.times).toEqual([null, null, null, null]);
+    // The Flash range reaches under a second, so the viral 0.96 s target is possible.
+    const flash = createTimerRound({ names, range: 'flash' }, stream([0.46, 0, 0]));
+    expect(flash.target).toBe(96); expect(formatTime(flash.target)).toBe('0.96 s');
     expect(() => createTimerRound({ names: ['a', 'b'], range: 'short' }, Math.random)).toThrow(/players/);
     expect(() => createTimerRound({ names, range: 'nope' as never }, Math.random)).toThrow(/range/);
   });
@@ -69,12 +72,25 @@ describe('timer imposter', () => {
   it('gives a caught imposter one guess at the target, within a tolerance that never drops below 0.30 s', () => {
     const caught = voteAll(timeAll(revealAll(make()), [300, 300, 300, 300]), [1, 0, 0, 0]);
     expect(caught.phase).toBe('guess');
-    expect(guessTolerance(300)).toBe(30); expect(guessTolerance(4000)).toBe(400);
+    expect(guessTolerance(300)).toBe(30); expect(guessTolerance(4000)).toBe(400); expect(guessTolerance(96)).toBe(30);
     expect(timerTransition(caught, { type: 'guess', time: 330 })).toMatchObject({ winner: 'imposter', reason: 'guessed' });
     expect(timerTransition(caught, { type: 'guess', time: 331 })).toMatchObject({ winner: 'friends', reason: 'caught' });
     expect(timerTransition(caught, { type: 'guess', time: -5 })).toBe(caught);
     expect(timerTransition(caught, { type: 'skip-guess' })).toMatchObject({ winner: 'friends', reason: 'caught' });
     expect(formatTime(305)).toBe('3.05 s'); expect(formatTime(4500)).toBe('45.00 s');
+  });
+  it('flags runs within 0.05 s of the target as perfect, closest first, without touching the result', () => {
+    expect(perfectRuns(revealAll(make()))).toEqual([]);
+    // Turns start at firstTurn (player 2): 2 → 3.05, 3 → 3.00, 0 → 3.06, 1 → 2.96 against a 3.00 s target.
+    const timed = timeAll(revealAll(make()), [305, 300, 306, 296]);
+    expect(perfectRuns(timed)).toEqual([3, 1, 2]);
+    const result = voteAll(timed, [1, 0, 0, 0]);
+    expect(result).toMatchObject({ phase: 'guess', winner: null });
+    expect(perfectRuns(timerTransition(result, { type: 'skip-guess' }))).toEqual([3, 1, 2]);
+  });
+  it('preselects a range named in the URL and ignores anything else', () => {
+    expect(rangeFromSearch('?range=flash')).toBe('flash'); expect(rangeFromSearch('?range=long&x=1')).toBe('long');
+    expect(rangeFromSearch('?range=toString')).toBeNull(); expect(rangeFromSearch('?range=nope')).toBeNull(); expect(rangeFromSearch('')).toBeNull();
   });
 });
 

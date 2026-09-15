@@ -6,7 +6,8 @@ import type { Theme } from '@/lib/themes';
 // the share sheet or saved. Rows are generic ("Alex — hot") so the word game can list votes, the
 // online room can list the typed clues, and Timer can list everyone's time.
 export interface RecapRow { label: string; value: string; highlight?: boolean; }
-export interface RecapData { roleLabel: string; imposter: string; secretLabel: string; secret: string; verdict: string; rowsTitle?: string; rows?: RecapRow[]; palette?: Theme['palette']; }
+export interface RecapBadge { label: string; text: string; }
+export interface RecapData { roleLabel: string; imposter: string; secretLabel: string; secret: string; verdict: string; badge?: RecapBadge | null; rowsTitle?: string; rows?: RecapRow[]; palette?: Theme['palette']; }
 const width = 1080, height = 1920;
 const serif = '"Cormorant Garamond", Georgia, serif', sans = '"DM Sans", Arial, sans-serif';
 
@@ -37,6 +38,14 @@ export async function renderRecap(data: RecapData): Promise<Blob> {
   c.fillStyle = accentLight; c.font = `500 84px ${serif}`; const secretLines = wrap(c, data.secret, 880).slice(0, 3); let y = 860;
   for (const line of secretLines) { c.fillText(line, 540, y); y += 92; }
   y += 30;
+  if (data.badge) {
+    // A gold pill under the secret — the "PERFECT" beat a viewer should spot before reading the rows.
+    c.font = `600 28px ${sans}`; c.letterSpacing = '6px'; const label = `✦  ${data.badge.label}`; const pillW = c.measureText(label).width + 90;
+    c.fillStyle = `${accent}2a`; c.strokeStyle = `${accent}99`; c.lineWidth = 2; c.beginPath(); c.roundRect(540 - pillW / 2, y - 6, pillW, 64, 32); c.fill(); c.stroke();
+    c.fillStyle = accentLight; c.fillText(label, 540, y + 36); c.letterSpacing = '0px';
+    c.fillStyle = cream; c.font = `400 40px ${serif}`; y += 116; for (const line of wrap(c, data.badge.text, 860).slice(0, 2)) { c.fillText(line, 540, y); y += 48; }
+    y += 44;
+  }
   if (data.rows?.length) {
     eyebrow(data.rowsTitle ?? 'HOW THE TABLE VOTED', y, '#b4c2b7'); y += 40;
     const rows = data.rows.slice(0, 20), rowH = Math.min(70, Math.floor(700 / rows.length)), size = Math.min(40, rowH - 22);

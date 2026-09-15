@@ -379,3 +379,24 @@ draft for the owner to sanity-check, same caveat as the original packs.
 **Tests:** every pack meets a minimum size, no duplicate text within a pack or within Mixed bag;
 the fresh-pool rule; the memory store (order, de-duplication, cap, junk in storage, private mode);
 and a Worker room playing 150 rounds of Mixed bag with no repeat inside the remembered window.
+
+## 2026-09-15 — Timer Imposter: "perfect" is a presentation beat, not a rule
+
+**A run within 0.05 s of the target is called PERFECT.** `perfectRuns` in `lib/timer-imposter.ts`
+lists who landed inside `perfectMargin` (5 hundredths), closest first. It changes nothing about who
+wins: the vote, the tie rule and the caught imposter's final guess (a tenth of the target, floor
+0.30 s) are untouched. What it changes is what the table sees — a gold "PERFECT" beat on the reveal
+stage after the secret, a banner on the result screen, the row marked in the times list, and a
+badge on the recap image. The wording leads with the closest run and says "— the imposter —" when
+that player is the one who never saw the number, because that is the moment the viral 0.96 clip is
+built around.
+
+**Why 0.05 s:** an exact hundredth is a 1-in-100 shot per run and would almost never fire; a tenth
+is too loose to feel like a feat. 0.05 s reads as "dead on" to a viewer at any range from Flash to
+Long. Reconsider if Flash rounds fire it every time.
+
+**The FAQ links into a round.** `/timer-imposter/?range=flash#timer-imposter` preselects the Flash
+range (`rangeFromSearch`, mirroring the home page's `?pack=`); the canonical stays
+`/timer-imposter/` and the URL is not in the sitemap. A plain `<a>` rather than `Link`, so the
+query is always read fresh.
+

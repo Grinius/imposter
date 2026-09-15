@@ -85,6 +85,43 @@ test('timer imposter: hidden stopwatch runs, vote, final guess, times revealed',
   await page.locator('.result-emblem').scrollIntoViewIfNeeded(); await shot(page, 'timer-result');
 });
 
+test('timer imposter: the FAQ link preselects Flash, and runs on the target get the PERFECT beat', async ({ page }) => {
+  await page.route(/plausible\.io/, route => route.abort()); await page.addInitScript(recordAnalytics);
+  // A frozen stopwatch clock the test advances by hand, so a run can land exactly on the target.
+  await page.addInitScript(() => { let frozen = 1_000; performance.now = () => frozen; (window as Window & { __advance?: (ms: number) => void }).__advance = ms => { frozen += ms; }; });
+  await page.goto('/timer-imposter/?range=flash#timer-imposter');
+  const flash = page.getByRole('button', { name: '0.5–1.5 s' }); await expect(flash).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.hint-description')).toContainText('0.96');
+  await page.getByRole('button', { name: /Start the clock/ }).click();
+  const cards = await revealAll(page, 4, /The imposter|0\.\d\d s|1\.\d\d s/);
+  const imposter = names[cards.findIndex(card => card === 'The imposter')];
+  const target = cards.find(card => card !== 'The imposter')!, targetMs = Math.round(Number(target.replace(' s', '')) * 1000);
+  expect(targetMs).toBeGreaterThanOrEqual(500); expect(targetMs).toBeLessThanOrEqual(1500);
+  const stops = [0, 30, -60, 40]; // dead on, +0.03, −0.06 (not perfect), +0.04
+  for (let i = 0; i < 4; i++) {
+    await page.getByRole('button', { name: /is ready/ }).click();
+    await page.getByRole('button', { name: 'START' }).click();
+    await page.evaluate(ms => (window as Window & { __advance?: (ms: number) => void }).__advance!(ms), targetMs + stops[i]);
+    await page.getByRole('button', { name: 'STOP' }).click();
+  }
+  await voteAll(page, names, voter => names[voter] === imposter ? names.find(n => n !== imposter)! : imposter);
+  await page.getByRole('button', { name: /got nothing/ }).click();
+  await expect(page.locator('.reveal-stage')).toBeVisible();
+  await page.getByRole('button', { name: /Reveal the imposter/ }).click();
+  await expect(page.locator('.reveal-flourish')).toContainText(/PERFECT RUNS/, { timeout: 10_000 });
+  await expect(page.locator('.reveal-flourish')).toContainText('dead on');
+  await shot(page, 'reveal-perfect');
+  await page.getByRole('button', { name: /See the full result/ }).click();
+  await expect(page.locator('.perfect-banner')).toContainText('PERFECT RUNS');
+  await expect(page.locator('.times-list .perfect-row')).toHaveCount(3);
+  await expect(page.locator('.times-list .perfect-row', { hasText: 'dead on' })).toHaveCount(1); // rows are in seat order, not run order
+  const download = page.waitForEvent('download'); await page.getByRole('button', { name: /recap image/ }).click();
+  const file = await download; if (shots) await file.saveAs(`${shots}/recap-perfect.png`);
+  const events = await page.evaluate(() => (window as Window & { __events?: { name: string; props?: Record<string, unknown> }[] }).__events ?? []);
+  expect(events[0].props).toEqual({ mode: 'timer', pack: 'flash', players: 4 });
+  await page.locator('.perfect-banner').scrollIntoViewIfNeeded(); await shot(page, 'timer-result-perfect');
+});
+
 test('question imposter: identical cards, one odd question, no final guess', async ({ page }) => {
   await page.goto('/question-imposter/');
   await page.getByRole('button', { name: /Deal the questions/ }).click();
