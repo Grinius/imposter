@@ -31,7 +31,7 @@ const facts = [
   ['Word packs', `${packs.length} themed packs plus the core categories`],
   ['Variants', 'Timer Imposter, Question Imposter, Drawing Imposter'],
   ['Platform', 'Any modern browser on phone, tablet or desktop'],
-  ['Made by', 'Justinas Grinius, independent developer'],
+  ['Made by', 'An independent developer, no studio or publisher'],
 ] as const;
 
 export default function PressPage() {
@@ -96,7 +96,7 @@ export default function PressPage() {
         </div>
         <ul>
           <li><Smartphone size={17} /><span><strong>Where to link:</strong> the home page <Link href="/">laughtable.com</Link> for the classic game, <Link href="/timer-imposter/">/timer-imposter/</Link> for the timer variant, <Link href="/imposter-game-online/">/imposter-game-online/</Link> for remote play.</span></li>
-          <li><Fingerprint size={17} /><span><strong>Founder line:</strong> LaughTable is built and run by Justinas Grinius, an independent developer. Available for quotes and interviews by email.</span></li>
+          <li><Fingerprint size={17} /><span><strong>Founder line:</strong> LaughTable is built and run by one independent developer. Available for quotes and interviews by email.</span></li>
           <li><Mail size={17} /><span><strong>Contact:</strong> <a href={`mailto:${contact}`}>{contact}</a>. Email is the fastest way to reach us.</span></li>
         </ul>
       </section>
